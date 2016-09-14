@@ -19,11 +19,11 @@ struct Controller
 	ID _idcounter;
 };
 
-BOOL Controller_Run(TIME time)
+HRESULT Controller_Run(TIME time)
 {
-	/*Controller* pController = Engine_GetController();
-	
-	if (_kbhit())
+	Controller* pController = Engine_GetController();
+	CEASSERT(pController&&time);
+	/*if (_kbhit())
 	{
 		ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector,_getch());
 		if (pEventid)
@@ -31,23 +31,24 @@ BOOL Controller_Run(TIME time)
 			EventManager_QueueEvent((*pEventid), NULL);
 		}
 	}*/
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Controller_EvalKey(void* pData) {
+HRESULT Controller_EvalKey(void* pData) {
 	Controller* pController = Engine_GetController();
+	CEASSERT(pController&&pData);
 	ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector, *(WPARAM*)pData);
 	if (pEventid)
 	{
 		EventManager_QueueEvent((*pEventid), NULL);
 	}
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Controller_Delete()
+HRESULT Controller_Delete()
 {
 	Controller* pController = Engine_GetController();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pController);
 	if (Vector_Elements(pController->_pControlsVector)>0)
 	{
 		Vector* pControlVector = NULL;
@@ -57,25 +58,23 @@ BOOL Controller_Delete()
 			pControls = (Controls*)Vector_Get(pController->_pControlsVector,i);
 			if (pControls){
 				pControlVector = pControls->_pControlVector;
-				error = error || Vector_FullDelete(pControlVector);
+				SAFECALL(Vector_FullDelete(pControlVector));
 			}
 		}
 	}
-	Vector_FullDelete(pController->_pControlsVector);
+	SAFECALL(Vector_FullDelete(pController->_pControlsVector));
 	_DEL(pController);
-	return error;
+	return S_OK;
 }
 
-BOOL Controller_SetControls(ID controlsid)
+HRESULT Controller_SetControls(ID controlsid)
 {
 	Controller* pController = Engine_GetController();
+	CEASSERT(pController&&controlsid);
 	Controls* pControls = (Controls*)Vector_Get(pController->_pControlsVector,controlsid);
-	if (!pControls)
-	{
-		return ERROR_SUCCESS;
-	}
+	CEASSERT(pControls);
 	pController->_pActiveControls = pControls;
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 Controller* Controller_New()
@@ -87,27 +86,27 @@ Controller* Controller_New()
 	return pController;
 }
 
-BOOL Controller_AddControl(ID controlsid, KEYCODE key, ID eventid)
+HRESULT Controller_AddControl(ID controlsid, KEYCODE key, ID eventid)
 {
 	Controller* pController = Engine_GetController();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pController&&controlsid&&key&&eventid);
 	Controls* pControls = (Controls*)Vector_Get(pController->_pControlsVector,controlsid);
 	ID* pEventID;
 	_NEW(ID, pEventID);
 	(*pEventID) = eventid;
-	error = Vector_Insert(pControls->_pControlVector,key,pEventID);
-	return error;
+	SAFECALL(Vector_Insert(pControls->_pControlVector,key,pEventID));
+	return S_OK;
 }
 
 ID Controller_NewControls() //memory allocation missing
 {
 	Controller* pController = Engine_GetController();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pController);
 	pController->_idcounter++;
 	Controls* pControls;
 	_NEW(Controls, pControls);
 	pControls->_id = pController->_idcounter;
 	pControls->_pControlVector = Vector_New(sizeof(void*),255);
-	error = Vector_Insert(pController->_pControlsVector, pControls->_id, pControls);
+	SAFECALL(Vector_Insert(pController->_pControlsVector, pControls->_id, pControls));
 	return pControls->_id;
 }

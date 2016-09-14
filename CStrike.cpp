@@ -17,30 +17,32 @@ CStrike* CStrike_NEW() {
 	return pCStrike;
 }
 
-BOOL CStrike_Run(TIME elapsed) {
+HRESULT CStrike_Run(TIME elapsed) {
 	cd3d11* pcd3d11 = Engine_GetCD3D11();
-
+	CEASSERT(pcd3d11&&elapsed);
 	pcd3d11->rot += .0005f*elapsed;
 	if (pcd3d11->rot > 6.26f)
 		pcd3d11->rot = 0.0f;
 	pcd3d11->World = XMMatrixTranslation(0.0f,0.0f, 0.0f) * XMMatrixRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), pcd3d11->rot);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL CStrike_DELETE(void) {
+HRESULT CStrike_DELETE(void) {
 	CStrike* pCStrike = Engine_GetCStrike();
+	CEASSERT(pCStrike);
 	_DEL(pCStrike);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL CStrike_CreateControls(CStrike* pCStrike)
+HRESULT CStrike_CreateControls(CStrike* pCStrike)
 {
+	CEASSERT(pCStrike);
 	pCStrike->_ctrlsGame = Controller_NewControls();
-	Controller_AddControl(pCStrike->_ctrlsGame, 27, EVENT_END);
-	Controller_AddControl(pCStrike->_ctrlsGame, 97, EVENT_MOVELEFT);
-	Controller_AddControl(pCStrike->_ctrlsGame, 100, EVENT_MOVERIGHT);
-	Controller_AddControl(pCStrike->_ctrlsGame, 115, EVENT_MOVEDOWN);
-	Controller_AddControl(pCStrike->_ctrlsGame, 119, EVENT_ROTATECW);
-	Controller_AddControl(pCStrike->_ctrlsGame, 32, EVENT_MOVEFIX);
-	return ERROR_FAILURE;
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 27, EVENT_END));
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 97, EVENT_MOVELEFT));
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 100, EVENT_MOVERIGHT));
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 115, EVENT_MOVEDOWN));
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 119, EVENT_ROTATECW));
+	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 32, EVENT_MOVEFIX));
+	return S_OK;
 }

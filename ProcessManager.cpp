@@ -37,6 +37,7 @@ ProcessManager* ProcessManager_New(void)
 ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
 {
 	ProcessManager* pPM = Engine_GetPM();
+	CEASSERT(pPM&&pCallBack);
 	Process* pProcess;
 	_NEW(Process, pProcess);
 	pProcess->_pCallBack = pCallBack;
@@ -47,29 +48,36 @@ ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
 	ID* pListID;
 	_NEW(ID, pListID);
 	(*pListID) = List_PushBack(pPM->_pProcessList, pProcess);
-	Vector_Insert(pPM->_pIDVector, pProcess->_id, (void*)pListID);
+	SAFECALL(Vector_Insert(pPM->_pIDVector, pProcess->_id, (void*)pListID));
 	return pProcess->_id;
 }
 
-BOOL ProcessManager_DeleteProcess(ID id)
+HRESULT ProcessManager_DeleteProcess(ID id)
 {
 	ProcessManager* pPM = Engine_GetPM();
-	BOOL error = List_DeleteElement(pPM->_pProcessList, *(ID*)Vector_Get(pPM->_pIDVector, id));
-	Vector_DeleteElement(pPM->_pIDVector, id);
-	return(error);
+	if (!pPM) {
+		return S_OK;
+	}
+	SAFECALL(List_DeleteElement(pPM->_pProcessList, *(ID*)Vector_Get(pPM->_pIDVector, id),true));
+	SAFECALL(Vector_DeleteElement(pPM->_pIDVector, id));
+	return S_OK;
 }
 
-BOOL ProcessManager_Delete()
+HRESULT ProcessManager_Delete()
 {
 	ProcessManager* pPM = Engine_GetPM();
-	BOOL error = List_FullDelete(pPM->_pProcessList);
-	Vector_FullDelete(pPM->_pIDVector);
+	if (!pPM) {
+		return S_OK;
+	}
+	SAFECALL(List_FullDelete(pPM->_pProcessList,true));
+	SAFECALL(Vector_FullDelete(pPM->_pIDVector));
 	_DEL(pPM);
-	return(error);
+	return S_OK;
 }
 
-BOOL ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
+HRESULT ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
 {
+	CEASSERT(pProcess&&elapsed);
 	pProcess->_waited = pProcess->_waited + elapsed;
 	if (pProcess->_waited >= pProcess->_wait)
 	{
@@ -85,19 +93,19 @@ BOOL ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
 			}
 		}
 	}
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL ProcessManager_Run(TIME elapsed)
+HRESULT ProcessManager_Run(TIME elapsed)
 {
 	ProcessManager* pPM = Engine_GetPM();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(elapsed&&pPM);
 	if (List_Length(pPM->_pProcessList) > 0)
 	{
 		for (Iterator itr = List_Iterator(pPM->_pProcessList); itr != NULL; itr = List_Next(itr))
 		{
-			error = error || ProcessManager_RunProcess((Process*)List_Get(itr), elapsed);
+			SAFECALL(ProcessManager_RunProcess((Process*)List_Get(itr), elapsed));
 		}
 	}
-	return error;
+	return S_OK;
 }

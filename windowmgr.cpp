@@ -6,6 +6,7 @@
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	CEASSERT(hwnd);
 	switch (msg)
 	{
 	case WM_CLOSE:
@@ -21,6 +22,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 HRESULT registerWindowClass(WNDCLASSEX* pwc, HINSTANCE* phInstance) {
+	CEASSERT(pwc&&phInstance);
 	pwc->cbSize = sizeof(WNDCLASSEX);
 	pwc->style = 0;
 	pwc->lpfnWndProc = WndProc;
@@ -37,34 +39,36 @@ HRESULT registerWindowClass(WNDCLASSEX* pwc, HINSTANCE* phInstance) {
 }
 
 HRESULT createWindow(WindowMgr* pWindowMgr) {
+	CEASSERT(pWindowMgr);
 	WNDCLASSEX* pwc;
 	_NEW(WNDCLASSEX, pwc);
-	HRCALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
-	BOCALL(RegisterClassEx(pwc));
+	SAFECALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
+	RegisterClassEx(pwc); 
 	(*pWindowMgr->phwnd) = CreateWindowEx(WS_EX_CLIENTEDGE, pwc->lpszClassName, pWindowMgr->windowtitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, BUFFERWIDTH, BUFFERHEIGHT, NULL, NULL, Engine_GetWinParams()->hInstance, NULL);
-	POCHECK(*pWindowMgr->phwnd);
 	return S_OK;
 }
 
 HRESULT showWindow(WindowMgr* pWindowMgr) {
+	CEASSERT(pWindowMgr);
 	ShowWindow(*pWindowMgr->phwnd, Engine_GetWinParams()->nCmdShow);
 	UpdateWindow(*pWindowMgr->phwnd);
 	return S_OK;
 }
 
-WindowMgr* WindowMgr_NEW(void) {
-	WindowMgr* pInst;
-	_NEW(WindowMgr, pInst);
+HRESULT WindowMgr_NEW(WindowMgr** ppInst) {
+	_NEW(WindowMgr, *ppInst);
+	WindowMgr* pInst = *ppInst;
 	_NEW(HWND, pInst->phwnd);
 	pInst->windowtitle = WINDOWTITLE;
 	SAFECALL(createWindow(pInst));
 	SAFECALL(showWindow(pInst));
-	return pInst;
+	return S_OK;
 }
 
 
-BOOL WindowMgr_Run(TIME elapsed) {
+HRESULT WindowMgr_Run(TIME elapsed) {
 	WindowMgr* pWindowMgr = Engine_GetWindowMgr();
+	CEASSERT(elapsed&&pWindowMgr);
 	MSG msg;
 	while (PeekMessage(&msg, *(pWindowMgr->phwnd), 0, 0, PM_REMOVE))
 	{
@@ -84,13 +88,14 @@ BOOL WindowMgr_Run(TIME elapsed) {
 			}
 		}
 	}
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL WindowMgr_DELETE(void) {
+HRESULT WindowMgr_DELETE(void) {
 	WindowMgr* pWindowMgr = Engine_GetWindowMgr();
-	DestroyWindow(*(pWindowMgr->phwnd));
+	CEASSERT(pWindowMgr);
+	SAFECALL(DestroyWindow(*(pWindowMgr->phwnd)));
 	_DEL(pWindowMgr->phwnd);
 	_DEL(pWindowMgr);
-	return ERROR_FAILURE;
+	return S_OK;
 }

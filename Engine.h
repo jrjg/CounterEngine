@@ -1,6 +1,11 @@
 #ifndef INCLUDE_ENGINE
 #define INCLUDE_ENGINE
 
+struct String {
+	char* buffer;
+	size_t length;
+};
+typedef struct String String;
 
 struct Engine;
 struct WinParams {
@@ -26,14 +31,14 @@ struct CameraManager* Engine_GetCameraManager(void);
 struct ResourceManager* Engine_GetResourceManager(void);
 struct ComponentManager* Engine_GetComponentManager(void);
 
-BOOL Engine_ShutDown(void);
-BOOL Engine_Run(void);
-BOOL Engine_StartUp(HINSTANCE, HINSTANCE, LPSTR, int);
-BOOL Engine_WaitTimer(TIME);
-BOOL Engine_Terminate(void*);
-BOOL Engine_UpdateUpTime(TIME);
+HRESULT Engine_ShutDown(void);
+HRESULT Engine_Run(void);
+HRESULT Engine_StartUp(HINSTANCE, HINSTANCE, LPSTR, int);
+HRESULT Engine_WaitTimer(TIME);
+HRESULT Engine_Terminate(void*);
+HRESULT Engine_UpdateUpTime(TIME);
 TIME Engine_GetUpTime(void);
 
 BOOL CHAREQ(char * a, char * b);
-
+BOOL CHAREQS(char * a, char * b,size_t l);
 #endif

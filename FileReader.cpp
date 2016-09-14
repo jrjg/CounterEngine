@@ -1,10 +1,13 @@
 #include "TopInclude.h"
 #include "FileReader.h"
 
-char* FileReader_Read(char * filename)
+HRESULT FileReader_Read(char * filename, FileContent** ppContent)
 {
+	FileContent* pContent = (*ppContent);
+	CEASSERT(pContent && "invalid FileContent");
+
 	//open file
-	if (!filename) { return 0; }
+	if (!filename) { return ERROR_SUCCESS; }
 	FILE *pFile = fopen(filename, "r");
 	CEASSERT(pFile && "File not found");
 
@@ -16,6 +19,8 @@ char* FileReader_Read(char * filename)
 
 	//create buffer
 	char* pBuffer = (char*)malloc(length);
+	pContent->pBuffer = pBuffer;
+	pContent->size = length;
 
 	//read file
 	int c;
@@ -26,5 +31,5 @@ char* FileReader_Read(char * filename)
 	//close file
 	fclose(pFile);
 
-	return pBuffer;
+	return S_OK;
 }

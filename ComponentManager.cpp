@@ -17,9 +17,12 @@ ComponentManager * ComponentManager_NEW()
 HRESULT ComponentManager_DELETE()
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
-	ComponentManager_FullDestroy();
-	Vector_Delete(pCM->pComponents);
-	List_FullDelete(pCM->pComponentHandlers);
+	if (!pCM) {
+		return S_OK;
+	}
+	SAFECALL(ComponentManager_FullDestroy());
+	SAFECALL(Vector_Delete(pCM->pComponents));
+	SAFECALL(List_FullDelete(pCM->pComponentHandlers,true));
 	_DEL(pCM);
 	return S_OK;
 }
@@ -27,6 +30,9 @@ HRESULT ComponentManager_DELETE()
 HRESULT ComponentManager_FullDestroy()
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
+	if (!pCM) {
+		return S_OK;
+	}
 	for (UINT i = 0; i < Vector_Last(pCM->pComponents); i++)
 	{
 		ComponentManager_DestroyComponent(i); //dont safecall
@@ -37,6 +43,7 @@ HRESULT ComponentManager_FullDestroy()
 HRESULT ComponentManager_RegisterComponentHandler(char * name, CCF pCreator, CDF pDestroyer)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
+	CEASSERT(pCM&&name&&pCreator&&pDestroyer);
 	ComponentHandler* pComponentHandler;
 	_NEW(ComponentHandler, pComponentHandler);
 	pComponentHandler->name = name;
@@ -49,6 +56,8 @@ HRESULT ComponentManager_RegisterComponentHandler(char * name, CCF pCreator, CDF
 HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * pID)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
+	CEASSERT(pCM&&name&&pCreatorDesc&&pID);
+
 	ComponentHandler* pComponentHandler;
 	CCF pCCF;
 
@@ -77,6 +86,7 @@ HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * 
 HRESULT ComponentManager_DestroyComponent(ID id)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
+	CEASSERT(pCM&&id);
 
 	//get the component
 	Component* pC;
@@ -104,10 +114,9 @@ HRESULT ComponentManager_DestroyComponent(ID id)
 HRESULT ComponentManager_GetComponent(ID id, void ** ppData)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
+	CEASSERT(pCM&&id);
 	Component* pC = (Component*)Vector_Get(pCM->pComponents, id);
-	if (!pC) {
-		return ERROR_SUCCESS;
-	}
+	CEASSERT(pC);
 	(*ppData) = pC->pData;
 	return S_OK;
 }

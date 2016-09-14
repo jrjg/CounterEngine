@@ -4,25 +4,24 @@
 
 ID List_ID = 0;
 
-struct ListElement
-{
-	struct ListElement* _pNext;
-	void* _pObj;
-	ID _id;
-};
+HRESULT List_GetLast(List* pList,void** ppObject) {
+	CEASSERT(pList && *ppObject&&"invalid List"&&"List_GetLast");
+	(*ppObject) = List_Get(pList->_pLastElem);
+	return S_OK;
+}
 
-struct List{
-	ListElement* _pFirstElem;
-	ListElement* _pLastElem;
-	unsigned long _length;
-	unsigned long _elemsize;
-	ID _idcnt;
-	ID _id;
-};
+HRESULT List_Copy(List* pFrom, List* pTo) {
+	CEASSERT(pFrom && pTo&&"invalid List"&&"List_Copy");
+	ExecOnList(
+		pFrom,
+		List_PushBack(pTo, List_Get(itr));
+	);
+	return S_OK;
+}
 
 List* List_New(unsigned long elemsize)
 {
-	assert(elemsize != 0);
+	CEASSERT(elemsize != 0 && elemsize&&"list cannot hold elements of size 0"&&"List_New");
 	List* pNewList;
 	_NEW(List, pNewList);
 	if (!pNewList)
@@ -41,31 +40,31 @@ List* List_New(unsigned long elemsize)
 
 void* List_Get(ListElement* pElem)
 {
-	assert(pElem);
+	CEASSERT(pElem&&"List_Get");
 	return pElem->_pObj;
 }
 
 ListElement* List_Next(ListElement* pElem)
 {
-	assert(pElem);
+	CEASSERT(pElem&&"List_Next");
 	return pElem->_pNext;
 }
 
 Iterator List_Iterator(List* pList)
 {
-	assert(pList);
+	CEASSERT(pList&&"List_Iterator");
 	return pList->_pFirstElem;
 }
 
 unsigned int List_Length(List* pList)
 {
-	assert(pList);
+	CEASSERT(pList&&"List_Length");
 	return pList->_length;
 }
 
 void* List_Pop(List* pList)
 {
-	assert(pList);
+	CEASSERT(pList&&"List_Pop");
 	if (pList->_length == 0)
 	{
 		return NULL;
@@ -83,46 +82,45 @@ void* List_Pop(List* pList)
 	return pObj;
 }
 
-BOOL List_Delete(List* pList)
-{	
-	_DEL(pList);
-	return ERROR_FAILURE;
-}
-
-BOOL List_FullDelete(List* pList)
+HRESULT List_FullDelete(List* pList, BOOL deleteObject)
 {
-	if (!pList)
-	{
-		return ERROR_SUCCESS;
+	if (!pList) {
+		return S_OK;
 	}
-	BOOL error = ERROR_FAILURE;
-	error = error || List_DeleteAllElements(pList);
-	error = error || List_Delete(pList);
-	return error;
+	SAFECALL(List_DeleteAllElements(pList, deleteObject));
+	_DEL(pList);
+	return S_OK;
 }
 
-BOOL List_DeleteAllElements(List* pList)
+HRESULT List_DeleteAllElements(List* pList, BOOL deleteObject)
 {
-	BOOL error = ERROR_FAILURE;
+	if (!pList) {
+		return S_OK;
+	}
 	Iterator itr2 = NULL;
 	for (Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)) {
 		if (itr2)
 		{
-			error = error || List_DeleteElement(pList, itr2->_id);
+			SAFECALL(List_DeleteElement(pList, itr2->_id, deleteObject));
 		}
 		itr2 = itr;
 	}
-	return error;
+	return S_OK;
 }
 
-BOOL List_DeleteElement(List* pList, ID id)
+HRESULT List_DeleteElement(List* pList, ID id,BOOL deleteObject)
 {
+	if (!pList) {
+		return S_OK;
+	}
 	Iterator itr;
 	Iterator itr2;
 	if (pList->_pFirstElem->_id == id) {
 		itr = pList->_pFirstElem;
 		pList->_pFirstElem = pList->_pFirstElem->_pNext;
-		_DEL(itr->_pObj);
+		if (deleteObject) {
+			_DEL(itr->_pObj);
+		}
 		_DEL(itr);
 		pList->_length--;
 		if (pList->_length == 0)
@@ -130,11 +128,13 @@ BOOL List_DeleteElement(List* pList, ID id)
 			pList->_pFirstElem = NULL;
 			pList->_pLastElem = NULL;
 		}
-		return ERROR_FAILURE;
+		return S_OK;
 	} else {
 		for (itr = List_Iterator(pList); List_Next(itr) != NULL; itr = List_Next(itr)) {
 			if (itr->_id == id){
-				_DEL(itr->_pObj);
+				if (deleteObject) {
+					_DEL(itr->_pObj);
+				}
 				assert(itr2);
 				itr2->_pNext = itr->_pNext;
 				if (pList->_pLastElem = itr)
@@ -143,19 +143,17 @@ BOOL List_DeleteElement(List* pList, ID id)
 				}
 				_DEL(itr);
 				pList->_length--;
-				return ERROR_FAILURE;
+				return S_OK;
 			}
 			itr2 = itr;
 		}
 	}
-	return ERROR_SUCCESS;
+	return S_OK;
 }
 
 ID List_PushBack(List* pList, void* pObject)
 {
-	if (!pList)
-	{
-	}
+	CEASSERT(pList&&pObject&&"List_PushBack");
 	ListElement* pNewElem;
 	_NEW(ListElement, pNewElem);
 	if (!pNewElem)

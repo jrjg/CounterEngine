@@ -7,7 +7,7 @@ typedef struct Timer Timer;
 TIME Timer_Elapsed(void);
 TIME Timer_Time(void);
 Timer* Timer_New(void);
-BOOL Timer_Wait(TIME);
-BOOL Timer_Delete(void);
+HRESULT Timer_Wait(TIME);
+HRESULT Timer_Delete(void);
 
 #endif 

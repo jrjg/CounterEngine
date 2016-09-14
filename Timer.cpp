@@ -22,27 +22,25 @@ TIME Timer_Time()
 	return (clock() * 1000 / CLOCKS_PER_SEC);
 }
 
-BOOL Timer_Wait(TIME time)
+HRESULT Timer_Wait(TIME time)
 {
+	CEASSERT(time);
 	Sleep(time);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Timer_Delete()
+HRESULT Timer_Delete()
 {
 	Timer* pTimer = Engine_GetTimer();
 	_DEL(pTimer);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 Timer* Timer_New()
 {
 	Timer* pTimer;
 	_NEW(Timer, pTimer);
-	if (!pTimer)
-	{
-		return NULL;
-	}
+	CEASSERT(pTimer);
 	pTimer->_last = Timer_Time();
 	return pTimer;
 }

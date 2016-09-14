@@ -13,8 +13,8 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 HRESULT registerWindowClass(WNDCLASSEX*, HINSTANCE*);
 HRESULT createWindow(WindowMgr*);
 HRESULT showWindow(WindowMgr*);
-WindowMgr* WindowMgr_NEW();
-BOOL WindowMgr_Run(TIME);
-BOOL WindowMgr_DELETE(void);
+HRESULT WindowMgr_NEW(WindowMgr**);
+HRESULT WindowMgr_Run(TIME);
+HRESULT WindowMgr_DELETE(void);
 
 #endif

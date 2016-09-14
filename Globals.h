@@ -7,26 +7,20 @@
 typedef unsigned int TIME;									//time
 typedef unsigned int ID;									//unique identifier
 typedef int KEYCODE;								//provisorische variable für tastatur tasten
-//typedef enum { FALSE, TRUE } BOOL;							//c++ like bool
-#define ERROR_SUCCESS TRUE									//ERROR occured
-#define ERROR_FAILURE FALSE								//ERROR failed
-#define _DBG												//DEBUG MODE ACTIVATED
+#define _DBG TRUE										//DEBUG MODE ACTIVATED
 #define _NEW(StructName,Pointer) Pointer = (StructName*)malloc(sizeof(StructName)); ZeroMemory(Pointer, sizeof(StructName));			//ALLOCATE MEMORY
 #define _DEL(pObject) if(pObject != NULL){free(pObject);}	//FREE MEMORY
 #define BACKGROUND_TRANSPARENT 1337							//LEET
 #define BACKGROUND_ERASED 1773								//2x LEET kappa
 
-
-#define HRCALL(HREXPR) if(FAILED(HREXPR)){return ERROR_SUCCESS;}
-#define BOCALL(BOEXPR) if(!BOEXPR){return ERROR_SUCCESS;}
-#define POCHECK(POEXPR) if(POEXPR == NULL){return ERROR_SUCCESS;}
 #define STR(STMNT) #STMNT
-#define SAFECALL(HREXPR) if(FAILED(HREXPR)){MessageBox(NULL, L#HREXPR, L"Error",MB_ICONEXCLAMATION | MB_OK);}
+#define SAFECALL(HREXPR) if(FAILED(HREXPR)&& _DBG){MessageBox(NULL, L#HREXPR, L"Function call failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 #define SAFE_RELEASE( x ) if( x ){ x->Release( ); x = 0; }
 
 #define WINDOWTITLE L"Counter Engine"
 #define BUFFERWIDTH 800
 #define BUFFERHEIGHT 600
+#define FULLSCREEN FALSE
 
 #define fOPAQUE (1.0f)
 #define cd3d11_CONSTANTBUFFER_MATRICES 0
@@ -34,7 +28,7 @@ typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define cd3d11_CONSTANTBUFFER_LIGHTING 0
 #define MAXIMUM_LIGHTS_SUPPORTED 8
 
-#define CEASSERT(expr) if(!(expr)){MessageBox(NULL, L#expr, L"Error",MB_ICONEXCLAMATION | MB_OK);}
+#define CEASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 //#define CEASSERT(expr) if(!(expr) && _DBG){ MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK); }
 
 #define ExecOnList(pList,Exec) for(Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)){Exec}

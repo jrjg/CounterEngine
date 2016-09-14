@@ -32,10 +32,7 @@ EventManager* EventManager_New(void)
 {
 	EventManager* pEM;
 	_NEW(EventManager, pEM);
-	if (!pEM)
-	{
-		return NULL;
-	}
+	CEASSERT(pEM);
 	pEM->_pEventVector = Vector_New(sizeof(List*),100);
 	pEM->_pListenerToEventSlotVector = Vector_New(sizeof(ID*),400);
 	pEM->_pEventList = List_New(sizeof(Event*));
@@ -44,25 +41,28 @@ EventManager* EventManager_New(void)
 	return pEM;
 }
 
-BOOL EventManager_Delete()
+HRESULT EventManager_Delete()
 {
 	EventManager* pEM = Engine_GetEM();
-	BOOL error = ERROR_FAILURE;
+	if (!pEM) {
+		return S_OK;
+	}
 	List* pListenerList;
 	for (unsigned int i = 0; i < Vector_Last(pEM->_pEventVector); i++)
 	{
 		pListenerList = (List*)Vector_Get(pEM->_pEventVector, i);
-		List_FullDelete(pListenerList);
+		SAFECALL(List_FullDelete(pListenerList,true));
 	}
-	error = error || Vector_Delete(pEM->_pEventVector); 
-	error = error || Vector_FullDelete(pEM->_pListenerToEventSlotVector);
+	SAFECALL(Vector_Delete(pEM->_pEventVector)); 
+	SAFECALL(Vector_FullDelete(pEM->_pListenerToEventSlotVector));
 	_DEL(pEM);
-	return error;
+	return S_OK;
 }
 
 ID EventManager_QueueEvent(ID id, void* pData)
 {
 	EventManager* pEM = Engine_GetEM();
+	CEASSERT(pEM);
 	Event* pEvent;
 	_NEW(Event, pEvent);
 	if (!pEvent)
@@ -82,24 +82,20 @@ ID EventManager_QueueEvent(ID id, void* pData)
 	return pEvent->id;
 }
 
-BOOL EventManager_RegisterEvent(ID id)
+HRESULT EventManager_RegisterEvent(ID id)
 {
 	EventManager* pEM = Engine_GetEM();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pEM);
 	List* pList = List_New(sizeof(EventListener*));
-	error = error || Vector_Insert(pEM->_pEventVector, id, pList);
-	if (error)
-	{
-		_DEL(pList);
-		return error;
-	}
-	return error;
+	SAFECALL(Vector_Insert(pEM->_pEventVector, id, pList));
+	return S_OK;
 }
 
 
 ID EventManager_RegisterForEvent(ID id, ECB pCallBack)
 {
 	EventManager* pEM = Engine_GetEM();
+	CEASSERT(pEM && pCallBack);
 	EventListener* pListener;
 	_NEW(EventListener, pListener);
 	pEM->_listenercounter++;
@@ -108,7 +104,7 @@ ID EventManager_RegisterForEvent(ID id, ECB pCallBack)
 
 	List* pList = (List*)Vector_Get(pEM->_pEventVector, id);
 	if (!pList) {
-		EventManager_RegisterEvent(id);
+		SAFECALL(EventManager_RegisterEvent(id));
 		pList = (List*)Vector_Get(pEM->_pEventVector, id);
 	}
 
@@ -121,68 +117,65 @@ ID EventManager_RegisterForEvent(ID id, ECB pCallBack)
 	ID* pEventSlotID;
 	_NEW(ID, pEventSlotID);
 	(*pEventSlotID) = id;
-	BOOL error = ERROR_FAILURE;
-	error = Vector_Insert(pEM->_pListenerToEventSlotVector,listenerid,pEventSlotID);
-	if(error)
-	{
-		_DEL(pEventSlotID);
-		return 0;
-	}
+	SAFECALL(Vector_Insert(pEM->_pListenerToEventSlotVector,listenerid,pEventSlotID));
 	return listenerid;
 }
 
-BOOL EventManager_UnRegisterEvent(ID eventslotid)
+HRESULT EventManager_UnRegisterEvent(ID eventslotid)
 {
 	EventManager* pEM = Engine_GetEM();
-	BOOL error = ERROR_FAILURE;
-	error = error || List_DeleteAllElements((List*)Vector_Get(pEM->_pEventVector, eventslotid));
-	error = error || Vector_DeleteElement(pEM->_pEventVector, eventslotid);
-	return error;
+	CEASSERT(pEM );
+	SAFECALL(List_DeleteAllElements((List*)Vector_Get(pEM->_pEventVector, eventslotid),true));
+	SAFECALL(Vector_DeleteElement(pEM->_pEventVector, eventslotid));
+	return S_OK;
 }
 
-BOOL EventManager_UnRegisterForEvent(ID listenerid)
+HRESULT EventManager_UnRegisterForEvent(ID listenerid)
 {
 	EventManager* pEM = Engine_GetEM();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pEM );
 	ID eventslotid = *(ID*)Vector_Get(pEM->_pListenerToEventSlotVector,listenerid);
-	error = error || Vector_DeleteElement(pEM->_pListenerToEventSlotVector,listenerid);
-	error = error || List_DeleteElement((List*)Vector_Get(pEM->_pEventVector, eventslotid), listenerid);
-	return error;
+	SAFECALL(Vector_DeleteElement(pEM->_pListenerToEventSlotVector,listenerid));
+	SAFECALL(List_DeleteElement((List*)Vector_Get(pEM->_pEventVector, eventslotid), listenerid,true));
+	return S_OK;
 }
 
-BOOL EventManager_TriggerEvent(ID slotid, void* pData)
+HRESULT EventManager_TriggerEvent(ID slotid, void* pData)
 {
 	EventManager* pEM = Engine_GetEM();
+	CEASSERT(pEM );
 	List* pList = (List*)Vector_Get(pEM->_pEventVector,slotid);
 	EventListener* pListener;
-	if (!pList) { return ERROR_SUCCESS; }
+	if (!pList) {
+		return S_OK;
+	}
 	for (Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr))
 	{
 		pListener = (EventListener*)List_Get(itr);
 		(*pListener->_pCallBack)(pData);
 	}
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL EventManager_RemoveEvent(ID eventid)
+HRESULT EventManager_RemoveEvent(ID eventid)
 {
-	BOOL error;
 	EventManager* pEM = Engine_GetEM();
-	error = List_DeleteElement(pEM->_pEventList, eventid);
-	return error;
+	CEASSERT(pEM);
+	SAFECALL(List_DeleteElement(pEM->_pEventList, eventid,true));
+	return S_OK;
 }
 
-BOOL EventManager_Run(TIME elapsed)
+HRESULT EventManager_Run(TIME elapsed)
 {
 	EventManager* pEM = Engine_GetEM();
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pEM && elapsed);
 	Event* pEvent = (Event*)List_Pop(pEM->_pEventList);
 	while (pEvent)
 	{
-		error = error || EventManager_TriggerEvent(pEvent->slotid, pEvent->pData);
+		SAFECALL(EventManager_TriggerEvent(pEvent->slotid, pEvent->pData));
 		_DEL(pEvent->pData);
 		_DEL(pEvent);
 		pEvent = (Event*)List_Pop(pEM->_pEventList);
 	}
-	return error;
+	return S_OK;
 }

@@ -18,9 +18,10 @@ ResourceManager * ResourceManager_NEW()
 HRESULT ResourceManager_DELETE()
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(pRM);
 	SAFECALL(ResourceManager_FullUnLoad());
-	Vector_Delete(pRM->pResources);
-	List_FullDelete(pRM->pResourceHandlers);
+	SAFECALL(Vector_Delete(pRM->pResources));
+	SAFECALL(List_FullDelete(pRM->pResourceHandlers,true));
 	_DEL(pRM);
 	return S_OK;
 }
@@ -28,6 +29,7 @@ HRESULT ResourceManager_DELETE()
 ID ResourceManager_LoadResource(char* name)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(pRM&&name);
 	FormatHandler* pFormatHandler;
 	FH pFH;
 
@@ -57,6 +59,7 @@ ID ResourceManager_LoadResource(char* name)
 }
 
 HRESULT ResourceManager_GetFormatName(char* from, char* to) {
+	CEASSERT(from&&to);
 	size_t len = strlen(from);
 	for (UINT n = 0; n<2; n++) { to[n] = from[len - n]; }
 	return S_OK;
@@ -65,6 +68,7 @@ HRESULT ResourceManager_GetFormatName(char* from, char* to) {
 HRESULT ResourceManager_UnLoadResource(ID id)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(id&&pRM);
 
 	//get the resource
 	Resource* pRes;
@@ -96,6 +100,7 @@ HRESULT ResourceManager_UnLoadResource(ID id)
 HRESULT ResourceManager_FullUnLoad()
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(pRM);
 	for (UINT i = 0; i < Vector_Last(pRM->pResources); i++)
 	{
 		ResourceManager_UnLoadResource(i); //dont safecall
@@ -106,10 +111,9 @@ HRESULT ResourceManager_FullUnLoad()
 HRESULT ResourceManager_GetResource(ID id, void ** ppRes)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(pRM&&id&&*ppRes);
 	Resource* pRes = (Resource*)Vector_Get(pRM->pResources, id);
-	if (!pRes) {
-		return ERROR_SUCCESS;
-	}
+	CEASSERT(pRes);
 	(*ppRes) = pRes->ResourceExtra;
 	return S_OK;
 }
@@ -117,6 +121,7 @@ HRESULT ResourceManager_GetResource(ID id, void ** ppRes)
 HRESULT ResourceManager_RegisterFormatHandler(char* name, FH pFH, xFH pXFH)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
+	CEASSERT(pRM&&name&&pFH&&pXFH);
 	FormatHandler* pFormatHandler;
 	_NEW(FormatHandler,pFormatHandler);
 	pFormatHandler->pFormatHandler = pFH;

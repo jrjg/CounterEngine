@@ -16,12 +16,9 @@ struct Vector
 
 Vector* Vector_New(unsigned long elemsize, unsigned int elemcnt)
 {
+	CEASSERT(elemsize&&elemcnt);
 	Vector* pVector;
 	_NEW(Vector, pVector);
-	if (!pVector)
-	{
-		return NULL;
-	}
 	pVector->_elemsize = elemsize;
 	pVector->_capacity = 0;
 	pVector->_last = 0;
@@ -35,44 +32,56 @@ Vector* Vector_New(unsigned long elemsize, unsigned int elemcnt)
 
 unsigned int Vector_Last(Vector* pVector)
 {
+	CEASSERT(pVector);
 	return pVector->_last;
 }
 
 unsigned int Vector_Capacity(Vector* pVector)
 {
+	CEASSERT(pVector);
 	return pVector->_capacity;
 }
 
-BOOL Vector_Delete(Vector* pVector)
+HRESULT Vector_Delete(Vector* pVector)
 {
+	if (!pVector) {
+		return S_OK;
+	}
 	_DEL(pVector->_pMem);
 	_DEL(pVector);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Vector_DeleteAllElements(Vector* pVector)
+HRESULT Vector_DeleteAllElements(Vector* pVector)
 {
-	BOOL error = ERROR_FAILURE;
+	if (!pVector) {
+		return S_OK;
+	}
 	if (pVector->_elems > 0)
 	{
 		for (unsigned int i = 0; i < pVector->_last; i++)
 		{
-			error = error || Vector_DeleteElement(pVector, i);
+			SAFECALL(Vector_DeleteElement(pVector, i));
 		}
 	}
-	return error;
+	return S_OK;
 }
 
-BOOL Vector_FullDelete(Vector* pVector)
+HRESULT Vector_FullDelete(Vector* pVector)
 {
-	BOOL error = ERROR_FAILURE;
-	error = error || Vector_DeleteAllElements(pVector);
-	error = error || Vector_Delete(pVector);
-	return error;
+	if (!pVector) {
+		return S_OK;
+	}
+	SAFECALL(Vector_DeleteAllElements(pVector));
+	SAFECALL(Vector_Delete(pVector));
+	return S_OK;
 }
 
-BOOL Vector_DeleteElement(Vector* pVector, unsigned int index)
+HRESULT Vector_DeleteElement(Vector* pVector, unsigned int index)
 {
+	if (!pVector) {
+		return S_OK;
+	}
 	_DEL(Vector_Get(pVector, index));
 	pVector->_elems--;
 	if (pVector->_last == index)
@@ -83,12 +92,12 @@ BOOL Vector_DeleteElement(Vector* pVector, unsigned int index)
 		}
 		pVector->_last = i;
 	}
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Vector_Resize(Vector* pVector, unsigned int elemcnt)
+HRESULT Vector_Resize(Vector* pVector, unsigned int elemcnt)
 {
-	assert(pVector);
+	CEASSERT(pVector&&elemcnt);
 	void* pMem = malloc(elemcnt * pVector->_elemsize);
 	memset(pMem, 0, elemcnt * pVector->_elemsize);
 	if (pVector->_elems>0)
@@ -98,16 +107,15 @@ BOOL Vector_Resize(Vector* pVector, unsigned int elemcnt)
 	_DEL(pVector->_pMem);
 	pVector->_pMem = pMem;
 	pVector->_capacity = elemcnt;
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-BOOL Vector_Insert(Vector* pVector, unsigned int index, void* pData)
+HRESULT Vector_Insert(Vector* pVector, unsigned int index, void* pData)
 {
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pVector&&pData);
 	if(index > pVector->_capacity)
 	{
-		error = Vector_Resize(pVector, index * 2);
-		if (error) { return error; };
+		SAFECALL(Vector_Resize(pVector, index * 2));
 	}
 	memcpy((char*)(pVector->_pMem) + index * pVector->_elemsize, &pData, pVector->_elemsize);
 	if (index > pVector->_last)
@@ -115,18 +123,17 @@ BOOL Vector_Insert(Vector* pVector, unsigned int index, void* pData)
 		pVector->_last = index;
 	}
 	pVector->_elems++;
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 unsigned int Vector_Pushback(Vector* pVector, void* pData)
 {
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(pVector&&pData);
 	unsigned int index = Vector_Last(pVector);
 	index++;
 	if (index > pVector->_capacity)
 	{
-		error = Vector_Resize(pVector, index * 2);
-		if (error) { return error; };
+		SAFECALL(Vector_Resize(pVector, index * 2));
 	}
 	memcpy((char*)(pVector->_pMem) + index * pVector->_elemsize, &pData, pVector->_elemsize);
 	if (index > pVector->_last)
@@ -139,11 +146,13 @@ unsigned int Vector_Pushback(Vector* pVector, void* pData)
 
 unsigned int Vector_Elements(Vector* pVector)
 {
+	CEASSERT(pVector);
 	return pVector->_elems;
 }
 
 void* Vector_Get(Vector* pVector, unsigned int index)
 {
+	CEASSERT(pVector);
 	if (index <= pVector->_capacity)
 	{
 		return(*(void**)((char*)(pVector->_pMem) + index * pVector->_elemsize));

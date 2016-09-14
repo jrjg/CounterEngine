@@ -10,7 +10,8 @@
 //#include "LightManager.h"
 #include "directx.h"
 
-ID3D11Buffer* cd3d11_CreateConstantBuffer(cd3d11* pd3d11,UINT size, bool dynamic, bool CPUupdates, D3D11_SUBRESOURCE_DATA* pData) {
+ HRESULT cd3d11_CreateConstantBuffer(cd3d11* pd3d11,UINT size, bool dynamic, bool CPUupdates, D3D11_SUBRESOURCE_DATA* pData, ID3D11Buffer** ppBuffer) {
+	CEASSERT(pd3d11&&size);
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = size;
 	desc.MiscFlags = 0;
@@ -28,58 +29,62 @@ ID3D11Buffer* cd3d11_CreateConstantBuffer(cd3d11* pd3d11,UINT size, bool dynamic
 		desc.CPUAccessFlags = 0;
 	}
 
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, ppBuffer));
 
-	return (pBuffer);
+	return S_OK;
 }
 
 
 
 HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut) {
+	CEASSERT(pFileName&&szEntryPoint&&szShaderModel);
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 	ID3DBlob* pErrorBlob;
 	SAFECALL(D3DCompileFromFile(pFileName, NULL, NULL, szEntryPoint, szShaderModel, dwShaderFlags, 0, ppBlobOut, &pErrorBlob));
 	SAFE_RELEASE(pErrorBlob);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
-cd3d11_VertexShader* cd3d11_createVertexShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel) {
-	cd3d11_VertexShader* pcd3d11VertexShader;
-	_NEW(cd3d11_VertexShader, pcd3d11VertexShader);
+ HRESULT cd3d11_createVertexShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_VertexShader** ppcd3d11VertexShader) {
+	 CEASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
+	_NEW(cd3d11_VertexShader, *ppcd3d11VertexShader);
+	cd3d11_VertexShader* pcd3d11VertexShader = *ppcd3d11VertexShader;
 	ID3DBlob* pVertexShaderBuffer;
 	SAFECALL(cd3d11_CompileShader(name, szEntryPoint, szShaderModel, &pVertexShaderBuffer));
 	SAFECALL(pd3d11->pDevice->CreateVertexShader(pVertexShaderBuffer->GetBufferPointer(), pVertexShaderBuffer->GetBufferSize(), NULL, &(pcd3d11VertexShader->pVertexShader)));
 	SAFECALL(pd3d11->pDevice->CreateInputLayout(D3D11VertexLayout_UnlitTextured, ARRAYSIZE(D3D11VertexLayout_UnlitTextured), pVertexShaderBuffer->GetBufferPointer(), pVertexShaderBuffer->GetBufferSize(), &(pcd3d11VertexShader->pVertexLayout11)));
 
-	pcd3d11VertexShader->pcbVSMatrices = cd3d11_CreateConstantBuffer(pd3d11,sizeof(ConstantBuffer_Matrices), true, true, NULL);
-	pcd3d11VertexShader->pcbVSLighting = cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Lighting) , true, true, NULL);
-	pcd3d11VertexShader->pcbVSMaterial = cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Material), true, true, NULL);
+	SAFECALL(cd3d11_CreateConstantBuffer(pd3d11,sizeof(ConstantBuffer_Matrices), true, true, NULL,&pcd3d11VertexShader->pcbVSMatrices));
+	SAFECALL(cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Lighting) , true, true, NULL,&pcd3d11VertexShader->pcbVSLighting));
+	SAFECALL(cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Material), true, true, NULL,&pcd3d11VertexShader->pcbVSMaterial));
 
 	SAFE_RELEASE(pVertexShaderBuffer);
-	return pcd3d11VertexShader;
+	return S_OK;
 }
 
-cd3d11_PixelShader* cd3d11_createPixelShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel) {
-	cd3d11_PixelShader* pcd3d11PixelShader;
-	_NEW(cd3d11_PixelShader, pcd3d11PixelShader);
+ HRESULT cd3d11_createPixelShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_PixelShader** ppcd3d11PixelShader) {
+	 CEASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
+	_NEW(cd3d11_PixelShader, *ppcd3d11PixelShader);
+	cd3d11_PixelShader* pcd3d11PixelShader = *ppcd3d11PixelShader;
 	ID3DBlob* pPixelShaderBuffer;
 	SAFECALL(cd3d11_CompileShader(name, szEntryPoint, szShaderModel, &pPixelShaderBuffer));
 	SAFECALL(pd3d11->pDevice->CreatePixelShader(pPixelShaderBuffer->GetBufferPointer(), pPixelShaderBuffer->GetBufferSize(),NULL, &(pcd3d11PixelShader->pPixelShader)));
-	pcd3d11PixelShader->pcbPSMaterial = cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Material), true, true, NULL);
+	SAFECALL(cd3d11_CreateConstantBuffer(pd3d11, sizeof(ConstantBuffer_Material), true, true, NULL,&pcd3d11PixelShader->pcbPSMaterial));
 	SAFE_RELEASE(pPixelShaderBuffer);
-	return pcd3d11PixelShader;
+	return S_OK;
 }
 
 HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
+	CEASSERT(pd3d11);
 	pd3d11->camView = XMMatrixLookAtLH(XMVectorSet(0.0f, 3.0f, -4.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, (float)BUFFERWIDTH / BUFFERHEIGHT, 1.0f, 1000.0f);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 //BOOL cd3d11_setupRenderVertexShader(Scene* pScene, SceneNode* pSceneNode) {
-BOOL cd3d11_setupRenderVertexShader() {
+HRESULT cd3d11_setupRenderVertexShader() {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11);
 	cd3d11_VertexShader* pcd3d11VertexShader = (cd3d11_VertexShader*)Vector_Get(pd3d11->pShaders, pd3d11->vsID);
 	pd3d11->pImmediateContext->VSSetShader(pcd3d11VertexShader->pVertexShader , NULL, 0);
 	pd3d11->pImmediateContext->IASetInputLayout(pcd3d11VertexShader->pVertexLayout11);
@@ -142,9 +147,10 @@ BOOL cd3d11_setupRenderVertexShader() {
 }
 
 //BOOL cd3d11_setupRenderPixelShader(Scene * pScene, SceneNode * pSceneNode)
-BOOL cd3d11_setupRenderPixelShader()
+HRESULT cd3d11_setupRenderPixelShader()
 {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11);
 	cd3d11_PixelShader* pcd3d11PixelShader = (cd3d11_PixelShader*)Vector_Get(pd3d11->pShaders, pd3d11->psID);
 	pd3d11->pImmediateContext->PSSetShader(pcd3d11PixelShader->pPixelShader, NULL, 0);
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -167,38 +173,41 @@ BOOL cd3d11_setupRenderPixelShader()
 }
 
 
-BOOL cd3d11_createShaders(cd3d11* pd3d11) {
-	cd3d11_VertexShader* pcd3d11VertexShader = cd3d11_createVertexShader(pd3d11, "VSMain" ,L"VS.hlsl", "vs_5_0");
+HRESULT cd3d11_createShaders(cd3d11* pd3d11) {
+	CEASSERT(pd3d11);
+	cd3d11_VertexShader* pcd3d11VertexShader;
+	SAFECALL(cd3d11_createVertexShader(pd3d11, "VSMain", L"VS.hlsl", "vs_5_0",&pcd3d11VertexShader));
 	pd3d11->vsID = Vector_Pushback(pd3d11->pShaders, pcd3d11VertexShader);
 	
-	cd3d11_PixelShader* pcd3d11PixelShader = cd3d11_createPixelShader(pd3d11, "PSMain" ,L"PS.hlsl", "ps_5_0");
+	cd3d11_PixelShader* pcd3d11PixelShader;
+	SAFECALL(cd3d11_createPixelShader(pd3d11, "PSMain" ,L"PS.hlsl", "ps_5_0", &pcd3d11PixelShader));
 	pd3d11->psID = Vector_Pushback(pd3d11->pShaders, pcd3d11PixelShader);
-	return true;
+	return S_OK;
 }
 
 
-cd3d11* cd3d11_NEW(void) {
-	cd3d11* pd3d11;
-	_NEW(cd3d11, pd3d11);
-
-	cd3d11_getSwapChain(pd3d11);
+HRESULT cd3d11_NEW(cd3d11** ppd3d11) {
+	_NEW(cd3d11, *ppd3d11);
+	cd3d11* pd3d11 = *ppd3d11;
+	SAFECALL(cd3d11_getSwapChain(pd3d11));
 	//pd3d11->pClsColor = (FLOAT*)malloc(sizeof(FLOAT) * 4);
 	pd3d11->pClsColor[0] = 0.8f; pd3d11->pClsColor[1] = 0.8f; pd3d11->pClsColor[2] = 0.8f; pd3d11->pClsColor[3] = 1.0f;
 	pd3d11->pShaders = Vector_New(sizeof(void*), 15);
-	cd3d11_createShaders(pd3d11);
+	SAFECALL(cd3d11_createShaders(pd3d11));
 
-	cd3d11_CreateDemoObject(pd3d11);
+	SAFECALL(cd3d11_CreateDemoObject(pd3d11));
 
-	cd3d11_CreateAndSetViewport(pd3d11);
+	SAFECALL(cd3d11_CreateAndSetViewport(pd3d11));
 
-	cd3d11_initCamera(pd3d11);
+	SAFECALL(cd3d11_initCamera(pd3d11));
 
-	cd3d11_registerHandlers(pd3d11);
+	SAFECALL(cd3d11_registerHandlers(pd3d11));
 
-	return pd3d11;
+	return S_OK;
 }
 
 HRESULT cd3d11_CreateAndSetViewport(cd3d11* pd3d11) {
+	CEASSERT(pd3d11);
 	pd3d11->pViewport;
 	_NEW(D3D11_VIEWPORT, pd3d11->pViewport);
 	pd3d11->pViewport->TopLeftX = 0.0f;
@@ -213,6 +222,8 @@ HRESULT cd3d11_CreateAndSetViewport(cd3d11* pd3d11) {
 
 HRESULT cd3d11_registerHandlers(cd3d11 * pd3d11)
 {
+	CEASSERT(pd3d11);
+
 	char* name;
 	size_t len = 0;
 
@@ -234,8 +245,9 @@ HRESULT cd3d11_registerHandlers(cd3d11 * pd3d11)
 	return S_OK;
 }
 
-BOOL cd3d11_Run(TIME elapsed) {
+HRESULT cd3d11_Run(TIME elapsed) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11&&elapsed);
 
 	pd3d11->pImmediateContext->OMSetRenderTargets(1, &(pd3d11->pView), pd3d11->pDepthView);
 
@@ -243,36 +255,38 @@ BOOL cd3d11_Run(TIME elapsed) {
 	//cbPerObj.WVP = XMMatrixTranspose(pd3d11->WorldViewProjection);
 
 	SAFECALL(cd3d11_clearTargets());
-	cd3d11_setupRenderVertexShader();
-	cd3d11_setupRenderPixelShader();
+	SAFECALL(cd3d11_setupRenderVertexShader());
+	SAFECALL(cd3d11_setupRenderPixelShader());
 
 	UINT offset = 0;
 	pd3d11->pImmediateContext->IASetVertexBuffers(0, 1, &(pd3d11->pDemoObject->pVertexBuffer), &(pd3d11->pDemoObject->stride), &offset);
 	pd3d11->pImmediateContext->IASetIndexBuffer(pd3d11->pDemoObject->pIndexBuffer, DXGI_FORMAT_R16_UINT, offset);
 	pd3d11->pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
-	cd3d11_SetTexture(&(pd3d11->pDemoObject->pResView), &(pd3d11->pDemoObject->pSamplerState));
+	SAFECALL(cd3d11_SetTexture(&(pd3d11->pDemoObject->pResView), &(pd3d11->pDemoObject->pSamplerState)));
 
 	pd3d11->pImmediateContext->DrawIndexed(pd3d11->pDemoObject->numPolys*3,0,0);
 
-	pd3d11->pSwapChain->Present(0, 0);
+	SAFECALL(pd3d11->pSwapChain->Present(0, 0));
 	
 	
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 HRESULT cd3d11_SetTexture(ID3D11ShaderResourceView* const *ppDiffuseRV, ID3D11SamplerState * const *ppSamplers)
 {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11);
 	pd3d11->pImmediateContext->PSSetShaderResources(0, 1, ppDiffuseRV);
 	pd3d11->pImmediateContext->PSSetSamplers(0, 1, ppSamplers);
 	return S_OK;
 }
 
 HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
+	CEASSERT(pd3d11);
 	pd3d11->pDemoObject;
 	_NEW(VertexObject, pd3d11->pDemoObject);
-	int squares = 1;
+	int squares = 10;
 	int m_numVerts = (squares + 1)*(squares + 1); 
 	
 	//vertexbuffer
@@ -355,6 +369,7 @@ HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
 
 HRESULT Resource_CreateTextureFromJPG(char* name, void** ppData) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11&&name);
 	TextureResource* pTexRes = (TextureResource*)(*ppData);
 	_NEW(TextureResource, pTexRes);
 	SAFECALL(CreateWICTextureFromFile(pd3d11->pDevice, LPCWSTR(name), &(pTexRes->pTex), &(pTexRes->pResView)));
@@ -363,6 +378,7 @@ HRESULT Resource_CreateTextureFromJPG(char* name, void** ppData) {
 
 HRESULT Resource_DestroyTextureFromJPG(void* pData) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11&&pData);
 	SAFE_RELEASE(((TextureResource*)pData)->pResView);
 	SAFE_RELEASE(((TextureResource*)pData)->pTex);
 	_DEL(pData);
@@ -371,6 +387,7 @@ HRESULT Resource_DestroyTextureFromJPG(void* pData) {
 
 HRESULT Component_CreateRenderComponent(void * pCreatorDesc, void ** ppData)
 {
+	CEASSERT(pCreatorDesc);
 	RenderComponent* pRC = (RenderComponent*)(*ppData);
 	RenderComponentDesc *pDesc = (RenderComponentDesc*)pCreatorDesc;
 	pRC->TexResID = ResourceManager_LoadResource(pDesc->texturename);
@@ -379,6 +396,7 @@ HRESULT Component_CreateRenderComponent(void * pCreatorDesc, void ** ppData)
 
 HRESULT Component_DestroyRenderComponent(void * pData)
 {
+	CEASSERT(pData);
 	RenderComponent* pRC = (RenderComponent*)pData;
 	ResourceManager_UnLoadResource(pRC->TexResID);
 	return S_OK;
@@ -386,6 +404,7 @@ HRESULT Component_DestroyRenderComponent(void * pData)
 
 HRESULT cd3d11_clearTargets() {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11);
 	if (pd3d11->pView && pd3d11->pDepthView)
 	{
 		pd3d11->pImmediateContext->ClearRenderTargetView(pd3d11->pView, pd3d11->pClsColor);
@@ -394,8 +413,9 @@ HRESULT cd3d11_clearTargets() {
 	return S_OK;
 }
 
-BOOL cd3d11_DELETE(void) {
+HRESULT cd3d11_DELETE(void) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
+	CEASSERT(pd3d11);
 	pd3d11->pImmediateContext->ClearState();
 
 	cd3d11_VertexShader* pcd3d11VertexShader = (cd3d11_VertexShader*)Vector_Get(pd3d11->pShaders, pd3d11->vsID);
@@ -413,6 +433,7 @@ BOOL cd3d11_DELETE(void) {
 		SAFE_RELEASE(pcd3d11PixelShader->pPixelShader);
 	}
 
+	pd3d11->pSwapChain->SetFullscreenState(false, NULL);
 	Vector_Delete(pd3d11->pShaders);
 	SAFE_RELEASE(pd3d11->pView);
 	SAFE_RELEASE(pd3d11->pDepthView);
@@ -432,10 +453,11 @@ BOOL cd3d11_DELETE(void) {
 	_DEL(pd3d11->pViewport);
 	
 	_DEL(pd3d11);
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
+	CEASSERT(pd3d11);
 	D3D_FEATURE_LEVEL* pFeatureLevels;
 	_NEW(D3D_FEATURE_LEVEL, pFeatureLevels);
 	(*pFeatureLevels) = D3D_FEATURE_LEVEL_11_0;
@@ -454,7 +476,8 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	pSCD->BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	pSCD->BufferCount = 2;
 	pSCD->OutputWindow = (*(Engine_GetWindowMgr()->phwnd));
-	pSCD->Windowed = TRUE;
+	(FULLSCREEN) ? pSCD->Windowed = FALSE : pSCD->Windowed = TRUE;
+	//pSCD->Windowed = TRUE;
 	pSCD->SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	pSCD->Flags = NULL;
 	pd3d11->pSwapChain = 0;
@@ -510,172 +533,172 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	return S_OK;
 }
 
-ID3D11Buffer* cd3d11_CreateStructuredBuffer(UINT count, UINT structsize, bool CPUWritable, bool GPUWritable, D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = count * structsize;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	desc.StructureByteStride = structsize;
-
-	if (!CPUWritable && !GPUWritable) {
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.Usage = D3D11_USAGE_IMMUTABLE;
-		desc.CPUAccessFlags = 0;
-	}
-	else if (CPUWritable && !GPUWritable) {
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-	else if (!CPUWritable && GPUWritable) {
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.CPUAccessFlags = 0;
-	}
-	else if (CPUWritable && !GPUWritable) {
-		SAFECALL(ERROR_SUCCESS);
-	}
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-
-	return (pBuffer);
-}
-
-ID3D11ShaderResourceView* cd3d11_CreateBufferShaderRessourceView(ID3D11Resource* pResource) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	desc.Buffer.ElementOffset = 0;
-	desc.Buffer.ElementWidth = 100;
-
-	ID3D11ShaderResourceView* pView = 0;
-	SAFECALL(pd3d11->pDevice->CreateShaderResourceView(pResource, &desc, &pView));
-
-	return (pView);
-}
-
-ID3D11UnorderedAccessView* cd3d11_CreateBufferUnorderedAcessView(ID3D11Resource* pResource) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
-	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	desc.Buffer.FirstElement = 0;
-	desc.Buffer.NumElements = 100;
-	desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
-
-	ID3D11UnorderedAccessView* pView = 0;
-	SAFECALL(pd3d11->pDevice->CreateUnorderedAccessView(pResource, &desc, &pView));
-
-	return (pView);
-}
-
-ID3D11Buffer* cd3d11_CreateAppendConsumeBuffer(UINT size, UINT structsize, D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = size * structsize;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	desc.StructureByteStride = structsize;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.CPUAccessFlags = 0;
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-
-	return (pBuffer);
-}
-
-ID3D11Buffer* cd3d11_CreateRawBuffer(UINT size, bool GPUWritable, D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = size;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-	desc.StructureByteStride = 0;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.CPUAccessFlags = 0;
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-
-	return (pBuffer);
-}
-
-ID3D11Buffer* cd3d11_CreateIndirectArgsBuffer(UINT size, D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = size;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
-	desc.StructureByteStride = 0;
-	desc.BindFlags = 0;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.CPUAccessFlags = 0;
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-
-	return (pBuffer);
-}
-
-ID3D11ShaderResourceView* cd3d11_CreateShaderResourceView(ID3D11Resource* pResource, D3D11_SHADER_RESOURCE_VIEW_DESC* pDesc) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	ID3D11ShaderResourceView* pView = 0;
-	SAFECALL(pd3d11->pDevice->CreateShaderResourceView(pResource, pDesc, &pView));
-	return (pView);
-}
-
-ID3D11Buffer* cd3d11_CreateVertexBuffer(UINT size,
-	bool dynamic,
-	bool streamout,
-	D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = size;
-	desc.MiscFlags = 0;
-	desc.StructureByteStride = 0;
-
-	if (streamout) {
-		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_STREAM_OUTPUT;
-	}
-	else {
-		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	}
-
-	if (dynamic) {
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-	else {
-		desc.Usage = D3D11_USAGE_IMMUTABLE;
-		desc.CPUAccessFlags = 0;
-	}
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-	return (pBuffer);
-}
-
-ID3D11Buffer* cd3d11_CreateIndexBuffer(UINT size, bool dynamic, D3D11_SUBRESOURCE_DATA* pData) {
-	cd3d11* pd3d11 = Engine_GetCD3D11();
-	D3D11_BUFFER_DESC desc;
-	desc.ByteWidth = size;
-	desc.MiscFlags = 0;
-	desc.StructureByteStride = 0;
-	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-	if (dynamic) {
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-	else {
-		desc.Usage = D3D11_USAGE_IMMUTABLE;
-		desc.CPUAccessFlags = 0;
-	}
-
-	ID3D11Buffer* pBuffer = 0;
-	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
-
-	return (pBuffer);
-}
+//ID3D11Buffer* cd3d11_CreateStructuredBuffer(UINT count, UINT structsize, bool CPUWritable, bool GPUWritable, D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = count * structsize;
+//	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+//	desc.StructureByteStride = structsize;
+//
+//	if (!CPUWritable && !GPUWritable) {
+//		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+//		desc.Usage = D3D11_USAGE_IMMUTABLE;
+//		desc.CPUAccessFlags = 0;
+//	}
+//	else if (CPUWritable && !GPUWritable) {
+//		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+//		desc.Usage = D3D11_USAGE_DYNAMIC;
+//		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//	}
+//	else if (!CPUWritable && GPUWritable) {
+//		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+//		desc.Usage = D3D11_USAGE_DEFAULT;
+//		desc.CPUAccessFlags = 0;
+//	}
+//	else if (CPUWritable && !GPUWritable) {
+//		SAFECALL(ERROR_SUCCESS);
+//	}
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//
+//	return (pBuffer);
+//}
+//
+//ID3D11ShaderResourceView* cd3d11_CreateBufferShaderRessourceView(ID3D11Resource* pResource) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+//	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+//	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+//	desc.Buffer.ElementOffset = 0;
+//	desc.Buffer.ElementWidth = 100;
+//
+//	ID3D11ShaderResourceView* pView = 0;
+//	SAFECALL(pd3d11->pDevice->CreateShaderResourceView(pResource, &desc, &pView));
+//
+//	return (pView);
+//}
+//
+//ID3D11UnorderedAccessView* cd3d11_CreateBufferUnorderedAcessView(ID3D11Resource* pResource) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+//	desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+//	desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+//	desc.Buffer.FirstElement = 0;
+//	desc.Buffer.NumElements = 100;
+//	desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
+//
+//	ID3D11UnorderedAccessView* pView = 0;
+//	SAFECALL(pd3d11->pDevice->CreateUnorderedAccessView(pResource, &desc, &pView));
+//
+//	return (pView);
+//}
+//
+//ID3D11Buffer* cd3d11_CreateAppendConsumeBuffer(UINT size, UINT structsize, D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = size * structsize;
+//	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+//	desc.StructureByteStride = structsize;
+//	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+//	desc.Usage = D3D11_USAGE_DEFAULT;
+//	desc.CPUAccessFlags = 0;
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//
+//	return (pBuffer);
+//}
+//
+//ID3D11Buffer* cd3d11_CreateRawBuffer(UINT size, bool GPUWritable, D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = size;
+//	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+//	desc.StructureByteStride = 0;
+//	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+//	desc.Usage = D3D11_USAGE_DEFAULT;
+//	desc.CPUAccessFlags = 0;
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//
+//	return (pBuffer);
+//}
+//
+//ID3D11Buffer* cd3d11_CreateIndirectArgsBuffer(UINT size, D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = size;
+//	desc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+//	desc.StructureByteStride = 0;
+//	desc.BindFlags = 0;
+//	desc.Usage = D3D11_USAGE_DEFAULT;
+//	desc.CPUAccessFlags = 0;
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//
+//	return (pBuffer);
+//}
+//
+//ID3D11ShaderResourceView* cd3d11_CreateShaderResourceView(ID3D11Resource* pResource, D3D11_SHADER_RESOURCE_VIEW_DESC* pDesc) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	ID3D11ShaderResourceView* pView = 0;
+//	SAFECALL(pd3d11->pDevice->CreateShaderResourceView(pResource, pDesc, &pView));
+//	return (pView);
+//}
+//
+//ID3D11Buffer* cd3d11_CreateVertexBuffer(UINT size,
+//	bool dynamic,
+//	bool streamout,
+//	D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = size;
+//	desc.MiscFlags = 0;
+//	desc.StructureByteStride = 0;
+//
+//	if (streamout) {
+//		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_STREAM_OUTPUT;
+//	}
+//	else {
+//		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+//	}
+//
+//	if (dynamic) {
+//		desc.Usage = D3D11_USAGE_DYNAMIC;
+//		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//	}
+//	else {
+//		desc.Usage = D3D11_USAGE_IMMUTABLE;
+//		desc.CPUAccessFlags = 0;
+//	}
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//	return (pBuffer);
+//}
+//
+//ID3D11Buffer* cd3d11_CreateIndexBuffer(UINT size, bool dynamic, D3D11_SUBRESOURCE_DATA* pData) {
+//	cd3d11* pd3d11 = Engine_GetCD3D11();
+//	D3D11_BUFFER_DESC desc;
+//	desc.ByteWidth = size;
+//	desc.MiscFlags = 0;
+//	desc.StructureByteStride = 0;
+//	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+//
+//	if (dynamic) {
+//		desc.Usage = D3D11_USAGE_DYNAMIC;
+//		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//	}
+//	else {
+//		desc.Usage = D3D11_USAGE_IMMUTABLE;
+//		desc.CPUAccessFlags = 0;
+//	}
+//
+//	ID3D11Buffer* pBuffer = 0;
+//	SAFECALL(pd3d11->pDevice->CreateBuffer(&desc, pData, &pBuffer));
+//
+//	return (pBuffer);
+//}

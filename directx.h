@@ -177,19 +177,19 @@ HRESULT Component_DestroyRenderComponent(void* pData);
 HRESULT cd3d11_getSwapChain(cd3d11*);
 //BOOL cd3d11_setupRenderVertexShader(Scene * pScene, SceneNode * pSceneNode);
 //BOOL cd3d11_setupRenderPixelShader(Scene * pScene, SceneNode * pSceneNode);
-BOOL cd3d11_setupRenderVertexShader();
-BOOL cd3d11_setupRenderPixelShader();
-cd3d11_VertexShader* cd3d11_createVertexShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel);
-cd3d11_PixelShader* cd3d11_createPixelShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel);
+HRESULT cd3d11_setupRenderVertexShader();
+HRESULT cd3d11_setupRenderPixelShader();
+HRESULT cd3d11_createVertexShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_VertexShader**);
+HRESULT cd3d11_createPixelShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_PixelShader**);
 
-cd3d11* cd3d11_NEW();
-BOOL cd3d11_DELETE();
-BOOL cd3d11_Run(TIME);
+HRESULT cd3d11_NEW(cd3d11**);
+HRESULT cd3d11_DELETE();
+HRESULT cd3d11_Run(TIME);
 HRESULT cd3d11_clearTargets();
 HRESULT cd3d11_render();
 
 HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11);
-BOOL cd3d11_PrepareInputAssembler(ID3D11Buffer* pIndexBuffer, ID3D11Buffer* pVertexBuffer, UINT* pStride);
+//BOOL cd3d11_PrepareInputAssembler(ID3D11Buffer* pIndexBuffer, ID3D11Buffer* pVertexBuffer, UINT* pStride);
 HRESULT cd3d11_registerHandlers(cd3d11* pd3d11);
 
 #endif

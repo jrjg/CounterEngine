@@ -10,18 +10,18 @@ typedef struct EventManager EventManager;
 typedef struct Event Event;
 typedef struct EventListener EventListener;
 
-typedef BOOL(*ECB)(void*); //event callback
+typedef HRESULT(*ECB)(void*); //event callback
 
 EventManager* EventManager_New(void);
-BOOL EventManager_Delete();
+HRESULT EventManager_Delete();
 ID EventManager_QueueEvent(ID,void*);
-BOOL EventManager_RegisterEvent(ID);
-BOOL EventManager_UnRegisterEvent(ID);
+HRESULT EventManager_RegisterEvent(ID);
+HRESULT EventManager_UnRegisterEvent(ID);
 ID EventManager_RegisterForEvent(ID, ECB);
-BOOL EventManager_UnRegisterForEvent(ID);
-BOOL EventManager_Run(TIME);
-BOOL EventManager_TriggerEvent(ID, void*);
-BOOL EventManager_RemoveEvent(ID);
+HRESULT EventManager_UnRegisterForEvent(ID);
+HRESULT EventManager_Run(TIME);
+HRESULT EventManager_TriggerEvent(ID, void*);
+HRESULT EventManager_RemoveEvent(ID);
 
 
 #endif

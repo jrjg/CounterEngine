@@ -7,11 +7,11 @@ struct Controller;
 typedef struct Controls Controls;
 typedef struct Controller Controller;
 Controller* Controller_New(void);
-BOOL Controller_Delete();
-BOOL Controller_SetControls(ID);
+HRESULT Controller_Delete();
+HRESULT Controller_SetControls(ID);
 ID Controller_NewControls();
-BOOL Controller_AddControl(ID, KEYCODE, ID);
-BOOL Controller_Run(TIME);
-BOOL Controller_EvalKey(void*);
+HRESULT Controller_AddControl(ID, KEYCODE, ID);
+HRESULT Controller_Run(TIME);
+HRESULT Controller_EvalKey(void*);
 
 #endif

@@ -39,48 +39,58 @@ struct Engine
 
 cd3d11* Engine_GetCD3D11()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pCD3D11;
 }
 
 CStrike* Engine_GetCStrike()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pCStrike;
 }
 
 EventManager* Engine_GetEM()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pEM;
 }
 
 ProcessManager* Engine_GetPM()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pPM;
 }
 
 WindowMgr* Engine_GetWindowMgr()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pWindowMgr;
 }
 
 Timer* Engine_GetTimer()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pTimer;
 }
 
 Controller* Engine_GetController()
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pController;
 }
 
 ComponentMgr* Engine_GetCmpMgr(void) {
+	CEASSERT(gpEngine);
 	return gpEngine->_pCmpMgr;
 }
 
 ComponentManager* Engine_GetComponentManager(void) {
+	CEASSERT(gpEngine);
 	return gpEngine->pCM;
 }
 
 ResourceManager* Engine_GetResourceManager(void) {
+	CEASSERT(gpEngine);
 	return gpEngine->pRM;
 }
 
@@ -89,37 +99,29 @@ ResourceManager* Engine_GetResourceManager(void) {
 //	return gpEngine->_pCMGR;
 //}
 
-BOOL Engine_ShutDown()
+HRESULT Engine_ShutDown()
 {
-	BOOL error = ERROR_FAILURE;
-	ProcessManager_Delete();
-	EventManager_Delete();
-	Timer_Delete();
-	Controller_Delete();
-	WindowMgr_DELETE();
-	//CameraManager_Delete();
-	//SceneManager_DELETE();
-	ResourceManager_DELETE();
-	ComponentManager_DELETE();
-	CStrike_DELETE();
-	cd3d11_DELETE();
-	return error;
+	SAFECALL(ProcessManager_Delete());
+	SAFECALL(EventManager_Delete());
+	SAFECALL(Timer_Delete());
+	SAFECALL(Controller_Delete());
+	SAFECALL(WindowMgr_DELETE());
+	SAFECALL(ResourceManager_DELETE());
+	SAFECALL(ComponentManager_DELETE());
+	SAFECALL(CStrike_DELETE());
+	SAFECALL(cd3d11_DELETE());
+	return S_OK;
 }
 
-BOOL Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(hInstance&&lpCmdLine);
 	if (gpEngine == NULL)
 	{
-
-
 		/*initializing*/
 		 _NEW(Engine, gpEngine);
-		if (!gpEngine) 
-		{ 
-			error = error || ERROR_SUCCESS;
-			return error;
-		}
+		 CEASSERT(gpEngine);
+
 		gpEngine->_tickdelay = 10;
 		gpEngine->_uptime = 0;
 		gpEngine->_terminate = FALSE;
@@ -139,9 +141,9 @@ BOOL Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		gpEngine->_pEM = EventManager_New();
 		gpEngine->_pTimer = Timer_New();
 		gpEngine->_pController = Controller_New();
-		gpEngine->_pWindowMgr = WindowMgr_NEW();
+		SAFECALL(WindowMgr_NEW(&gpEngine->_pWindowMgr));
 		gpEngine->_pCStrike = CStrike_NEW();
-		gpEngine->_pCD3D11 = cd3d11_NEW();
+		SAFECALL(cd3d11_NEW(&gpEngine->_pCD3D11));
 		//gpEngine->_pCMGR = CameraManager_New();
 		//gpEngine->_pSMGR = SceneManager_NEW();
 		
@@ -161,18 +163,19 @@ BOOL Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 		EventManager_QueueEvent(EVENT_START,NULL);
 	}
-	return error;
+	return S_OK;
 }
 
 WinParams* Engine_GetWinParams(void)
 {
+	CEASSERT(gpEngine);
 	return gpEngine->_pWinParams;
 }
 
-BOOL Engine_UpdateUpTime(TIME elapsed)
+HRESULT Engine_UpdateUpTime(TIME elapsed)
 {
 	gpEngine->_uptime = gpEngine->_uptime + elapsed;
-	return ERROR_FAILURE;
+	return S_OK;
 }
 
 TIME Engine_GetUpTime(void)
@@ -182,6 +185,7 @@ TIME Engine_GetUpTime(void)
 
 BOOL CHAREQ(char * a, char * b)
 {
+	CEASSERT(a&&b);
 	size_t lena = strlen(a);
 	size_t lenb = strlen(b);
 	if (lena != lenb) {
@@ -193,29 +197,38 @@ BOOL CHAREQ(char * a, char * b)
 	return true;
 }
 
-BOOL Engine_WaitTimer(TIME elapsed)
+BOOL CHAREQS(char * a, char * b, size_t l)
+{
+	CEASSERT(a&&b&&l);
+	for (size_t n = 0; n < l; n++) {
+		if (a[n] != b[n]) { return false; }
+	}
+	return true;
+}
+
+HRESULT Engine_WaitTimer(TIME elapsed)
 {
 	TIME wait = gpEngine->_tickdelay - elapsed;
-	if (wait < 0)
-	{
-		return ERROR_SUCCESS;
+	if (wait < 0) {
+		return S_OK;
 	}
-	Timer_Wait(wait);
-	return ERROR_FAILURE;
+	SAFECALL(Timer_Wait(wait));
+	return S_OK;
 }
 
-BOOL Engine_Run()
+HRESULT Engine_Run()
 {
-	BOOL error = ERROR_FAILURE;
+	CEASSERT(gpEngine);
 	while (gpEngine->_terminate == FALSE)
 	{
-		ProcessManager_Run(Timer_Elapsed());
+		SAFECALL(ProcessManager_Run(Timer_Elapsed()));
 	}
-	return error;
+	return S_OK;
 }
 
-BOOL Engine_Terminate(void* pData)
+HRESULT Engine_Terminate(void* pData)
 {
+	CEASSERT(gpEngine);
 	gpEngine->_terminate = TRUE;
-	return ERROR_FAILURE;
+	return S_OK;
 }
