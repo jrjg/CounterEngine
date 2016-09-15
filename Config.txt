@@ -1,0 +1,7 @@
+Engine{
+	Bufferwidth = 1920;
+	Bufferheight = 1080;
+	Fullscreen = true;
+	Windowtitle = "LUL XD";
+	Groundspeed = 10;
+}

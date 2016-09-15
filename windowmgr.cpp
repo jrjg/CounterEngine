@@ -44,7 +44,7 @@ HRESULT createWindow(WindowMgr* pWindowMgr) {
 	_NEW(WNDCLASSEX, pwc);
 	SAFECALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
 	RegisterClassEx(pwc); 
-	(*pWindowMgr->phwnd) = CreateWindowEx(WS_EX_CLIENTEDGE, pwc->lpszClassName, pWindowMgr->windowtitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, BUFFERWIDTH, BUFFERHEIGHT, NULL, NULL, Engine_GetWinParams()->hInstance, NULL);
+	(*pWindowMgr->phwnd) = CreateWindowEx(WS_EX_CLIENTEDGE, pwc->lpszClassName, Engine_WINDOWTITLE(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, Engine_BUFFERWIDTH(), Engine_BUFFERHEIGHT(), NULL, NULL, Engine_GetWinParams()->hInstance, NULL);
 	return S_OK;
 }
 
@@ -59,7 +59,7 @@ HRESULT WindowMgr_NEW(WindowMgr** ppInst) {
 	_NEW(WindowMgr, *ppInst);
 	WindowMgr* pInst = *ppInst;
 	_NEW(HWND, pInst->phwnd);
-	pInst->windowtitle = WINDOWTITLE;
+	pInst->windowtitle = LPCWSTR(Engine_WINDOWTITLE());
 	SAFECALL(createWindow(pInst));
 	SAFECALL(showWindow(pInst));
 	return S_OK;

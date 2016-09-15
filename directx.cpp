@@ -77,7 +77,7 @@ HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szSh
 HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
 	CEASSERT(pd3d11);
 	pd3d11->camView = XMMatrixLookAtLH(XMVectorSet(0.0f, 3.0f, -4.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, (float)BUFFERWIDTH / BUFFERHEIGHT, 1.0f, 1000.0f);
+	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, Engine_BUFFERWIDTH() / Engine_BUFFERHEIGHT(), 1.0f, 1000.0f);
 	return S_OK;
 }
 
@@ -212,8 +212,8 @@ HRESULT cd3d11_CreateAndSetViewport(cd3d11* pd3d11) {
 	_NEW(D3D11_VIEWPORT, pd3d11->pViewport);
 	pd3d11->pViewport->TopLeftX = 0.0f;
 	pd3d11->pViewport->TopLeftY = 0.0f;
-	pd3d11->pViewport->Width = BUFFERWIDTH;
-	pd3d11->pViewport->Height = BUFFERHEIGHT;
+	pd3d11->pViewport->Width = Engine_BUFFERWIDTH();
+	pd3d11->pViewport->Height = Engine_BUFFERHEIGHT();
 	pd3d11->pViewport->MinDepth = 0.0f;
 	pd3d11->pViewport->MaxDepth = 1.0f;
 	pd3d11->pImmediateContext->RSSetViewports(1, pd3d11->pViewport);
@@ -464,8 +464,8 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	DXGI_SWAP_CHAIN_DESC* pSCD;
 	_NEW(DXGI_SWAP_CHAIN_DESC, pSCD);
 
-	pSCD->BufferDesc.Width = BUFFERWIDTH;
-	pSCD->BufferDesc.Height = BUFFERHEIGHT;
+	pSCD->BufferDesc.Width = Engine_BUFFERWIDTH();
+	pSCD->BufferDesc.Height = Engine_BUFFERHEIGHT();
 	pSCD->BufferDesc.RefreshRate.Numerator =60;
 	pSCD->BufferDesc.RefreshRate.Denominator = 1;
 	pSCD->BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -476,7 +476,7 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	pSCD->BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	pSCD->BufferCount = 2;
 	pSCD->OutputWindow = (*(Engine_GetWindowMgr()->phwnd));
-	(FULLSCREEN) ? pSCD->Windowed = FALSE : pSCD->Windowed = TRUE;
+	(Engine_FULLSCREEN()) ? pSCD->Windowed = FALSE : pSCD->Windowed = TRUE;
 	//pSCD->Windowed = TRUE;
 	pSCD->SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	pSCD->Flags = NULL;
@@ -509,8 +509,10 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	SAFECALL(pd3d11->pDevice->CreateRenderTargetView(pd3d11->pSwapChainBuffer, 0, &pd3d11->pView));
 	
 	D3D11_TEXTURE2D_DESC desc;
-	desc.Width = BUFFERWIDTH;
-	desc.Height = BUFFERHEIGHT;
+	ZeroMemory(&desc,sizeof(D3D11_TEXTURE2D_DESC));
+	desc.Width = Engine_BUFFERWIDTH();
+	desc.Height = Engine_BUFFERHEIGHT();
+
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 	desc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -526,6 +528,7 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 
 	pd3d11->pDepthView = 0;
 	D3D11_DEPTH_STENCIL_VIEW_DESC desc2;
+	ZeroMemory(&desc2, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 	desc2.Format = DXGI_FORMAT_D32_FLOAT;
 	desc2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	desc2.Flags = NULL;

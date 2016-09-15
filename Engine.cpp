@@ -11,6 +11,7 @@
 //#include "ComponentMgr.h"
 //#include "CameraManager.h"
 //#include "SceneManager.h"
+#include "Parser.h"
 #include "Engine.h"
 
 
@@ -35,7 +36,33 @@ struct Engine
 	WinParams* _pWinParams;
 	ComponentManager* pCM;
 	ResourceManager* pRM;
+
+	LPWSTR WINDOWTITLE;
+	float BUFFERWIDTH;
+	float BUFFERHEIGHT;
+	bool FULLSCREEN;
+	Parser* pConfigParser;
 };
+
+LPWSTR Engine_WINDOWTITLE() {
+	CEASSERT(gpEngine);
+	return gpEngine->WINDOWTITLE;
+}
+
+float Engine_BUFFERWIDTH() {
+	CEASSERT(gpEngine);
+	return gpEngine->BUFFERWIDTH;
+}
+
+float Engine_BUFFERHEIGHT() {
+	CEASSERT(gpEngine);
+	return gpEngine->BUFFERHEIGHT;
+}
+
+BOOL Engine_FULLSCREEN() {
+	CEASSERT(gpEngine);
+	return gpEngine->FULLSCREEN;
+}
 
 cd3d11* Engine_GetCD3D11()
 {
@@ -113,6 +140,63 @@ HRESULT Engine_ShutDown()
 	return S_OK;
 }
 
+HRESULT Engine_LoadConfig(void* pD) {
+	if (!gpEngine->pConfigParser) {
+		gpEngine->pConfigParser = Parser_New();
+		String* pString;
+		_NEW(String, pString);
+		STRING(pString->buffer, "Engine");
+		SAFECALL(Parser_RegisterHandler(gpEngine->pConfigParser, pString, &Engine_ParseConfig, &Engine_ParseConfig));
+		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, '{', &Engine_ParseConfig));
+		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, '}', &Engine_ParseConfig));
+		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, ';', &Engine_ParseConfig));
+	}
+	String pFilename;
+	pFilename.buffer = "Config.txt";
+	pFilename.length = strlen("Config.txt");
+	SAFECALL(Parser_LoadContentFromFile(gpEngine->pConfigParser, &pFilename));
+	SAFECALL(Parser_Parse(gpEngine->pConfigParser));
+	return S_OK;
+}
+
+HRESULT Engine_ParseConfig(void** ppCurrentObject, String* pObjectName) {
+	CEASSERT(pObjectName);
+	
+	//clean up String
+	SAFECALL(Parser_CleanString(pObjectName));
+	
+	//next check for object names
+	if (CHAREQS(pObjectName->buffer, "Engine", pObjectName->length)) {
+
+		//do nothing here, engine object already exists
+		return S_OK;
+	}
+
+	//first check for dividers
+	char lastchar = pObjectName->buffer[pObjectName->length];
+
+	//ignore these
+	if(lastchar == '{') { 
+		return S_OK;
+
+	}
+	
+	//attribute should have been defined
+	if (lastchar == ';') { 
+
+		//first, cut off this last character
+		Parser_CollapseString(pObjectName, pObjectName->length);
+
+		//check for attributes
+		EVAL_FLOAT_ATTRIBUTE("Bufferwidth",gpEngine->BUFFERWIDTH);
+		EVAL_FLOAT_ATTRIBUTE("Bufferwidth", gpEngine->BUFFERHEIGHT);
+		EVAL_BOOL_ATTRIBUTE("Fullscreen", gpEngine->FULLSCREEN);
+		EVAL_LPCWSTR_ATTRIBUTE("Windowtitle", gpEngine->WINDOWTITLE);
+		EVAL_UNSIGNEDINT_ATTRIBUTE("Groundspeed", gpEngine->_tickdelay);
+	}
+	return S_OK;
+}
+
 HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	CEASSERT(hInstance&&lpCmdLine);
@@ -121,10 +205,15 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		/*initializing*/
 		 _NEW(Engine, gpEngine);
 		 CEASSERT(gpEngine);
-
+		
 		gpEngine->_tickdelay = 10;
 		gpEngine->_uptime = 0;
 		gpEngine->_terminate = FALSE;
+
+		gpEngine->BUFFERWIDTH = 800;
+		gpEngine->BUFFERHEIGHT = 600;
+		gpEngine->FULLSCREEN = false;
+		gpEngine->WINDOWTITLE = L"Counter Engine";
 		
 		_NEW(WinParams, gpEngine->_pWinParams);
 		if (gpEngine->_pWinParams) {
@@ -160,6 +249,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		
 
 		EventManager_RegisterForEvent(EVENT_END,&Engine_Terminate);
+		//EventManager_RegisterForEvent(EVENT_START, &Engine_LoadConfig);
 
 		EventManager_QueueEvent(EVENT_START,NULL);
 	}

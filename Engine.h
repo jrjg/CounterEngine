@@ -38,6 +38,11 @@ HRESULT Engine_WaitTimer(TIME);
 HRESULT Engine_Terminate(void*);
 HRESULT Engine_UpdateUpTime(TIME);
 TIME Engine_GetUpTime(void);
+LPWSTR Engine_WINDOWTITLE();
+float Engine_BUFFERWIDTH();
+float Engine_BUFFERHEIGHT();
+BOOL Engine_FULLSCREEN();
+HRESULT Engine_ParseConfig(void** ppCurrentObject, String* pObjectName);
 
 BOOL CHAREQ(char * a, char * b);
 BOOL CHAREQS(char * a, char * b,size_t l);

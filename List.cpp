@@ -5,7 +5,7 @@
 ID List_ID = 0;
 
 HRESULT List_GetLast(List* pList,void** ppObject) {
-	CEASSERT(pList && *ppObject&&"invalid List"&&"List_GetLast");
+	CEASSERT(pList &&"invalid List");
 	(*ppObject) = List_Get(pList->_pLastElem);
 	return S_OK;
 }

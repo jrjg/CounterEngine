@@ -17,16 +17,19 @@ typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define SAFECALL(HREXPR) if(FAILED(HREXPR)&& _DBG){MessageBox(NULL, L#HREXPR, L"Function call failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 #define SAFE_RELEASE( x ) if( x ){ x->Release( ); x = 0; }
 
-#define WINDOWTITLE L"Counter Engine"
-#define BUFFERWIDTH 800
-#define BUFFERHEIGHT 600
-#define FULLSCREEN FALSE
+//#define WINDOWTITLE L"Counter Engine"
+//#define BUFFERWIDTH 800
+//#define BUFFERHEIGHT 600
+//#define FULLSCREEN FALSE
 
+
+#define MAXIMUM_LIGHTS_SUPPORTED 8
 #define fOPAQUE (1.0f)
 #define cd3d11_CONSTANTBUFFER_MATRICES 0
 #define cd3d11_CONSTANTBUFFER_MATERIAL 0
 #define cd3d11_CONSTANTBUFFER_LIGHTING 0
-#define MAXIMUM_LIGHTS_SUPPORTED 8
+
+#define STRING(pBufferX,StringX) pBufferX = (char*)malloc(strlen(StringX)); pBufferX = StringX;
 
 #define CEASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 //#define CEASSERT(expr) if(!(expr) && _DBG){ MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK); }
