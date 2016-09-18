@@ -32,7 +32,7 @@ HRESULT Timer_Wait(TIME time)
 HRESULT Timer_Delete()
 {
 	Timer* pTimer = Engine_GetTimer();
-	_DEL(pTimer);
+	CE1_DEL(pTimer);
 	return S_OK;
 }
 

@@ -30,7 +30,7 @@ HRESULT CStrike_Run(TIME elapsed) {
 HRESULT CStrike_DELETE(void) {
 	CStrike* pCStrike = Engine_GetCStrike();
 	CEASSERT(pCStrike);
-	_DEL(pCStrike);
+	CE1_DEL(pCStrike);
 	return S_OK;
 }
 
@@ -38,11 +38,11 @@ HRESULT CStrike_CreateControls(CStrike* pCStrike)
 {
 	CEASSERT(pCStrike);
 	pCStrike->_ctrlsGame = Controller_NewControls();
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 27, EVENT_END));
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 97, EVENT_MOVELEFT));
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 100, EVENT_MOVERIGHT));
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 115, EVENT_MOVEDOWN));
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 119, EVENT_ROTATECW));
-	SAFECALL(Controller_AddControl(pCStrike->_ctrlsGame, 32, EVENT_MOVEFIX));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 27, EVENT_END));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 97, EVENT_MOVELEFT));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 100, EVENT_MOVERIGHT));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 115, EVENT_MOVEDOWN));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 119, EVENT_ROTATECW));
+	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 32, EVENT_MOVEFIX));
 	return S_OK;
 }

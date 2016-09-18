@@ -19,10 +19,10 @@ HRESULT ResourceManager_DELETE()
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
 	CEASSERT(pRM);
-	SAFECALL(ResourceManager_FullUnLoad());
-	SAFECALL(Vector_Delete(pRM->pResources));
-	SAFECALL(List_FullDelete(pRM->pResourceHandlers,true));
-	_DEL(pRM);
+	CE1_CALL(ResourceManager_FullUnLoad());
+	CE1_CALL(Vector_Delete(pRM->pResources));
+	CE1_CALL(List_FullDelete(pRM->pResourceHandlers,true));
+	CE1_DEL(pRM);
 	return S_OK;
 }
 
@@ -35,7 +35,7 @@ ID ResourceManager_LoadResource(char* name)
 
 	//get the formatname
 	char formatname[3];
-	SAFECALL(ResourceManager_GetFormatName(name, formatname));
+	CE1_CALL(ResourceManager_GetFormatName(name, formatname));
 
 	//get the formathandler
 	ExecOnList(
@@ -51,7 +51,7 @@ ID ResourceManager_LoadResource(char* name)
 	pRes->name = name;
 
 	//create the resourceextra
-	SAFECALL((*pFH)(name,&(pRes->ResourceExtra)));
+	CE1_CALL((*pFH)(name,&(pRes->ResourceExtra)));
 	CEASSERT(pRes->ResourceExtra && "Resource could not be loaded");
 
 	//store resource
@@ -72,11 +72,11 @@ HRESULT ResourceManager_UnLoadResource(ID id)
 
 	//get the resource
 	Resource* pRes;
-	SAFECALL(ResourceManager_GetResource(id, ((void**)(&pRes)) ));
+	CE1_CALL(ResourceManager_GetResource(id, ((void**)(&pRes)) ));
 
 	//get the formatname
 	char formatname[3];
-	SAFECALL(ResourceManager_GetFormatName(pRes->name, formatname));
+	CE1_CALL(ResourceManager_GetFormatName(pRes->name, formatname));
 
 	//get the xformathandler
 	FormatHandler* pFormatHandler;
@@ -89,11 +89,11 @@ HRESULT ResourceManager_UnLoadResource(ID id)
 	CEASSERT(pXFH && "Format not supported");
 
 	//delete resourceextra
-	SAFECALL((*pXFH)(pRes->ResourceExtra));
+	CE1_CALL((*pXFH)(pRes->ResourceExtra));
 
 	//delete resource
-	_DEL(pRes->name);
-	_DEL(pRes);
+	CE1_DEL(pRes->name);
+	CE1_DEL(pRes);
 	return S_OK;
 }
 
@@ -103,7 +103,7 @@ HRESULT ResourceManager_FullUnLoad()
 	CEASSERT(pRM);
 	for (UINT i = 0; i < Vector_Last(pRM->pResources); i++)
 	{
-		ResourceManager_UnLoadResource(i); //dont safecall
+		ResourceManager_UnLoadResource(i); //dont CE1_CALL
 	}
 	return S_OK;
 }

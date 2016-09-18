@@ -128,74 +128,36 @@ ResourceManager* Engine_GetResourceManager(void) {
 
 HRESULT Engine_ShutDown()
 {
-	SAFECALL(ProcessManager_Delete());
-	SAFECALL(EventManager_Delete());
-	SAFECALL(Timer_Delete());
-	SAFECALL(Controller_Delete());
-	SAFECALL(WindowMgr_DELETE());
-	SAFECALL(ResourceManager_DELETE());
-	SAFECALL(ComponentManager_DELETE());
-	SAFECALL(CStrike_DELETE());
-	SAFECALL(cd3d11_DELETE());
+	CE1_CALL(ProcessManager_Delete());
+	CE1_CALL(EventManager_Delete());
+	CE1_CALL(Timer_Delete());
+	CE1_CALL(Controller_Delete());
+	CE1_CALL(WindowMgr_DELETE());
+	CE1_CALL(ResourceManager_DELETE());
+	CE1_CALL(ComponentManager_DELETE());
+	CE1_CALL(CStrike_DELETE());
+	CE1_CALL(cd3d11_DELETE());
 	return S_OK;
 }
 
-HRESULT Engine_LoadConfig(void* pD) {
+HRESULT Engine_ConfigHandler(void* p0,String* pObjName,void* pObj) {
+
+}
+
+HRESULT Engine_LoadConfig() {
+	String* pString;
 	if (!gpEngine->pConfigParser) {
 		gpEngine->pConfigParser = Parser_New();
-		String* pString;
-		_NEW(String, pString);
-		STRING(pString->buffer, "Engine");
-		SAFECALL(Parser_RegisterHandler(gpEngine->pConfigParser, pString, &Engine_ParseConfig, &Engine_ParseConfig));
-		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, '{', &Engine_ParseConfig));
-		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, '}', &Engine_ParseConfig));
-		SAFECALL(Parser_RegisterSingleCharHandler(gpEngine->pConfigParser, ';', &Engine_ParseConfig));
+		CE1_STR(pString, "Fullscreen");
+		CE1_CALL(Parser_registerType(gpEngine->pConfigParser, pString,sizeof(bool),&Engine_ConfigHandler));
+		
 	}
-	String pFilename;
-	pFilename.buffer = "Config.txt";
-	pFilename.length = strlen("Config.txt");
-	SAFECALL(Parser_LoadContentFromFile(gpEngine->pConfigParser, &pFilename));
-	SAFECALL(Parser_Parse(gpEngine->pConfigParser));
+	CE1_STR(pString, "Config.txt");
+	Parser_ParseFromFile(gpEngine->pConfigParser, pString, &Engine_ConfigHandler);
 	return S_OK;
 }
 
-HRESULT Engine_ParseConfig(void** ppCurrentObject, String* pObjectName) {
-	CEASSERT(pObjectName);
-	
-	//clean up String
-	SAFECALL(Parser_CleanString(pObjectName));
-	
-	//next check for object names
-	if (CHAREQS(pObjectName->buffer, "Engine", pObjectName->length)) {
 
-		//do nothing here, engine object already exists
-		return S_OK;
-	}
-
-	//first check for dividers
-	char lastchar = pObjectName->buffer[pObjectName->length];
-
-	//ignore these
-	if(lastchar == '{') { 
-		return S_OK;
-
-	}
-	
-	//attribute should have been defined
-	if (lastchar == ';') { 
-
-		//first, cut off this last character
-		Parser_CollapseString(pObjectName, pObjectName->length);
-
-		//check for attributes
-		EVAL_FLOAT_ATTRIBUTE("Bufferwidth",gpEngine->BUFFERWIDTH);
-		EVAL_FLOAT_ATTRIBUTE("Bufferwidth", gpEngine->BUFFERHEIGHT);
-		EVAL_BOOL_ATTRIBUTE("Fullscreen", gpEngine->FULLSCREEN);
-		EVAL_LPCWSTR_ATTRIBUTE("Windowtitle", gpEngine->WINDOWTITLE);
-		EVAL_UNSIGNEDINT_ATTRIBUTE("Groundspeed", gpEngine->_tickdelay);
-	}
-	return S_OK;
-}
 
 HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -230,9 +192,9 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		gpEngine->_pEM = EventManager_New();
 		gpEngine->_pTimer = Timer_New();
 		gpEngine->_pController = Controller_New();
-		SAFECALL(WindowMgr_NEW(&gpEngine->_pWindowMgr));
+		CE1_CALL(WindowMgr_NEW(&gpEngine->_pWindowMgr));
 		gpEngine->_pCStrike = CStrike_NEW();
-		SAFECALL(cd3d11_NEW(&gpEngine->_pCD3D11));
+		CE1_CALL(cd3d11_NEW(&gpEngine->_pCD3D11));
 		//gpEngine->_pCMGR = CameraManager_New();
 		//gpEngine->_pSMGR = SceneManager_NEW();
 		
@@ -302,7 +264,7 @@ HRESULT Engine_WaitTimer(TIME elapsed)
 	if (wait < 0) {
 		return S_OK;
 	}
-	SAFECALL(Timer_Wait(wait));
+	CE1_CALL(Timer_Wait(wait));
 	return S_OK;
 }
 
@@ -311,7 +273,7 @@ HRESULT Engine_Run()
 	CEASSERT(gpEngine);
 	while (gpEngine->_terminate == FALSE)
 	{
-		SAFECALL(ProcessManager_Run(Timer_Elapsed()));
+		CE1_CALL(ProcessManager_Run(Timer_Elapsed()));
 	}
 	return S_OK;
 }

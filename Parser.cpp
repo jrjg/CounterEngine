@@ -8,256 +8,311 @@
 Parser * Parser_New()
 {
 	Parser* pParser;
-	_NEW(Parser,pParser);
-	pParser->pHandlers = List_New(sizeof(Handler*));
+	_NEW(Parser, pParser);
 	pParser->pObjects = List_New(sizeof(Object*));
-	pParser->pSingleCharDividers = List_New(sizeof(char));
-	_NEW(FileContent,pParser->pFileContent);
+	pParser->pSingleCharOperators = List_New(sizeof(SingleCharOperator*));
+	pParser->pTypes = List_New(sizeof(Type*));
 	return pParser;
 }
 
-HRESULT Parser_LoadContentFromFile(Parser* pParser, String* pFileName)
-{
-	CEASSERT(pParser&&pFileName);
-	SAFECALL(FileReader_Read(pFileName->buffer, &(pParser->pFileContent)));
-	return S_OK;
-}
-
-HRESULT Parser_CollapseString(String* pObjectName, int index) {
-	CEASSERT(pObjectName);
-	if (pObjectName->length == 0) {
-		return S_OK;
-	}
-	if (index < pObjectName->length) {
-		for (int i = index; i < pObjectName->length - 1; i++) {
-			pObjectName->buffer[i] = pObjectName->buffer[i + 1];
-		}
-	}
-	pObjectName->length--;
-	return S_OK;
-}
-
-HRESULT Parser_CleanString(String* pObjectName) {
-	CEASSERT(pObjectName);
-	char c;
-	for (int i = 0; i < pObjectName->length; i++) {
-
-		//single collapse
-		c = pObjectName->buffer[i];
-		if (c == ' '
-			|| c == '"'
-			|| c == '='
-			) {
-			SAFECALL(Parser_CollapseString(pObjectName, i));
-		}
-
-		//double collaps
-		if (c == '\\' && pObjectName->buffer[i + 1] == 'n'
-			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
-			|| c == '\\' && pObjectName->buffer[i + 1] == 'r'
-			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
-			|| c == '\\' && pObjectName->buffer[i + 1] == 'f'
-			|| c == '\\' && pObjectName->buffer[i + 1] == '\"'
-			) {
-			SAFECALL(Parser_CollapseString(pObjectName, i));
-			SAFECALL(Parser_CollapseString(pObjectName, i));
-		}
-	}
-
-}
-
-HRESULT Parser_RegisterHandler(Parser* pParser, String* pObjectName, HandlerFunction pHandlerFunction, HandlerOnCompleteFunction pOnCompleteHandlerFunction)
-{
-	CEASSERT(pParser&&pObjectName&&pHandlerFunction);
-	Handler* pHandler;
-	_NEW(Handler, pHandler);
-	pHandler->pHandlerFunction = pHandlerFunction;
-	pHandler->pObjectName = pObjectName;
-	pHandler->pHandlerOnCompleteFunction = pOnCompleteHandlerFunction;
-	List_PushBack(pParser->pHandlers, pHandler);
-	return S_OK;
-}
-
-HRESULT Parser_RegisterSingleCharHandler(Parser* pParser, char d, HandlerFunction pHandlerFunction)
+HRESULT Parser_RegisterSingleCharOperator(Parser* pParser, char d, SingeCharOperatorCode code)
 {
 	CEASSERT(pParser && d&&"invalid Parser");
-	char* pCharacter;
-	_NEW(char, pCharacter);
-	*pCharacter = d;
-	List_PushBack(pParser->pSingleCharDividers, (void*)pCharacter);
-	String* pSingleCharString;
-	_NEW(String,pSingleCharString);
-	pSingleCharString->buffer = pCharacter;
-	pSingleCharString->length = 1;
-	SAFECALL(Parser_RegisterHandler(pParser, pSingleCharString, pHandlerFunction,NULL));
+	CE1_NEW(SingleCharOperator, pSC);
+	_NEW(char, (pSC->pChar));
+	*(pSC->pChar) = d;
+	pSC->code = code;
+	List_PushBack(pParser->pSingleCharOperators, (void*)pSC);
+	return S_OK;
+}
+
+HRESULT Parser_RegisterVariable(Parser* pParser, String* pVariableName, String* pTypeName, size_t size, ObjectHandlerFunction pObjectHandlerFunction)
+{
+	CEASSERT(pParser&& pTypeName&& pVariableName &&size && "Parser_RegisterObject");
+	CE1_NEW(Type,pType);
+	pType->pTypeName = pTypeName;
+	pType->size = size;
+	pType->pObjectHandlerFunction = pObjectHandlerFunction;
+	CE1_CALL(List_PushBack(pParser->pTypes, pType));
 	return S_OK;
 }
 
 HRESULT Parser_CompleteCurrentObject(Parser* pParser) {
 	CEASSERT(pParser && List_Length(pParser->pObjects)>0 && "parsing syntax errror");
-	Object* pObject = (Object*)List_Pop(pParser->pObjects);
-	pParser->pCurrentHandler->pHandlerOnCompleteFunction(&pObject->inst, pObject->pHandler->pObjectName);
-	_DEL(pObject);
+
+	//get the just created object
+	Object* pChildObject = (Object*)List_Pop(pParser->pObjects);
+
+	//get its parent
+	Object* pParentObject;
+	if (List_Length(pParser->pObjects) > 0) {
+		CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pParentObject));
+	}
+	else {
+		(*pParser->pRootHandler)(NULL, pChildObject->pType->pTypeName, pChildObject->pInst);
+	}
+
+	//submit the child to its parent
+	CE1_CALL((*pParentObject->pType->pObjectHandlerFunction)(pParentObject, pChildObject->pType->pTypeName, pChildObject->pInst));
+
+	//release the carrier
+	CE1_DEL(pChildObject);
 }
 
 HRESULT Parser_Destroy(Parser * pParser)
 {
+	//exit if theres no parser
 	if (!pParser) {
 		return S_OK;
 	}
-	_DEL(pParser->pFileContent->pBuffer);
-	_DEL(pParser->pFileContent);
 
-	//delete handler list
-	Handler* pHandler;
+	//delete types
+	Type* pType;
 	ExecOnList(
-		pParser->pHandlers,
-		pHandler = (Handler*)List_Get(itr);
-		_DEL(pHandler->pObjectName->buffer);
-		_DEL(pHandler->pObjectName);
+		pParser->pTypes,
+		pType = (Type*)List_Get(itr);
+		CE1_DEL(pType->pTypeName->pBuffer);
+		CE1_DEL(pType->pTypeName);
 	);
-	SAFECALL(List_FullDelete(pParser->pHandlers,true));
-
+	CE1_CALL(List_FullDelete(pParser->pTypes,true));
+	
 	//delete object list ->there should not be elements in this list
-	SAFECALL(List_FullDelete(pParser->pObjects, false));
+	CE1_CALL(List_FullDelete(pParser->pObjects, false));
 
-	//full delete is enough
-	SAFECALL(List_FullDelete(pParser->pSingleCharDividers, true));
+	//delete SingleCharOperators
+	SingleCharOperator* pSingleCharOperator;
+	ExecOnList(
+		pParser->pSingleCharOperators,
+		pSingleCharOperator = (SingleCharOperator*)List_Get(itr);
+		CE1_DEL(pSingleCharOperator->pChar);
+	);
+	CE1_CALL(List_FullDelete(pParser->pSingleCharOperators, true));
 
-	_DEL(pParser);
+	CE1_DEL(pParser);
 	return S_OK;
 }
 
-BOOL Parser_isDivider(Parser* pParser, char c) {
+BOOL Parser_isSingleCharOperator(Parser* pParser, char c, SingeCharOperatorCode* pCode) {
 	CEASSERT(pParser && c&&"invalid Parser");
-	char* d;
+	SingleCharOperator* pSingleCharOperator;
 	ExecOnList(
-		pParser->pSingleCharDividers,
-		d = (char*)List_Get(itr);
-		if ((*d) == c) {
+		pParser->pSingleCharOperators,
+		pSingleCharOperator = (SingleCharOperator*)List_Get(itr);
+		if ((*pSingleCharOperator->pChar) == c) {
+			*pCode = pSingleCharOperator->code;
 			return true;
 		}
 	);
 	return false;
 }
 
-
-HRESULT CallHandler(Parser* pParser, Handler* pHandler, size_t BufferIndex, size_t currentStatementIndex, String* pTempString) {
-	Object* pCurrentObject = 0;
-	CEASSERT(pHandler&&"no valid Handler found");
-
-	//get the currently processed object
-	SAFECALL(List_GetLast(pParser->pObjects, (void**)&pCurrentObject));
-
-	//call the handler function and submit the currently processed object and buffer snippet
-	pTempString->buffer = pParser->pFileContent->pBuffer + BufferIndex * sizeof(char*);
-	pTempString->length = currentStatementIndex;
-	SAFECALL((*(pHandler->pHandlerFunction))((void**)&pCurrentObject, pTempString));
+HRESULT Parser_CreateObjectFromType(Type* pType, Object* pObject) {
+	pObject->pInst = malloc(pType->size);
+	pObject->pType = pType;
+	return S_OK;
 }
 
-HRESULT Parser_Parse(Parser * pParser)
+#define CASE(TYPESTRING,EXEC) if (CHAREQS(pType->pBuffer, TYPESTRING, pType->length)) {EXEC}
+
+HRESULT Parser_ConvertStringToType(String* pValueString, String* pType,void* pValue) {
+	CASE("FLOAT", 
+		*(FLOAT*)pValue = strtod(pValueString->pBuffer, NULL); 
+		return S_OK;);
+
+	CASE("BOOL", 
+		(pValueString->pBuffer[0] == 'f') ? *(bool*)pValue = FALSE : *(bool*)pValue = TRUE; 
+		return S_OK;);
+
+	CASE("STRING", 
+		for (int i = 0; i < pValueString->length; i++) { 
+			((String*)pValue)->pBuffer[i] = pValueString->pBuffer[i]; 
+		} 
+		((String*)pValue)->length = pValueString->length; 
+		return S_OK;);
+
+	CASE("UINT", 
+		*(UINT*)pValue = (UINT)atoi(pValueString->pBuffer); 
+		return S_OK;);
+
+	CASE("LPCWSTR", 
+		MultiByteToWideChar(CP_ACP, 0, pValueString->pBuffer, pValueString->length, (LPWSTR)pValue, pValueString->length); 
+		return S_OK;);
+
+	CEASSERT(0&&"Could not convert String: Type unknown");
+	return ERROR_SUCCESS;
+}
+
+HRESULT Parser_SetObjectValueFromString(Object* pObject,String* pValueString) {
+	CE1_CALL(Parser_ConvertStringToType(pValueString, pObject->pType->pTypeName, pObject->pInst));
+	return S_OK;
+}
+
+HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerFunction pRootHandler)
 {
 	//check for valid parser
-	CEASSERT(pParser && pParser->pFileContent->size>0 && List_Length(pParser->pHandlers)>0 && "invalid parser");
+	CEASSERT(pParser && pRootHandler && List_Length(pParser->pTypes)>0 && "invalid parser");
+
+	//read file 
+	String* pFileContent;
+	CE1_CALL(FileReader_Read(pFileName->pBuffer, &(pFileContent)));
+
+	//set root handler
+	pParser->pRootHandler = pRootHandler;
 
 	//initialize variables
-	pParser->pCurrentHandler = 0;
-	Handler* pTempHandler = 0;
-	HandlerFunction f = 0;
+	Type* pType = 0;
 	Object* pCurrentObject = 0;
 	size_t currentStatementIndex = 0;
 	char* currentStatement = 0;
 	size_t BufferIndex = 0;
-	List* pHandlersCopy = List_New(sizeof(Handler*));
-	String* pTempString;
-	_NEW(String, pTempString);
-	BOOL skipHandler;
+	List* pTypesCopy = List_New(sizeof(Type*));
+	Object* pObj;
+	CE1_NEW(String, pValueString);
 
 	//query whole buffer
-	for (BufferIndex = 0; BufferIndex < pParser->pFileContent->size; BufferIndex = BufferIndex + currentStatementIndex) {
+	for (BufferIndex = 0; BufferIndex < pFileContent->length; BufferIndex = BufferIndex + currentStatementIndex) {
+
+		//reset 
+		CE1_CALL(List_DeleteAllElements(pTypesCopy, false));
+		pValueString->length = 0;
 
 		//copy Handler list for next statement
 		ExecOnList(
-			pParser->pHandlers,
-
-			//before copying, make sure that we dont take in the singlechar handler: these are handled differently
-			pTempHandler = (Handler*)List_Get(itr);
-			if (pTempHandler->pHandlerOnCompleteFunction) {
-				List_PushBack(pHandlersCopy, List_Get(itr));
-			}
+			pParser->pTypes,
+			List_PushBack(pTypesCopy, List_Get(itr));
 		);
 
-		skipHandler = false;
-
-		//identify Handler
+		//identify type
 		for (currentStatementIndex = 0; ; currentStatementIndex++) {
 
-			//exit if this character is an divider
-			if (Parser_isDivider(pParser, pParser->pFileContent->pBuffer[BufferIndex + currentStatementIndex])) {
-				
-				//search handler for this character
-				ExecOnList(
-					pParser->pHandlers,
-					pTempHandler = ((Handler*)List_Get(itr));
-					if (pTempHandler->pObjectName->buffer[0] == pParser->pFileContent->pBuffer[BufferIndex + currentStatementIndex]) {
-						
-						//call singe-char-handler
-						CallHandler(pParser, pTempHandler, BufferIndex, currentStatementIndex, pTempString);
-					}
-				);
-				skipHandler = true;
+			//exit if this character is registered as an single char operator
+			SingeCharOperatorCode code = ignore;
+			if (Parser_isSingleCharOperator(pParser, pFileContent->pBuffer[BufferIndex + currentStatementIndex], &code)) {
+				switch (code) {
+					case submit:
+						pValueString->length = currentStatementIndex-1; //dont take in single char operator
+						pValueString->pBuffer = pFileContent->pBuffer + BufferIndex * sizeof(char);
+						CE1_CALL(List_GetLast(pParser->pObjects,(void**)&pObj));
+						CE1_CALL(Parser_SetObjectValueFromString(pObj, pValueString));
+						CE1_CALL(Parser_CompleteCurrentObject(pParser));
+						break;
+					case ignore:
+						break;
+				}
 				break;
 			}
 
-			//There is only 1 handler remaining in the list -> check if its the right one
-			if (List_Length(pHandlersCopy) == 1) {
-
-				//get the only Handler left, which is also the last one in the list
-				pTempHandler = 0;
-				SAFECALL(List_GetLast(pHandlersCopy, (void**)&pTempHandler));
-
-				//if the found name equals the handlers name
-				if (CHAREQS(pTempHandler->pObjectName->buffer, pParser->pFileContent->pBuffer + BufferIndex * sizeof(char*), pTempHandler->pObjectName->length)) {
-
-					//make this handler the current handler
-					pParser->pCurrentHandler = pTempHandler;
-					
-					//extend currentStatementIndex to full namelength and exit
-					currentStatementIndex = pTempHandler->pObjectName->length;
+			//There is only 1 type remaining in the list -> check if its the right one
+			if (List_Length(pTypesCopy) == 1) {
+				CE1_CALL(List_GetLast(pTypesCopy, (void**)&pType));
+				if (CHAREQS(pType->pTypeName->pBuffer, pFileContent->pBuffer + BufferIndex * sizeof(char), pType->pTypeName->length)) {
+					_NEW(Object, pObj);
+					CE1_CALL(Parser_CreateObjectFromType(pType, pObj));
+					CE1_CALL(List_PushBack(pParser->pObjects, pObj));
+					currentStatementIndex = pType->pTypeName->length;
 					break;
 				
-				//If the names dont match, then no handler is available -> the datachunk is handled by current handler
+				//value 
 				}else {
-
-					//Delete the remaining handler
-					SAFECALL(List_DeleteAllElements(pHandlersCopy, false));
+					CE1_CALL(List_DeleteAllElements(pTypesCopy, false));
 				}
 			}
 
-			//delete all mismatching Handlers
+			//delete all mismatching types
 			ExecOnList(
-				pHandlersCopy,
-				pTempHandler = ((Handler*)List_Get(itr));
-				if (pTempHandler->pObjectName->buffer[currentStatementIndex] != pParser->pFileContent->pBuffer[BufferIndex + currentStatementIndex]) {
-					SAFECALL(List_DeleteElement(pHandlersCopy, itr->_id, FALSE));
+				pTypesCopy,
+				pType = ((Type*)List_Get(itr));
+				if (pType->pTypeName->pBuffer[currentStatementIndex] != pFileContent->pBuffer[BufferIndex + currentStatementIndex]) {
+					CE1_CALL(List_DeleteElement(pTypesCopy, itr->_id, FALSE));
 				}
 			);
 		}
-
-		if (!skipHandler) {
-
-			//two or more handlers are matching
-			CEASSERT(List_Length(pHandlersCopy) <= 1 && "nonunique handlers");
-
-			//call current handler
-			CallHandler(pParser, pParser->pCurrentHandler, BufferIndex, currentStatementIndex, pTempString);
-		}
-
-		//reset handler list copy
-		List_DeleteAllElements(pHandlersCopy,false);
 	}
+	CE1_DEL(pValueString);
+	CE1_DEL(pFileContent->pBuffer);
+	CE1_DEL(pFileContent);
 
-	_DEL(pTempString);
 	return S_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//HRESULT Parser_CollapseString(String* pObjectName, int index) {
+//	CEASSERT(pObjectName);
+//	if (pObjectName->length == 0) {
+//		return S_OK;
+//	}
+//	if (index < pObjectName->length) {
+//		for (int i = index; i < pObjectName->length - 1; i++) {
+//			pObjectName->buffer[i] = pObjectName->buffer[i + 1];
+//		}
+//	}
+//	pObjectName->length--;
+//	return S_OK;
+//}
+//
+//HRESULT Parser_CleanString(String* pObjectName) {
+//	CEASSERT(pObjectName);
+//	char c;
+//	for (int i = 0; i < pObjectName->length; i++) {
+//
+//		//single collapse
+//		c = pObjectName->buffer[i];
+//		if (c == ' '
+//			|| c == '"'
+//			|| c == '='
+//			) {
+//			CE1_CALL(Parser_CollapseString(pObjectName, i));
+//		}
+//
+//		//double collaps
+//		if (c == '\\' && pObjectName->buffer[i + 1] == 'n'
+//			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
+//			|| c == '\\' && pObjectName->buffer[i + 1] == 'r'
+//			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
+//			|| c == '\\' && pObjectName->buffer[i + 1] == 'f'
+//			|| c == '\\' && pObjectName->buffer[i + 1] == '\"'
+//			) {
+//			CE1_CALL(Parser_CollapseString(pObjectName, i));
+//			CE1_CALL(Parser_CollapseString(pObjectName, i));
+//		}
+//	}
+//
+//}
+
+//HRESULT Parser_RegisterHandler(Parser* pParser, String* pObjectName, HandlerFunction pHandlerFunction, HandlerOnCompleteFunction pOnCompleteHandlerFunction)
+//{
+//	CEASSERT(pParser&&pObjectName&&pHandlerFunction);
+//	Handler* pHandler;
+//	_NEW(Handler, pHandler);
+//	pHandler->pHandlerFunction = pHandlerFunction;
+//	pHandler->pObjectName = pObjectName;
+//	pHandler->pHandlerOnCompleteFunction = pOnCompleteHandlerFunction;
+//	List_PushBack(pParser->pHandlers, pHandler);
+//	return S_OK;
+//}
+
+//HRESULT CallHandler(Parser* pParser, Handler* pHandler, size_t BufferIndex, size_t currentStatementIndex, String* pTempString) {
+//	Object* pCurrentObject = 0;
+//	CEASSERT(pHandler&&"no valid Handler found");
+//
+//	//get the currently processed object
+//	CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pCurrentObject));
+//
+//	//call the handler function and submit the currently processed object and buffer snippet
+//	pTempString->buffer = pParser->pFileContent->pBuffer + BufferIndex * sizeof(char*);
+//	pTempString->length = currentStatementIndex;
+//	CE1_CALL((*(pHandler->pHandlerFunction))((void**)&pCurrentObject, pTempString));
+//}

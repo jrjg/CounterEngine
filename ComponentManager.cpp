@@ -20,10 +20,10 @@ HRESULT ComponentManager_DELETE()
 	if (!pCM) {
 		return S_OK;
 	}
-	SAFECALL(ComponentManager_FullDestroy());
-	SAFECALL(Vector_Delete(pCM->pComponents));
-	SAFECALL(List_FullDelete(pCM->pComponentHandlers,true));
-	_DEL(pCM);
+	CE1_CALL(ComponentManager_FullDestroy());
+	CE1_CALL(Vector_Delete(pCM->pComponents));
+	CE1_CALL(List_FullDelete(pCM->pComponentHandlers,true));
+	CE1_DEL(pCM);
 	return S_OK;
 }
 
@@ -35,7 +35,7 @@ HRESULT ComponentManager_FullDestroy()
 	}
 	for (UINT i = 0; i < Vector_Last(pCM->pComponents); i++)
 	{
-		ComponentManager_DestroyComponent(i); //dont safecall
+		ComponentManager_DestroyComponent(i); //dont CE1_CALL
 	}
 	return S_OK;
 }
@@ -75,7 +75,7 @@ HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * 
 	pC->name = name;
 
 	//create the componentdata
-	SAFECALL((*pCCF)(pCreatorDesc, &(pC->pData)));
+	CE1_CALL((*pCCF)(pCreatorDesc, &(pC->pData)));
 	CEASSERT(pC->pData && "Component could not be created");
 
 	//store component
@@ -90,7 +90,7 @@ HRESULT ComponentManager_DestroyComponent(ID id)
 
 	//get the component
 	Component* pC;
-	SAFECALL(ComponentManager_GetComponent(id, (void**)(&pC) ));
+	CE1_CALL(ComponentManager_GetComponent(id, (void**)(&pC) ));
 
 	//get the destroyer
 	ComponentHandler* pComponentHandler;
@@ -103,11 +103,11 @@ HRESULT ComponentManager_DestroyComponent(ID id)
 	CEASSERT(pDestroyer && "Component type not supported");
 
 	//delete component data
-	SAFECALL((*pDestroyer)(pC->pData));
+	CE1_CALL((*pDestroyer)(pC->pData));
 
 	//delete compoment
-	_DEL(pC->name);
-	_DEL(pC);
+	CE1_DEL(pC->name);
+	CE1_DEL(pC);
 	return S_OK;
 }
 

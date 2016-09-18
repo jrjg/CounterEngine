@@ -1,10 +1,11 @@
 #include "TopInclude.h"
+#include "Engine.h"
 #include "FileReader.h"
 
-HRESULT FileReader_Read(char * filename, FileContent** ppContent)
+HRESULT FileReader_Read(char * filename, String** ppContent)
 {
-	FileContent* pContent = (*ppContent);
-	CEASSERT(pContent && "invalid FileContent");
+	String* pString = (*ppContent);
+	CEASSERT(pString && "invalid String");
 
 	//open file
 	if (!filename) { return ERROR_SUCCESS; }
@@ -19,8 +20,8 @@ HRESULT FileReader_Read(char * filename, FileContent** ppContent)
 
 	//create buffer
 	char* pBuffer = (char*)malloc(length);
-	pContent->pBuffer = pBuffer;
-	pContent->size = length;
+	pString->pBuffer = pBuffer;
+	pString->length = length;
 
 	//read file
 	int c;

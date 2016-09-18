@@ -5,7 +5,7 @@
 ID List_ID = 0;
 
 HRESULT List_GetLast(List* pList,void** ppObject) {
-	CEASSERT(pList &&"invalid List");
+	CEASSERT(pList&&List_Length(pList)>0 &&"invalid List");
 	(*ppObject) = List_Get(pList->_pLastElem);
 	return S_OK;
 }
@@ -72,7 +72,7 @@ void* List_Pop(List* pList)
 	ListElement* pFirst = pList->_pFirstElem;
 	void* pObj = pFirst->_pObj;
 	pList->_pFirstElem = pFirst->_pNext;
-	_DEL(pFirst);
+	CE1_DEL(pFirst);
 	pList->_length--;
 	if (pList->_length == 0)
 	{
@@ -87,8 +87,8 @@ HRESULT List_FullDelete(List* pList, BOOL deleteObject)
 	if (!pList) {
 		return S_OK;
 	}
-	SAFECALL(List_DeleteAllElements(pList, deleteObject));
-	_DEL(pList);
+	CE1_CALL(ListCE1_DELeteAllElements(pList, deleteObject));
+	CE1_DEL(pList);
 	return S_OK;
 }
 
@@ -101,7 +101,7 @@ HRESULT List_DeleteAllElements(List* pList, BOOL deleteObject)
 	for (Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)) {
 		if (itr2)
 		{
-			SAFECALL(List_DeleteElement(pList, itr2->_id, deleteObject));
+			CE1_CALL(ListCE1_DELeteElement(pList, itr2->_id, deleteObject));
 		}
 		itr2 = itr;
 	}
@@ -119,9 +119,9 @@ HRESULT List_DeleteElement(List* pList, ID id,BOOL deleteObject)
 		itr = pList->_pFirstElem;
 		pList->_pFirstElem = pList->_pFirstElem->_pNext;
 		if (deleteObject) {
-			_DEL(itr->_pObj);
+			CE1_DEL(itr->_pObj);
 		}
-		_DEL(itr);
+		CE1_DEL(itr);
 		pList->_length--;
 		if (pList->_length == 0)
 		{
@@ -133,7 +133,7 @@ HRESULT List_DeleteElement(List* pList, ID id,BOOL deleteObject)
 		for (itr = List_Iterator(pList); List_Next(itr) != NULL; itr = List_Next(itr)) {
 			if (itr->_id == id){
 				if (deleteObject) {
-					_DEL(itr->_pObj);
+					CE1_DEL(itr->_pObj);
 				}
 				assert(itr2);
 				itr2->_pNext = itr->_pNext;
@@ -141,7 +141,7 @@ HRESULT List_DeleteElement(List* pList, ID id,BOOL deleteObject)
 				{
 					pList->_pLastElem = itr2;
 				}
-				_DEL(itr);
+				CE1_DEL(itr);
 				pList->_length--;
 				return S_OK;
 			}

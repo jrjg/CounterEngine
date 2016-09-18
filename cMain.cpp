@@ -9,13 +9,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CEASSERT(hInstance  && lpCmdLine && "Windows broken");
 
 	/* start up the engine*/
-	SAFECALL(Engine_StartUp(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
+	CE1_CALL(Engine_StartUp(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
 	
 	/* run the engine*/
-	SAFECALL(Engine_Run());
+	CE1_CALL(Engine_Run());
 
 	/* shut down the engine*/
-	SAFECALL(Engine_ShutDown());
+	CE1_CALL(Engine_ShutDown());
 
 	/* return error code*/
 	return S_OK;

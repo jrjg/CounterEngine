@@ -58,12 +58,12 @@ HRESULT Controller_Delete()
 			pControls = (Controls*)Vector_Get(pController->_pControlsVector,i);
 			if (pControls){
 				pControlVector = pControls->_pControlVector;
-				SAFECALL(Vector_FullDelete(pControlVector));
+				CE1_CALL(Vector_FullDelete(pControlVector));
 			}
 		}
 	}
-	SAFECALL(Vector_FullDelete(pController->_pControlsVector));
-	_DEL(pController);
+	CE1_CALL(Vector_FullDelete(pController->_pControlsVector));
+	CE1_DEL(pController);
 	return S_OK;
 }
 
@@ -94,7 +94,7 @@ HRESULT Controller_AddControl(ID controlsid, KEYCODE key, ID eventid)
 	ID* pEventID;
 	_NEW(ID, pEventID);
 	(*pEventID) = eventid;
-	SAFECALL(Vector_Insert(pControls->_pControlVector,key,pEventID));
+	CE1_CALL(Vector_Insert(pControls->_pControlVector,key,pEventID));
 	return S_OK;
 }
 
@@ -107,6 +107,6 @@ ID Controller_NewControls() //memory allocation missing
 	_NEW(Controls, pControls);
 	pControls->_id = pController->_idcounter;
 	pControls->_pControlVector = Vector_New(sizeof(void*),255);
-	SAFECALL(Vector_Insert(pController->_pControlsVector, pControls->_id, pControls));
+	CE1_CALL(Vector_Insert(pController->_pControlsVector, pControls->_id, pControls));
 	return pControls->_id;
 }

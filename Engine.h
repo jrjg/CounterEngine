@@ -2,7 +2,7 @@
 #define INCLUDE_ENGINE
 
 struct String {
-	char* buffer;
+	char* pBuffer;
 	size_t length;
 };
 typedef struct String String;
@@ -42,7 +42,8 @@ LPWSTR Engine_WINDOWTITLE();
 float Engine_BUFFERWIDTH();
 float Engine_BUFFERHEIGHT();
 BOOL Engine_FULLSCREEN();
-HRESULT Engine_ParseConfig(void** ppCurrentObject, String* pObjectName);
+HRESULT Engine_LoadConfig();
+HRESULT Engine_ConfigHandler(void* p0, String* pObjName, void* pObj);
 
 BOOL CHAREQ(char * a, char * b);
 BOOL CHAREQS(char * a, char * b,size_t l);

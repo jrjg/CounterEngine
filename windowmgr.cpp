@@ -42,7 +42,7 @@ HRESULT createWindow(WindowMgr* pWindowMgr) {
 	CEASSERT(pWindowMgr);
 	WNDCLASSEX* pwc;
 	_NEW(WNDCLASSEX, pwc);
-	SAFECALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
+	CE1_CALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
 	RegisterClassEx(pwc); 
 	(*pWindowMgr->phwnd) = CreateWindowEx(WS_EX_CLIENTEDGE, pwc->lpszClassName, Engine_WINDOWTITLE(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, Engine_BUFFERWIDTH(), Engine_BUFFERHEIGHT(), NULL, NULL, Engine_GetWinParams()->hInstance, NULL);
 	return S_OK;
@@ -60,8 +60,8 @@ HRESULT WindowMgr_NEW(WindowMgr** ppInst) {
 	WindowMgr* pInst = *ppInst;
 	_NEW(HWND, pInst->phwnd);
 	pInst->windowtitle = LPCWSTR(Engine_WINDOWTITLE());
-	SAFECALL(createWindow(pInst));
-	SAFECALL(showWindow(pInst));
+	CE1_CALL(createWindow(pInst));
+	CE1_CALL(showWindow(pInst));
 	return S_OK;
 }
 
@@ -94,8 +94,8 @@ HRESULT WindowMgr_Run(TIME elapsed) {
 HRESULT WindowMgr_DELETE(void) {
 	WindowMgr* pWindowMgr = Engine_GetWindowMgr();
 	CEASSERT(pWindowMgr);
-	SAFECALL(DestroyWindow(*(pWindowMgr->phwnd)));
-	_DEL(pWindowMgr->phwnd);
-	_DEL(pWindowMgr);
+	CE1_CALL(DestroyWindow(*(pWindowMgr->phwnd)));
+	CE1_DEL(pWindowMgr->phwnd);
+	CE1_DEL(pWindowMgr);
 	return S_OK;
 }

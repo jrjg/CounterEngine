@@ -48,7 +48,7 @@ ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
 	ID* pListID;
 	_NEW(ID, pListID);
 	(*pListID) = List_PushBack(pPM->_pProcessList, pProcess);
-	SAFECALL(Vector_Insert(pPM->_pIDVector, pProcess->_id, (void*)pListID));
+	CE1_CALL(Vector_Insert(pPM->_pIDVector, pProcess->_id, (void*)pListID));
 	return pProcess->_id;
 }
 
@@ -58,8 +58,8 @@ HRESULT ProcessManager_DeleteProcess(ID id)
 	if (!pPM) {
 		return S_OK;
 	}
-	SAFECALL(List_DeleteElement(pPM->_pProcessList, *(ID*)Vector_Get(pPM->_pIDVector, id),true));
-	SAFECALL(Vector_DeleteElement(pPM->_pIDVector, id));
+	CE1_CALL(List_DeleteElement(pPM->_pProcessList, *(ID*)Vector_Get(pPM->_pIDVector, id),true));
+	CE1_CALL(Vector_DeleteElement(pPM->_pIDVector, id));
 	return S_OK;
 }
 
@@ -69,9 +69,9 @@ HRESULT ProcessManager_Delete()
 	if (!pPM) {
 		return S_OK;
 	}
-	SAFECALL(List_FullDelete(pPM->_pProcessList,true));
-	SAFECALL(Vector_FullDelete(pPM->_pIDVector));
-	_DEL(pPM);
+	CE1_CALL(List_FullDelete(pPM->_pProcessList,true));
+	CE1_CALL(Vector_FullDelete(pPM->_pIDVector));
+	CE1_DEL(pPM);
 	return S_OK;
 }
 
@@ -104,7 +104,7 @@ HRESULT ProcessManager_Run(TIME elapsed)
 	{
 		for (Iterator itr = List_Iterator(pPM->_pProcessList); itr != NULL; itr = List_Next(itr))
 		{
-			SAFECALL(ProcessManager_RunProcess((Process*)List_Get(itr), elapsed));
+			CE1_CALL(ProcessManager_RunProcess((Process*)List_Get(itr), elapsed));
 		}
 	}
 	return S_OK;
