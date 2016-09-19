@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "List.h"
 #include "Engine.h"
+#include "Parser.h"
 #include "ComponentManager.h"
 
 ComponentManager * ComponentManager_NEW()

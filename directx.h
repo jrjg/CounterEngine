@@ -117,6 +117,28 @@ struct TextureResource{
 };
 typedef struct TextureResource TextureResource;
 
+struct ObjModel {
+	ID3D11Buffer* pMeshVertBuffer;
+	ID3D11Buffer* pMeshIndexBuff;
+	XMMATRIX meshWorld;
+	int meshSubsets;
+	struct Vector* pMeshSubsetIndexStart;
+	struct Vector* pMeshSubsetTexture;
+	struct Vector* pMeshSRV;
+	struct Vector* pTextureNameArray;
+};
+typedef ObjModel ObjModel;
+
+struct SurfaceMaterial
+{
+	String* pMatName;
+	XMFLOAT4 difColor;
+	int texArrayIndex;
+	bool hasTexture;
+	bool transparent;
+};
+typedef SurfaceMaterial SurfaceMaterial;
+
 struct RenderComponent {
 	ID3D11Buffer* pIndexBuffer;
 	ID3D11Buffer* pVertexBuffer;
@@ -125,6 +147,8 @@ struct RenderComponent {
 	ID TexResID;
 };
 typedef struct RenderComponent RenderComponent;
+
+
 
 struct RenderComponentDesc {
 	char* texturename;

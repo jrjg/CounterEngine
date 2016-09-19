@@ -4,7 +4,7 @@
 #include "Engine.h"
 #include "Parser.h"
 
-#define DECLARE_TYPE(TYPENAME,INTERNTYPE,CONVERT)_NEW(Type, pType);CE1_STR(pType->pTypeName, TYPENAME);pType->size = sizeof(INTERNTYPE);pType->pConvertFromStringToTypeFunction = &CONVERT;
+
 
 Parser * Parser_New()
 {
@@ -16,13 +16,11 @@ Parser * Parser_New()
 	pParser->pVariables = List_New(sizeof(Variable*));
 
 	//declare basic types
-	Type* pType;
-	String* pString;
-	DECLARE_TYPE("Bool",bool, Parser_ConvertFromStringToBool);
-	DECLARE_TYPE("Float", float, Parser_ConvertFromStringToFloat);
-	DECLARE_TYPE("LPCWSTR", LPCWSTR, Parser_ConvertFromStringToLPCWSTR);
-	DECLARE_TYPE("String", String, Parser_ConvertFromStringToString);
-	DECLARE_TYPE("UINT", UINT, Parser_ConvertFromStringToUINT);
+	CE1_CALL(Parser_DeclareType(pParser, "Bool",sizeof(bool),&Parser_ConvertFromStringToBool));
+	CE1_CALL(Parser_DeclareType(pParser, "Float", sizeof(float), &Parser_ConvertFromStringToFloat));
+	CE1_CALL(Parser_DeclareType(pParser, "LPCWSTR", sizeof(LPCWSTR), &Parser_ConvertFromStringToLPCWSTR));
+	CE1_CALL(Parser_DeclareType(pParser, "String", sizeof(String), &Parser_ConvertFromStringToString));
+	CE1_CALL(Parser_DeclareType(pParser, "UINT", sizeof(UINT), &Parser_ConvertFromStringToUINT));
 	return pParser;
 }
 
@@ -36,11 +34,11 @@ HRESULT Parser_RegisterOperator(Parser* pParser, char* d, OperatorCode code)
 	return S_OK;
 }
 
-HRESULT Parser_DeclareType(Parser* pParser, String* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction)
+HRESULT Parser_DeclareType(Parser* pParser, char* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction)
 {
 	CE1_ASSERT(pParser&& pTypeName &&size && "Parser_DeclareType");
 	CE1_NEW(Type,pType);
-	pType->pTypeName = pTypeName;
+	CE1_STR(pType->pTypeName, pTypeName);
 	pType->size = size;
 	pType->pConvertFromStringToTypeFunction = pConvertFromStringToTypeFunction;
 	CE1_CALL(List_PushBack(pParser->pTypes, pType));
@@ -68,7 +66,7 @@ HRESULT Parser_SubmitObject(Parser* pParser) {
 	else {
 		(*pParser->pRootHandler)(NULL, pChildObject->pType->pTypeName, pChildObject->pInst);
 	}
-	CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pType->pTypeName, pChildObject->pInst));
+	CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	CE1_DEL(pChildObject);
 }
 

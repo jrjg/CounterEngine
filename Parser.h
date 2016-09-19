@@ -1,14 +1,6 @@
 #ifndef PARSER_INC
 #define PARSER_INC
 
-// how to use parser
-// 1. create parser by calling Parser_New
-// 2. register types by calling Parser_registerType
-// 3. register single character operators by calling Parser_RegisterSingleCharOperator
-//		-> dont forget to define ignore and submit
-// 4. start parsing by calling Parser_ParseFromFile
-
-
 typedef HRESULT(*ObjectHandlerFunction)(void* pParentObject, struct String* pChildObjectName, void* pChildObject);
 typedef HRESULT(*ConvertFromStringToTypeFunction)(void* pObject,String* pString);
 typedef enum{ignore,submit}OperatorCode;
@@ -52,7 +44,7 @@ typedef struct Parser Parser;
 Parser* Parser_New();
 HRESULT Parser_Destroy(Parser* pParser);
 HRESULT Parser_SubmitObject(Parser* pParser);
-HRESULT Parser_DeclareType(Parser* pParser, String* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction);
+HRESULT Parser_DeclareType(Parser* pParser, char* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction);
 HRESULT Parser_DeclareVariable(Parser* pParser, char* pTypeName, char* pVariableName, ObjectHandlerFunction pObjectHandlerFunction);
 HRESULT Parser_RegisterOperator(Parser* pParser, char*, OperatorCode code);
 HRESULT Parser_ParseFile(Parser* pParser, String* pFileName, ObjectHandlerFunction pRootHandler);
