@@ -5,14 +5,14 @@
 ID List_ID = 0;
 
 HRESULT List_GetLast(List* pList,void** ppObject) {
-	CEASSERT(pList&&List_Length(pList)>0 &&"invalid List");
+	CE1_ASSERT(pList&&List_Length(pList)>0 &&"invalid List");
 	(*ppObject) = List_Get(pList->_pLastElem);
 	return S_OK;
 }
 
 HRESULT List_Copy(List* pFrom, List* pTo) {
-	CEASSERT(pFrom && pTo&&"invalid List"&&"List_Copy");
-	ExecOnList(
+	CE1_ASSERT(pFrom && pTo&&"invalid List"&&"List_Copy");
+	CE1_LISTEXEC(
 		pFrom,
 		List_PushBack(pTo, List_Get(itr));
 	);
@@ -21,7 +21,7 @@ HRESULT List_Copy(List* pFrom, List* pTo) {
 
 List* List_New(unsigned long elemsize)
 {
-	CEASSERT(elemsize != 0 && elemsize&&"list cannot hold elements of size 0"&&"List_New");
+	CE1_ASSERT(elemsize != 0 && elemsize&&"list cannot hold elements of size 0"&&"List_New");
 	List* pNewList;
 	_NEW(List, pNewList);
 	if (!pNewList)
@@ -40,31 +40,31 @@ List* List_New(unsigned long elemsize)
 
 void* List_Get(ListElement* pElem)
 {
-	CEASSERT(pElem&&"List_Get");
+	CE1_ASSERT(pElem&&"List_Get");
 	return pElem->_pObj;
 }
 
 ListElement* List_Next(ListElement* pElem)
 {
-	CEASSERT(pElem&&"List_Next");
+	CE1_ASSERT(pElem&&"List_Next");
 	return pElem->_pNext;
 }
 
 Iterator List_Iterator(List* pList)
 {
-	CEASSERT(pList&&"List_Iterator");
+	CE1_ASSERT(pList&&"List_Iterator");
 	return pList->_pFirstElem;
 }
 
 unsigned int List_Length(List* pList)
 {
-	CEASSERT(pList&&"List_Length");
+	CE1_ASSERT(pList&&"List_Length");
 	return pList->_length;
 }
 
 void* List_Pop(List* pList)
 {
-	CEASSERT(pList&&"List_Pop");
+	CE1_ASSERT(pList&&"List_Pop");
 	if (pList->_length == 0)
 	{
 		return NULL;
@@ -153,7 +153,7 @@ HRESULT List_DeleteElement(List* pList, ID id,BOOL deleteObject)
 
 ID List_PushBack(List* pList, void* pObject)
 {
-	CEASSERT(pList&&pObject&&"List_PushBack");
+	CE1_ASSERT(pList&&pObject&&"List_PushBack");
 	ListElement* pNewElem;
 	_NEW(ListElement, pNewElem);
 	if (!pNewElem)

@@ -11,7 +11,7 @@
 #include "directx.h"
 
  HRESULT cd3d11_CreateConstantBuffer(cd3d11* pd3d11,UINT size, bool dynamic, bool CPUupdates, D3D11_SUBRESOURCE_DATA* pData, ID3D11Buffer** ppBuffer) {
-	CEASSERT(pd3d11&&size);
+	CE1_ASSERT(pd3d11&&size);
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = size;
 	desc.MiscFlags = 0;
@@ -37,7 +37,7 @@
 
 
 HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut) {
-	CEASSERT(pFileName&&szEntryPoint&&szShaderModel);
+	CE1_ASSERT(pFileName&&szEntryPoint&&szShaderModel);
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 	ID3DBlob* pErrorBlob;
 	CE1_CALL(D3DCompileFromFile(pFileName, NULL, NULL, szEntryPoint, szShaderModel, dwShaderFlags, 0, ppBlobOut, &pErrorBlob));
@@ -46,7 +46,7 @@ HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szSh
 }
 
  HRESULT cd3d11_createVertexShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_VertexShader** ppcd3d11VertexShader) {
-	 CEASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
+	 CE1_ASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
 	_NEW(cd3d11_VertexShader, *ppcd3d11VertexShader);
 	cd3d11_VertexShader* pcd3d11VertexShader = *ppcd3d11VertexShader;
 	ID3DBlob* pVertexShaderBuffer;
@@ -63,7 +63,7 @@ HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szSh
 }
 
  HRESULT cd3d11_createPixelShader(cd3d11* pd3d11, LPCSTR szEntryPoint, LPCWSTR name, LPCSTR szShaderModel, cd3d11_PixelShader** ppcd3d11PixelShader) {
-	 CEASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
+	 CE1_ASSERT(pd3d11&&szEntryPoint&&name&&szShaderModel);
 	_NEW(cd3d11_PixelShader, *ppcd3d11PixelShader);
 	cd3d11_PixelShader* pcd3d11PixelShader = *ppcd3d11PixelShader;
 	ID3DBlob* pPixelShaderBuffer;
@@ -75,7 +75,7 @@ HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szSh
 }
 
 HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	pd3d11->camView = XMMatrixLookAtLH(XMVectorSet(0.0f, 3.0f, -4.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, Engine_BUFFERWIDTH() / Engine_BUFFERHEIGHT(), 1.0f, 1000.0f);
 	return S_OK;
@@ -84,7 +84,7 @@ HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
 //BOOL cd3d11_setupRenderVertexShader(Scene* pScene, SceneNode* pSceneNode) {
 HRESULT cd3d11_setupRenderVertexShader() {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	cd3d11_VertexShader* pcd3d11VertexShader = (cd3d11_VertexShader*)Vector_Get(pd3d11->pShaders, pd3d11->vsID);
 	pd3d11->pImmediateContext->VSSetShader(pcd3d11VertexShader->pVertexShader , NULL, 0);
 	pd3d11->pImmediateContext->IASetInputLayout(pcd3d11VertexShader->pVertexLayout11);
@@ -150,7 +150,7 @@ HRESULT cd3d11_setupRenderVertexShader() {
 HRESULT cd3d11_setupRenderPixelShader()
 {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	cd3d11_PixelShader* pcd3d11PixelShader = (cd3d11_PixelShader*)Vector_Get(pd3d11->pShaders, pd3d11->psID);
 	pd3d11->pImmediateContext->PSSetShader(pcd3d11PixelShader->pPixelShader, NULL, 0);
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -174,7 +174,7 @@ HRESULT cd3d11_setupRenderPixelShader()
 
 
 HRESULT cd3d11_createShaders(cd3d11* pd3d11) {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	cd3d11_VertexShader* pcd3d11VertexShader;
 	CE1_CALL(cd3d11_createVertexShader(pd3d11, "VSMain", L"VS.hlsl", "vs_5_0",&pcd3d11VertexShader));
 	pd3d11->vsID = Vector_Pushback(pd3d11->pShaders, pcd3d11VertexShader);
@@ -207,7 +207,7 @@ HRESULT cd3d11_NEW(cd3d11** ppd3d11) {
 }
 
 HRESULT cd3d11_CreateAndSetViewport(cd3d11* pd3d11) {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	pd3d11->pViewport;
 	_NEW(D3D11_VIEWPORT, pd3d11->pViewport);
 	pd3d11->pViewport->TopLeftX = 0.0f;
@@ -222,7 +222,7 @@ HRESULT cd3d11_CreateAndSetViewport(cd3d11* pd3d11) {
 
 HRESULT cd3d11_registerHandlers(cd3d11 * pd3d11)
 {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 
 	char* name;
 	size_t len = 0;
@@ -247,7 +247,7 @@ HRESULT cd3d11_registerHandlers(cd3d11 * pd3d11)
 
 HRESULT cd3d11_Run(TIME elapsed) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11&&elapsed);
+	CE1_ASSERT(pd3d11&&elapsed);
 
 	pd3d11->pImmediateContext->OMSetRenderTargets(1, &(pd3d11->pView), pd3d11->pDepthView);
 
@@ -276,14 +276,14 @@ HRESULT cd3d11_Run(TIME elapsed) {
 HRESULT cd3d11_SetTexture(ID3D11ShaderResourceView* const *ppDiffuseRV, ID3D11SamplerState * const *ppSamplers)
 {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	pd3d11->pImmediateContext->PSSetShaderResources(0, 1, ppDiffuseRV);
 	pd3d11->pImmediateContext->PSSetSamplers(0, 1, ppSamplers);
 	return S_OK;
 }
 
 HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	pd3d11->pDemoObject;
 	_NEW(VertexObject, pd3d11->pDemoObject);
 	int squares = 10;
@@ -369,7 +369,7 @@ HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
 
 HRESULT Resource_CreateTextureFromJPG(char* name, void** ppData) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11&&name);
+	CE1_ASSERT(pd3d11&&name);
 	TextureResource* pTexRes = (TextureResource*)(*ppData);
 	_NEW(TextureResource, pTexRes);
 	CE1_CALL(CreateWICTextureFromFile(pd3d11->pDevice, LPCWSTR(name), &(pTexRes->pTex), &(pTexRes->pResView)));
@@ -378,7 +378,7 @@ HRESULT Resource_CreateTextureFromJPG(char* name, void** ppData) {
 
 HRESULT Resource_DestroyTextureFromJPG(void* pData) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11&&pData);
+	CE1_ASSERT(pd3d11&&pData);
 	SAFE_RELEASE(((TextureResource*)pData)->pResView);
 	SAFE_RELEASE(((TextureResource*)pData)->pTex);
 	CE1_DEL(pData);
@@ -387,7 +387,7 @@ HRESULT Resource_DestroyTextureFromJPG(void* pData) {
 
 HRESULT Component_CreateRenderComponent(void * pCreatorDesc, void ** ppData)
 {
-	CEASSERT(pCreatorDesc);
+	CE1_ASSERT(pCreatorDesc);
 	RenderComponent* pRC = (RenderComponent*)(*ppData);
 	RenderComponentDesc *pDesc = (RenderComponentDesc*)pCreatorDesc;
 	pRC->TexResID = ResourceManager_LoadResource(pDesc->texturename);
@@ -396,7 +396,7 @@ HRESULT Component_CreateRenderComponent(void * pCreatorDesc, void ** ppData)
 
 HRESULT Component_DestroyRenderComponent(void * pData)
 {
-	CEASSERT(pData);
+	CE1_ASSERT(pData);
 	RenderComponent* pRC = (RenderComponent*)pData;
 	ResourceManager_UnLoadResource(pRC->TexResID);
 	return S_OK;
@@ -404,7 +404,7 @@ HRESULT Component_DestroyRenderComponent(void * pData)
 
 HRESULT cd3d11_clearTargets() {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	if (pd3d11->pView && pd3d11->pDepthView)
 	{
 		pd3d11->pImmediateContext->ClearRenderTargetView(pd3d11->pView, pd3d11->pClsColor);
@@ -415,7 +415,7 @@ HRESULT cd3d11_clearTargets() {
 
 HRESULT cd3d11_DELETE(void) {
 	cd3d11* pd3d11 = Engine_GetCD3D11();
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	pd3d11->pImmediateContext->ClearState();
 
 	cd3d11_VertexShader* pcd3d11VertexShader = (cd3d11_VertexShader*)Vector_Get(pd3d11->pShaders, pd3d11->vsID);
@@ -457,7 +457,7 @@ HRESULT cd3d11_DELETE(void) {
 }
 
 HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
-	CEASSERT(pd3d11);
+	CE1_ASSERT(pd3d11);
 	D3D_FEATURE_LEVEL* pFeatureLevels;
 	_NEW(D3D_FEATURE_LEVEL, pFeatureLevels);
 	(*pFeatureLevels) = D3D_FEATURE_LEVEL_11_0;

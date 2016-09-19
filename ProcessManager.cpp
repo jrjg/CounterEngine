@@ -37,7 +37,7 @@ ProcessManager* ProcessManager_New(void)
 ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
 {
 	ProcessManager* pPM = Engine_GetPM();
-	CEASSERT(pPM&&pCallBack);
+	CE1_ASSERT(pPM&&pCallBack);
 	Process* pProcess;
 	_NEW(Process, pProcess);
 	pProcess->_pCallBack = pCallBack;
@@ -77,7 +77,7 @@ HRESULT ProcessManager_Delete()
 
 HRESULT ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
 {
-	CEASSERT(pProcess&&elapsed);
+	CE1_ASSERT(pProcess&&elapsed);
 	pProcess->_waited = pProcess->_waited + elapsed;
 	if (pProcess->_waited >= pProcess->_wait)
 	{
@@ -99,7 +99,7 @@ HRESULT ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
 HRESULT ProcessManager_Run(TIME elapsed)
 {
 	ProcessManager* pPM = Engine_GetPM();
-	CEASSERT(elapsed&&pPM);
+	CE1_ASSERT(elapsed&&pPM);
 	if (List_Length(pPM->_pProcessList) > 0)
 	{
 		for (Iterator itr = List_Iterator(pPM->_pProcessList); itr != NULL; itr = List_Next(itr))

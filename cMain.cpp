@@ -6,7 +6,7 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 { 
-	CEASSERT(hInstance  && lpCmdLine && "Windows broken");
+	CE1_ASSERT(hInstance  && lpCmdLine && "Windows broken");
 
 	/* start up the engine*/
 	CE1_CALL(Engine_StartUp(hInstance, hPrevInstance, lpCmdLine, nCmdShow));

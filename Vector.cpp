@@ -16,7 +16,7 @@ struct Vector
 
 Vector* Vector_New(unsigned long elemsize, unsigned int elemcnt)
 {
-	CEASSERT(elemsize&&elemcnt);
+	CE1_ASSERT(elemsize&&elemcnt);
 	Vector* pVector;
 	_NEW(Vector, pVector);
 	pVector->_elemsize = elemsize;
@@ -32,13 +32,13 @@ Vector* Vector_New(unsigned long elemsize, unsigned int elemcnt)
 
 unsigned int Vector_Last(Vector* pVector)
 {
-	CEASSERT(pVector);
+	CE1_ASSERT(pVector);
 	return pVector->_last;
 }
 
 unsigned int Vector_Capacity(Vector* pVector)
 {
-	CEASSERT(pVector);
+	CE1_ASSERT(pVector);
 	return pVector->_capacity;
 }
 
@@ -97,7 +97,7 @@ HRESULT Vector_DeleteElement(Vector* pVector, unsigned int index)
 
 HRESULT Vector_Resize(Vector* pVector, unsigned int elemcnt)
 {
-	CEASSERT(pVector&&elemcnt);
+	CE1_ASSERT(pVector&&elemcnt);
 	void* pMem = malloc(elemcnt * pVector->_elemsize);
 	memset(pMem, 0, elemcnt * pVector->_elemsize);
 	if (pVector->_elems>0)
@@ -112,7 +112,7 @@ HRESULT Vector_Resize(Vector* pVector, unsigned int elemcnt)
 
 HRESULT Vector_Insert(Vector* pVector, unsigned int index, void* pData)
 {
-	CEASSERT(pVector&&pData);
+	CE1_ASSERT(pVector&&pData);
 	if(index > pVector->_capacity)
 	{
 		CE1_CALL(Vector_Resize(pVector, index * 2));
@@ -128,7 +128,7 @@ HRESULT Vector_Insert(Vector* pVector, unsigned int index, void* pData)
 
 unsigned int Vector_Pushback(Vector* pVector, void* pData)
 {
-	CEASSERT(pVector&&pData);
+	CE1_ASSERT(pVector&&pData);
 	unsigned int index = Vector_Last(pVector);
 	index++;
 	if (index > pVector->_capacity)
@@ -146,13 +146,13 @@ unsigned int Vector_Pushback(Vector* pVector, void* pData)
 
 unsigned int Vector_Elements(Vector* pVector)
 {
-	CEASSERT(pVector);
+	CE1_ASSERT(pVector);
 	return pVector->_elems;
 }
 
 void* Vector_Get(Vector* pVector, unsigned int index)
 {
-	CEASSERT(pVector);
+	CE1_ASSERT(pVector);
 	if (index <= pVector->_capacity)
 	{
 		return(*(void**)((char*)(pVector->_pMem) + index * pVector->_elemsize));

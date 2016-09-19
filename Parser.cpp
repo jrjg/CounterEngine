@@ -2,48 +2,65 @@
 #include "FileReader.h"
 #include "List.h"
 #include "Engine.h"
-
 #include "Parser.h"
+
+#define DECLARE_TYPE(TYPENAME,INTERNTYPE,CONVERT)_NEW(Type, pType);CE1_STR(pType->pTypeName, TYPENAME);pType->size = sizeof(INTERNTYPE);pType->pConvertFromStringToTypeFunction = &CONVERT;
 
 Parser * Parser_New()
 {
 	Parser* pParser;
 	_NEW(Parser, pParser);
 	pParser->pObjects = List_New(sizeof(Object*));
-	pParser->pSingleCharOperators = List_New(sizeof(SingleCharOperator*));
+	pParser->pOperators = List_New(sizeof(Operator*));
 	pParser->pTypes = List_New(sizeof(Type*));
+	pParser->pVariables = List_New(sizeof(Variable*));
+
+	//declare basic types
+	Type* pType;
+	String* pString;
+	DECLARE_TYPE("Bool",bool, Parser_ConvertFromStringToBool);
+	DECLARE_TYPE("Float", float, Parser_ConvertFromStringToFloat);
+	DECLARE_TYPE("LPCWSTR", LPCWSTR, Parser_ConvertFromStringToLPCWSTR);
+	DECLARE_TYPE("String", String, Parser_ConvertFromStringToString);
+	DECLARE_TYPE("UINT", UINT, Parser_ConvertFromStringToUINT);
 	return pParser;
 }
 
-HRESULT Parser_RegisterSingleCharOperator(Parser* pParser, char d, SingeCharOperatorCode code)
+HRESULT Parser_RegisterOperator(Parser* pParser, char* d, OperatorCode code)
 {
-	CEASSERT(pParser && d&&"invalid Parser");
-	CE1_NEW(SingleCharOperator, pSC);
-	_NEW(char, (pSC->pChar));
-	*(pSC->pChar) = d;
-	pSC->code = code;
-	List_PushBack(pParser->pSingleCharOperators, (void*)pSC);
+	CE1_ASSERT(pParser && d&&"invalid Parser");
+	CE1_NEW(Operator, pOperator);
+	CE1_STR(pOperator->pString,d);
+	pOperator->code = code;
+	List_PushBack(pParser->pOperators, (void*)pOperator);
 	return S_OK;
 }
 
-HRESULT Parser_RegisterVariable(Parser* pParser, String* pVariableName, String* pTypeName, size_t size, ObjectHandlerFunction pObjectHandlerFunction)
+HRESULT Parser_DeclareType(Parser* pParser, String* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction)
 {
-	CEASSERT(pParser&& pTypeName&& pVariableName &&size && "Parser_RegisterObject");
+	CE1_ASSERT(pParser&& pTypeName &&size && "Parser_DeclareType");
 	CE1_NEW(Type,pType);
 	pType->pTypeName = pTypeName;
 	pType->size = size;
-	pType->pObjectHandlerFunction = pObjectHandlerFunction;
+	pType->pConvertFromStringToTypeFunction = pConvertFromStringToTypeFunction;
 	CE1_CALL(List_PushBack(pParser->pTypes, pType));
 	return S_OK;
 }
 
-HRESULT Parser_CompleteCurrentObject(Parser* pParser) {
-	CEASSERT(pParser && List_Length(pParser->pObjects)>0 && "parsing syntax errror");
+HRESULT Parser_DeclareVariable(Parser * pParser, char * pTypeName, char * pVariableName, ObjectHandlerFunction pObjectHandlerFunction)
+{
+	CE1_ASSERT(pParser && pTypeName && pVariableName && "Parser_DeclareVariable");
+	CE1_NEW(Variable,pVar);
+	CE1_STR(pVar->pTypeName, pTypeName);
+	CE1_STR(pVar->pVariableName, pVariableName);
+	pVar->pObjectHandlerFunction = pObjectHandlerFunction;
+	CE1_CALL(List_PushBack(pParser->pVariables, pVar));
+	return S_OK;
+}
 
-	//get the just created object
+HRESULT Parser_SubmitObject(Parser* pParser) {
+	CE1_ASSERT(pParser && List_Length(pParser->pObjects)>0 && "parsing syntax errror");
 	Object* pChildObject = (Object*)List_Pop(pParser->pObjects);
-
-	//get its parent
 	Object* pParentObject;
 	if (List_Length(pParser->pObjects) > 0) {
 		CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pParentObject));
@@ -51,11 +68,7 @@ HRESULT Parser_CompleteCurrentObject(Parser* pParser) {
 	else {
 		(*pParser->pRootHandler)(NULL, pChildObject->pType->pTypeName, pChildObject->pInst);
 	}
-
-	//submit the child to its parent
-	CE1_CALL((*pParentObject->pType->pObjectHandlerFunction)(pParentObject, pChildObject->pType->pTypeName, pChildObject->pInst));
-
-	//release the carrier
+	CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pType->pTypeName, pChildObject->pInst));
 	CE1_DEL(pChildObject);
 }
 
@@ -66,9 +79,21 @@ HRESULT Parser_Destroy(Parser * pParser)
 		return S_OK;
 	}
 
+	//delete variables
+	Variable* pVariable;
+	CE1_LISTEXEC(
+		pParser->pVariables,
+		pVariable = (Variable*)List_Get(itr);
+		CE1_DEL(pVariable->pTypeName->pBuffer);
+		CE1_DEL(pVariable->pTypeName);
+		CE1_DEL(pVariable->pVariableName->pBuffer);
+		CE1_DEL(pVariable->pVariableName);
+	);
+	CE1_CALL(List_FullDelete(pParser->pVariables, true));
+
 	//delete types
 	Type* pType;
-	ExecOnList(
+	CE1_LISTEXEC(
 		pParser->pTypes,
 		pType = (Type*)List_Get(itr);
 		CE1_DEL(pType->pTypeName->pBuffer);
@@ -79,27 +104,42 @@ HRESULT Parser_Destroy(Parser * pParser)
 	//delete object list ->there should not be elements in this list
 	CE1_CALL(List_FullDelete(pParser->pObjects, false));
 
-	//delete SingleCharOperators
-	SingleCharOperator* pSingleCharOperator;
-	ExecOnList(
-		pParser->pSingleCharOperators,
-		pSingleCharOperator = (SingleCharOperator*)List_Get(itr);
-		CE1_DEL(pSingleCharOperator->pChar);
+	//delete Operators
+	Operator* pOperator;
+	CE1_LISTEXEC(
+		pParser->pOperators,
+		pOperator = (Operator*)List_Get(itr);
+		CE1_DEL(pOperator->pString->pBuffer);
+		CE1_DEL(pOperator->pString);
 	);
-	CE1_CALL(List_FullDelete(pParser->pSingleCharOperators, true));
+	CE1_CALL(List_FullDelete(pParser->pOperators, true));
 
 	CE1_DEL(pParser);
 	return S_OK;
 }
 
-BOOL Parser_isSingleCharOperator(Parser* pParser, char c, SingeCharOperatorCode* pCode) {
-	CEASSERT(pParser && c&&"invalid Parser");
-	SingleCharOperator* pSingleCharOperator;
-	ExecOnList(
-		pParser->pSingleCharOperators,
-		pSingleCharOperator = (SingleCharOperator*)List_Get(itr);
-		if ((*pSingleCharOperator->pChar) == c) {
-			*pCode = pSingleCharOperator->code;
+BOOL Parser_isOperator(Parser* pParser, char* pBuffer, Operator** ppOperator) {
+	CE1_ASSERT(pParser &&"invalid Parser");
+	Operator* pOperator;
+	CE1_LISTEXEC(
+		pParser->pOperators,
+		pOperator = (Operator*)List_Get(itr);
+		if(CE1_CMPSTR(pOperator->pString->pBuffer, pBuffer, pOperator->pString->length)) {
+			*ppOperator = pOperator;
+			return true;
+		}
+	);
+	return false;
+}
+
+BOOL Parser_isVariable(Parser* pParser, char* pBuffer, Variable** ppVariable) {
+	CE1_ASSERT(pParser &&"invalid Parser");
+	Variable* pVariable;
+	CE1_LISTEXEC(
+		pParser->pVariables,
+		pVariable = (Variable*)List_Get(itr);
+		if (CE1_CMPSTR(pVariable->pVariableName->pBuffer, pBuffer, pVariable->pVariableName->length)) {
+			*ppVariable = pVariable;
 			return true;
 		}
 	);
@@ -112,133 +152,97 @@ HRESULT Parser_CreateObjectFromType(Type* pType, Object* pObject) {
 	return S_OK;
 }
 
-#define CASE(TYPESTRING,EXEC) if (CHAREQS(pType->pBuffer, TYPESTRING, pType->length)) {EXEC}
-
-HRESULT Parser_ConvertStringToType(String* pValueString, String* pType,void* pValue) {
-	CASE("FLOAT", 
-		*(FLOAT*)pValue = strtod(pValueString->pBuffer, NULL); 
-		return S_OK;);
-
-	CASE("BOOL", 
-		(pValueString->pBuffer[0] == 'f') ? *(bool*)pValue = FALSE : *(bool*)pValue = TRUE; 
-		return S_OK;);
-
-	CASE("STRING", 
-		for (int i = 0; i < pValueString->length; i++) { 
-			((String*)pValue)->pBuffer[i] = pValueString->pBuffer[i]; 
-		} 
-		((String*)pValue)->length = pValueString->length; 
-		return S_OK;);
-
-	CASE("UINT", 
-		*(UINT*)pValue = (UINT)atoi(pValueString->pBuffer); 
-		return S_OK;);
-
-	CASE("LPCWSTR", 
-		MultiByteToWideChar(CP_ACP, 0, pValueString->pBuffer, pValueString->length, (LPWSTR)pValue, pValueString->length); 
-		return S_OK;);
-
-	CEASSERT(0&&"Could not convert String: Type unknown");
+HRESULT Parser_GetTypeByName(Parser* pParser, String* pTypeName, Type** ppType){
+	Type* pType;
+	CE1_LISTEXEC(
+		pParser->pTypes,
+		pType = (Type*)List_Get(itr);
+		if (CE1_CMPSTR(pType->pTypeName->pBuffer, pTypeName->pBuffer, pTypeName->length)) {
+			*ppType = pType;
+			return S_OK;
+		}
+	);
+	CE1_ASSERT(0&&"Type not found");
 	return ERROR_SUCCESS;
 }
 
-HRESULT Parser_SetObjectValueFromString(Object* pObject,String* pValueString) {
-	CE1_CALL(Parser_ConvertStringToType(pValueString, pObject->pType->pTypeName, pObject->pInst));
-	return S_OK;
-}
-
-HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerFunction pRootHandler)
+HRESULT Parser_ParseFile(Parser * pParser, String* pFileName, ObjectHandlerFunction pRootHandler)
 {
-	//check for valid parser
-	CEASSERT(pParser && pRootHandler && List_Length(pParser->pTypes)>0 && "invalid parser");
-
-	//read file 
+	CE1_ASSERT(pParser && pRootHandler && List_Length(pParser->pTypes)>0 && "invalid parser");
 	String* pFileContent;
 	CE1_CALL(FileReader_Read(pFileName->pBuffer, &(pFileContent)));
-
-	//set root handler
 	pParser->pRootHandler = pRootHandler;
 
-	//initialize variables
-	Type* pType = 0;
+	Variable* pVariable = 0;
 	Object* pCurrentObject = 0;
 	size_t currentStatementIndex = 0;
 	char* currentStatement = 0;
 	size_t BufferIndex = 0;
-	List* pTypesCopy = List_New(sizeof(Type*));
 	Object* pObj;
+	Type* pType;
+	Operator* pOperator;
 	CE1_NEW(String, pValueString);
 
-	//query whole buffer
 	for (BufferIndex = 0; BufferIndex < pFileContent->length; BufferIndex = BufferIndex + currentStatementIndex) {
-
-		//reset 
-		CE1_CALL(List_DeleteAllElements(pTypesCopy, false));
-		pValueString->length = 0;
-
-		//copy Handler list for next statement
-		ExecOnList(
-			pParser->pTypes,
-			List_PushBack(pTypesCopy, List_Get(itr));
-		);
-
-		//identify type
 		for (currentStatementIndex = 0; ; currentStatementIndex++) {
-
-			//exit if this character is registered as an single char operator
-			SingeCharOperatorCode code = ignore;
-			if (Parser_isSingleCharOperator(pParser, pFileContent->pBuffer[BufferIndex + currentStatementIndex], &code)) {
-				switch (code) {
+			if (Parser_isOperator(pParser, pFileContent->pBuffer + currentStatementIndex, &pOperator)) {
+				switch (pOperator->code) {
 					case submit:
-						pValueString->length = currentStatementIndex-1; //dont take in single char operator
+						pValueString->length = currentStatementIndex- pOperator->pString->length; 
 						pValueString->pBuffer = pFileContent->pBuffer + BufferIndex * sizeof(char);
 						CE1_CALL(List_GetLast(pParser->pObjects,(void**)&pObj));
-						CE1_CALL(Parser_SetObjectValueFromString(pObj, pValueString));
-						CE1_CALL(Parser_CompleteCurrentObject(pParser));
+						CE1_CALL((*pObj->pType->pConvertFromStringToTypeFunction)(pObj->pInst,pValueString));
+						CE1_CALL(Parser_SubmitObject(pParser));
 						break;
 					case ignore:
 						break;
 				}
 				break;
+			}else if (Parser_isVariable(pParser, pFileContent->pBuffer, &pVariable)) {
+				_NEW(Object, pObj);
+				pObj->pVariable = pVariable;
+				CE1_CALL(pParser, Parser_GetTypeByName(pVariable->pTypeName, &pType));
+				CE1_CALL(Parser_CreateObjectFromType(pType, pObj));
+				CE1_CALL(List_PushBack(pParser->pObjects, pObj));
+				currentStatementIndex = pVariable->pVariableName->length;
+				break;
 			}
-
-			//There is only 1 type remaining in the list -> check if its the right one
-			if (List_Length(pTypesCopy) == 1) {
-				CE1_CALL(List_GetLast(pTypesCopy, (void**)&pType));
-				if (CHAREQS(pType->pTypeName->pBuffer, pFileContent->pBuffer + BufferIndex * sizeof(char), pType->pTypeName->length)) {
-					_NEW(Object, pObj);
-					CE1_CALL(Parser_CreateObjectFromType(pType, pObj));
-					CE1_CALL(List_PushBack(pParser->pObjects, pObj));
-					currentStatementIndex = pType->pTypeName->length;
-					break;
-				
-				//value 
-				}else {
-					CE1_CALL(List_DeleteAllElements(pTypesCopy, false));
-				}
-			}
-
-			//delete all mismatching types
-			ExecOnList(
-				pTypesCopy,
-				pType = ((Type*)List_Get(itr));
-				if (pType->pTypeName->pBuffer[currentStatementIndex] != pFileContent->pBuffer[BufferIndex + currentStatementIndex]) {
-					CE1_CALL(List_DeleteElement(pTypesCopy, itr->_id, FALSE));
-				}
-			);
 		}
 	}
+
 	CE1_DEL(pValueString);
 	CE1_DEL(pFileContent->pBuffer);
 	CE1_DEL(pFileContent);
-
 	return S_OK;
 }
 
+HRESULT Parser_ConvertFromStringToFloat(void* pObject, String* pString) {
+	*(FLOAT*)pObject = strtod(pString->pBuffer, NULL);
+	return S_OK;
+}
 
+HRESULT Parser_ConvertFromStringToBool(void* pObject, String* pString) {
+	(pString->pBuffer[0] == 'f') ? *(bool*)pObject = FALSE : *(bool*)pObject = TRUE;
+	return S_OK;
+}
 
+HRESULT Parser_ConvertFromStringToString(void* pObject, String* pString) {
+	for (int i = 0; i < pString->length; i++) {
+		((String*)pObject)->pBuffer[i] = pString->pBuffer[i];
+	}
+	((String*)pObject)->length = pString->length;
+	return S_OK;
+}
 
+HRESULT Parser_ConvertFromStringToUINT(void* pObject, String* pString) {
+	*(UINT*)pObject = (UINT)atoi(pString->pBuffer);
+	return S_OK;
+}
 
+HRESULT Parser_ConvertFromStringToLPCWSTR(void* pObject, String* pString) {
+	MultiByteToWideChar(CP_ACP, 0, pString->pBuffer, pString->length, (LPWSTR)pObject, pString->length);
+	return S_OK;
+}
 
 
 
@@ -250,7 +254,7 @@ HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerF
 
 
 //HRESULT Parser_CollapseString(String* pObjectName, int index) {
-//	CEASSERT(pObjectName);
+//	CE1_ASSERT(pObjectName);
 //	if (pObjectName->length == 0) {
 //		return S_OK;
 //	}
@@ -264,7 +268,7 @@ HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerF
 //}
 //
 //HRESULT Parser_CleanString(String* pObjectName) {
-//	CEASSERT(pObjectName);
+//	CE1_ASSERT(pObjectName);
 //	char c;
 //	for (int i = 0; i < pObjectName->length; i++) {
 //
@@ -294,7 +298,7 @@ HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerF
 
 //HRESULT Parser_RegisterHandler(Parser* pParser, String* pObjectName, HandlerFunction pHandlerFunction, HandlerOnCompleteFunction pOnCompleteHandlerFunction)
 //{
-//	CEASSERT(pParser&&pObjectName&&pHandlerFunction);
+//	CE1_ASSERT(pParser&&pObjectName&&pHandlerFunction);
 //	Handler* pHandler;
 //	_NEW(Handler, pHandler);
 //	pHandler->pHandlerFunction = pHandlerFunction;
@@ -306,7 +310,7 @@ HRESULT Parser_ParseFromFile(Parser * pParser, String* pFileName, ObjectHandlerF
 
 //HRESULT CallHandler(Parser* pParser, Handler* pHandler, size_t BufferIndex, size_t currentStatementIndex, String* pTempString) {
 //	Object* pCurrentObject = 0;
-//	CEASSERT(pHandler&&"no valid Handler found");
+//	CE1_ASSERT(pHandler&&"no valid Handler found");
 //
 //	//get the currently processed object
 //	CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pCurrentObject));

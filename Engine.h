@@ -46,5 +46,6 @@ HRESULT Engine_LoadConfig();
 HRESULT Engine_ConfigHandler(void* p0, String* pObjName, void* pObj);
 
 BOOL CHAREQ(char * a, char * b);
-BOOL CHAREQS(char * a, char * b,size_t l);
+BOOL CE1_CMPSTR(char * a, char * b,size_t l);
+
 #endif

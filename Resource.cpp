@@ -18,7 +18,7 @@ ResourceManager * ResourceManager_NEW()
 HRESULT ResourceManager_DELETE()
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(pRM);
+	CE1_ASSERT(pRM);
 	CE1_CALL(ResourceManager_FullUnLoad());
 	CE1_CALL(Vector_Delete(pRM->pResources));
 	CE1_CALL(List_FullDelete(pRM->pResourceHandlers,true));
@@ -29,7 +29,7 @@ HRESULT ResourceManager_DELETE()
 ID ResourceManager_LoadResource(char* name)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(pRM&&name);
+	CE1_ASSERT(pRM&&name);
 	FormatHandler* pFormatHandler;
 	FH pFH;
 
@@ -38,12 +38,12 @@ ID ResourceManager_LoadResource(char* name)
 	CE1_CALL(ResourceManager_GetFormatName(name, formatname));
 
 	//get the formathandler
-	ExecOnList(
+	CE1_LISTEXEC(
 		pRM->pResourceHandlers, pFormatHandler = (FormatHandler*)List_Get(itr);  
 		if (CHAREQ(pFormatHandler->formatname,formatname)) {
 			pFH = pFormatHandler->pFormatHandler;
 		});
-	CEASSERT(pFH && "Format not supported");
+	CE1_ASSERT(pFH && "Format not supported");
 
 	//create the resource
 	Resource* pRes;
@@ -52,14 +52,14 @@ ID ResourceManager_LoadResource(char* name)
 
 	//create the resourceextra
 	CE1_CALL((*pFH)(name,&(pRes->ResourceExtra)));
-	CEASSERT(pRes->ResourceExtra && "Resource could not be loaded");
+	CE1_ASSERT(pRes->ResourceExtra && "Resource could not be loaded");
 
 	//store resource
 	return Vector_Pushback(pRM->pResources, pRes);
 }
 
 HRESULT ResourceManager_GetFormatName(char* from, char* to) {
-	CEASSERT(from&&to);
+	CE1_ASSERT(from&&to);
 	size_t len = strlen(from);
 	for (UINT n = 0; n<2; n++) { to[n] = from[len - n]; }
 	return S_OK;
@@ -68,7 +68,7 @@ HRESULT ResourceManager_GetFormatName(char* from, char* to) {
 HRESULT ResourceManager_UnLoadResource(ID id)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(id&&pRM);
+	CE1_ASSERT(id&&pRM);
 
 	//get the resource
 	Resource* pRes;
@@ -81,12 +81,12 @@ HRESULT ResourceManager_UnLoadResource(ID id)
 	//get the xformathandler
 	FormatHandler* pFormatHandler;
 	xFH pXFH;
-	ExecOnList(
+	CE1_LISTEXEC(
 		pRM->pResourceHandlers, pFormatHandler = (FormatHandler*)List_Get(itr);
 		if (CHAREQ(pFormatHandler->formatname, formatname)) {
 		pXFH = pFormatHandler->pXFormatHandler;
 	});
-	CEASSERT(pXFH && "Format not supported");
+	CE1_ASSERT(pXFH && "Format not supported");
 
 	//delete resourceextra
 	CE1_CALL((*pXFH)(pRes->ResourceExtra));
@@ -100,7 +100,7 @@ HRESULT ResourceManager_UnLoadResource(ID id)
 HRESULT ResourceManager_FullUnLoad()
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(pRM);
+	CE1_ASSERT(pRM);
 	for (UINT i = 0; i < Vector_Last(pRM->pResources); i++)
 	{
 		ResourceManager_UnLoadResource(i); //dont CE1_CALL
@@ -111,9 +111,9 @@ HRESULT ResourceManager_FullUnLoad()
 HRESULT ResourceManager_GetResource(ID id, void ** ppRes)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(pRM&&id&&*ppRes);
+	CE1_ASSERT(pRM&&id&&*ppRes);
 	Resource* pRes = (Resource*)Vector_Get(pRM->pResources, id);
-	CEASSERT(pRes);
+	CE1_ASSERT(pRes);
 	(*ppRes) = pRes->ResourceExtra;
 	return S_OK;
 }
@@ -121,7 +121,7 @@ HRESULT ResourceManager_GetResource(ID id, void ** ppRes)
 HRESULT ResourceManager_RegisterFormatHandler(char* name, FH pFH, xFH pXFH)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
-	CEASSERT(pRM&&name&&pFH&&pXFH);
+	CE1_ASSERT(pRM&&name&&pFH&&pXFH);
 	FormatHandler* pFormatHandler;
 	_NEW(FormatHandler,pFormatHandler);
 	pFormatHandler->pFormatHandler = pFH;

@@ -24,7 +24,7 @@ TIME Timer_Time()
 
 HRESULT Timer_Wait(TIME time)
 {
-	CEASSERT(time);
+	CE1_ASSERT(time);
 	Sleep(time);
 	return S_OK;
 }
@@ -40,7 +40,7 @@ Timer* Timer_New()
 {
 	Timer* pTimer;
 	_NEW(Timer, pTimer);
-	CEASSERT(pTimer);
+	CE1_ASSERT(pTimer);
 	pTimer->_last = Timer_Time();
 	return pTimer;
 }

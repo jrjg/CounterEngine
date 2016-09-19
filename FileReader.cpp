@@ -5,12 +5,12 @@
 HRESULT FileReader_Read(char * filename, String** ppContent)
 {
 	String* pString = (*ppContent);
-	CEASSERT(pString && "invalid String");
+	CE1_ASSERT(pString && "invalid String");
 
 	//open file
 	if (!filename) { return ERROR_SUCCESS; }
 	FILE *pFile = fopen(filename, "r");
-	CEASSERT(pFile && "File not found");
+	CE1_ASSERT(pFile && "File not found");
 
 	//get file size
 	size_t pos = ftell(pFile);    // Current position

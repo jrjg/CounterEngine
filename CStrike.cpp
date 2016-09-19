@@ -19,7 +19,7 @@ CStrike* CStrike_NEW() {
 
 HRESULT CStrike_Run(TIME elapsed) {
 	cd3d11* pcd3d11 = Engine_GetCD3D11();
-	CEASSERT(pcd3d11&&elapsed);
+	CE1_ASSERT(pcd3d11&&elapsed);
 	pcd3d11->rot += .0005f*elapsed;
 	if (pcd3d11->rot > 6.26f)
 		pcd3d11->rot = 0.0f;
@@ -29,14 +29,14 @@ HRESULT CStrike_Run(TIME elapsed) {
 
 HRESULT CStrike_DELETE(void) {
 	CStrike* pCStrike = Engine_GetCStrike();
-	CEASSERT(pCStrike);
+	CE1_ASSERT(pCStrike);
 	CE1_DEL(pCStrike);
 	return S_OK;
 }
 
 HRESULT CStrike_CreateControls(CStrike* pCStrike)
 {
-	CEASSERT(pCStrike);
+	CE1_ASSERT(pCStrike);
 	pCStrike->_ctrlsGame = Controller_NewControls();
 	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 27, EVENT_END));
 	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 97, EVENT_MOVELEFT));

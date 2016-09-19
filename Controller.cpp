@@ -22,7 +22,7 @@ struct Controller
 HRESULT Controller_Run(TIME time)
 {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController&&time);
+	CE1_ASSERT(pController&&time);
 	/*if (_kbhit())
 	{
 		ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector,_getch());
@@ -36,7 +36,7 @@ HRESULT Controller_Run(TIME time)
 
 HRESULT Controller_EvalKey(void* pData) {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController&&pData);
+	CE1_ASSERT(pController&&pData);
 	ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector, *(WPARAM*)pData);
 	if (pEventid)
 	{
@@ -48,7 +48,7 @@ HRESULT Controller_EvalKey(void* pData) {
 HRESULT Controller_Delete()
 {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController);
+	CE1_ASSERT(pController);
 	if (Vector_Elements(pController->_pControlsVector)>0)
 	{
 		Vector* pControlVector = NULL;
@@ -70,9 +70,9 @@ HRESULT Controller_Delete()
 HRESULT Controller_SetControls(ID controlsid)
 {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController&&controlsid);
+	CE1_ASSERT(pController&&controlsid);
 	Controls* pControls = (Controls*)Vector_Get(pController->_pControlsVector,controlsid);
-	CEASSERT(pControls);
+	CE1_ASSERT(pControls);
 	pController->_pActiveControls = pControls;
 	return S_OK;
 }
@@ -89,7 +89,7 @@ Controller* Controller_New()
 HRESULT Controller_AddControl(ID controlsid, KEYCODE key, ID eventid)
 {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController&&controlsid&&key&&eventid);
+	CE1_ASSERT(pController&&controlsid&&key&&eventid);
 	Controls* pControls = (Controls*)Vector_Get(pController->_pControlsVector,controlsid);
 	ID* pEventID;
 	_NEW(ID, pEventID);
@@ -101,7 +101,7 @@ HRESULT Controller_AddControl(ID controlsid, KEYCODE key, ID eventid)
 ID Controller_NewControls() //memory allocation missing
 {
 	Controller* pController = Engine_GetController();
-	CEASSERT(pController);
+	CE1_ASSERT(pController);
 	pController->_idcounter++;
 	Controls* pControls;
 	_NEW(Controls, pControls);

@@ -45,79 +45,79 @@ struct Engine
 };
 
 LPWSTR Engine_WINDOWTITLE() {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->WINDOWTITLE;
 }
 
 float Engine_BUFFERWIDTH() {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->BUFFERWIDTH;
 }
 
 float Engine_BUFFERHEIGHT() {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->BUFFERHEIGHT;
 }
 
 BOOL Engine_FULLSCREEN() {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->FULLSCREEN;
 }
 
 cd3d11* Engine_GetCD3D11()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pCD3D11;
 }
 
 CStrike* Engine_GetCStrike()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pCStrike;
 }
 
 EventManager* Engine_GetEM()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pEM;
 }
 
 ProcessManager* Engine_GetPM()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pPM;
 }
 
 WindowMgr* Engine_GetWindowMgr()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pWindowMgr;
 }
 
 Timer* Engine_GetTimer()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pTimer;
 }
 
 Controller* Engine_GetController()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pController;
 }
 
 ComponentMgr* Engine_GetCmpMgr(void) {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pCmpMgr;
 }
 
 ComponentManager* Engine_GetComponentManager(void) {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->pCM;
 }
 
 ResourceManager* Engine_GetResourceManager(void) {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->pRM;
 }
 
@@ -140,33 +140,40 @@ HRESULT Engine_ShutDown()
 	return S_OK;
 }
 
-HRESULT Engine_ConfigHandler(void* p0,String* pObjName,void* pObj) {
+#define CASE(NAME,EXEC)if (CE1_CMPSTR(pObjName->pBuffer, NAME, pObjName->length)) {EXEC;return S_OK;}
 
+HRESULT Engine_ConfigHandler(void* p0,String* pObjName,void* pObj) {
+	CASE("Fullscreen",gpEngine->FULLSCREEN = *(bool*)pObj);
+	CASE("Windowtitle", gpEngine->WINDOWTITLE = *(LPWSTR*)pObj);
+	CASE("ResX", gpEngine->BUFFERHEIGHT = *(float*)pObj);
+	CASE("ResY", gpEngine->BUFFERWIDTH = *(float*)pObj);
+	CASE("Speed", gpEngine->_tickdelay = *(UINT*)pObj);
+	CE1_ASSERT(0&&"unknown Object received");
 }
 
 HRESULT Engine_LoadConfig() {
-	String* pString;
+	String* pVarName;
+	String* pTypeName;
 	if (!gpEngine->pConfigParser) {
 		gpEngine->pConfigParser = Parser_New();
-		CE1_STR(pString, "Fullscreen");
-		CE1_CALL(Parser_registerType(gpEngine->pConfigParser, pString,sizeof(bool),&Engine_ConfigHandler));
-		
+		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "Bool", "Fullscreen", &Engine_ConfigHandler));
+		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, ";",OperatorCode::submit));
+		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, " ", OperatorCode::ignore));
+		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, "\n", OperatorCode::ignore));
 	}
-	CE1_STR(pString, "Config.txt");
-	Parser_ParseFromFile(gpEngine->pConfigParser, pString, &Engine_ConfigHandler);
+	CE1_STR(pVarName, "Config.txt");
+	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, pVarName, &Engine_ConfigHandler));
 	return S_OK;
 }
 
-
-
 HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	CEASSERT(hInstance&&lpCmdLine);
+	CE1_ASSERT(hInstance&&lpCmdLine);
 	if (gpEngine == NULL)
 	{
 		/*initializing*/
 		 _NEW(Engine, gpEngine);
-		 CEASSERT(gpEngine);
+		 CE1_ASSERT(gpEngine);
 		
 		gpEngine->_tickdelay = 10;
 		gpEngine->_uptime = 0;
@@ -220,7 +227,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 
 WinParams* Engine_GetWinParams(void)
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	return gpEngine->_pWinParams;
 }
 
@@ -237,7 +244,7 @@ TIME Engine_GetUpTime(void)
 
 BOOL CHAREQ(char * a, char * b)
 {
-	CEASSERT(a&&b);
+	CE1_ASSERT(a&&b);
 	size_t lena = strlen(a);
 	size_t lenb = strlen(b);
 	if (lena != lenb) {
@@ -249,9 +256,9 @@ BOOL CHAREQ(char * a, char * b)
 	return true;
 }
 
-BOOL CHAREQS(char * a, char * b, size_t l)
+BOOL CE1_CMPSTR(char * a, char * b, size_t l)
 {
-	CEASSERT(a&&b&&l);
+	CE1_ASSERT(a&&b&&l);
 	for (size_t n = 0; n < l; n++) {
 		if (a[n] != b[n]) { return false; }
 	}
@@ -270,7 +277,7 @@ HRESULT Engine_WaitTimer(TIME elapsed)
 
 HRESULT Engine_Run()
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	while (gpEngine->_terminate == FALSE)
 	{
 		CE1_CALL(ProcessManager_Run(Timer_Elapsed()));
@@ -280,7 +287,7 @@ HRESULT Engine_Run()
 
 HRESULT Engine_Terminate(void* pData)
 {
-	CEASSERT(gpEngine);
+	CE1_ASSERT(gpEngine);
 	gpEngine->_terminate = TRUE;
 	return S_OK;
 }

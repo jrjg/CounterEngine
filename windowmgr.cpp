@@ -6,7 +6,7 @@
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	CEASSERT(hwnd);
+	CE1_ASSERT(hwnd);
 	switch (msg)
 	{
 	case WM_CLOSE:
@@ -22,7 +22,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 HRESULT registerWindowClass(WNDCLASSEX* pwc, HINSTANCE* phInstance) {
-	CEASSERT(pwc&&phInstance);
+	CE1_ASSERT(pwc&&phInstance);
 	pwc->cbSize = sizeof(WNDCLASSEX);
 	pwc->style = 0;
 	pwc->lpfnWndProc = WndProc;
@@ -39,7 +39,7 @@ HRESULT registerWindowClass(WNDCLASSEX* pwc, HINSTANCE* phInstance) {
 }
 
 HRESULT createWindow(WindowMgr* pWindowMgr) {
-	CEASSERT(pWindowMgr);
+	CE1_ASSERT(pWindowMgr);
 	WNDCLASSEX* pwc;
 	_NEW(WNDCLASSEX, pwc);
 	CE1_CALL(registerWindowClass(pwc, &(Engine_GetWinParams()->hInstance)));
@@ -49,7 +49,7 @@ HRESULT createWindow(WindowMgr* pWindowMgr) {
 }
 
 HRESULT showWindow(WindowMgr* pWindowMgr) {
-	CEASSERT(pWindowMgr);
+	CE1_ASSERT(pWindowMgr);
 	ShowWindow(*pWindowMgr->phwnd, Engine_GetWinParams()->nCmdShow);
 	UpdateWindow(*pWindowMgr->phwnd);
 	return S_OK;
@@ -68,7 +68,7 @@ HRESULT WindowMgr_NEW(WindowMgr** ppInst) {
 
 HRESULT WindowMgr_Run(TIME elapsed) {
 	WindowMgr* pWindowMgr = Engine_GetWindowMgr();
-	CEASSERT(elapsed&&pWindowMgr);
+	CE1_ASSERT(elapsed&&pWindowMgr);
 	MSG msg;
 	while (PeekMessage(&msg, *(pWindowMgr->phwnd), 0, 0, PM_REMOVE))
 	{
@@ -93,7 +93,7 @@ HRESULT WindowMgr_Run(TIME elapsed) {
 
 HRESULT WindowMgr_DELETE(void) {
 	WindowMgr* pWindowMgr = Engine_GetWindowMgr();
-	CEASSERT(pWindowMgr);
+	CE1_ASSERT(pWindowMgr);
 	CE1_CALL(DestroyWindow(*(pWindowMgr->phwnd)));
 	CE1_DEL(pWindowMgr->phwnd);
 	CE1_DEL(pWindowMgr);

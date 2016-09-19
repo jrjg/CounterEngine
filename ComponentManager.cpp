@@ -43,7 +43,7 @@ HRESULT ComponentManager_FullDestroy()
 HRESULT ComponentManager_RegisterComponentHandler(char * name, CCF pCreator, CDF pDestroyer)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
-	CEASSERT(pCM&&name&&pCreator&&pDestroyer);
+	CE1_ASSERT(pCM&&name&&pCreator&&pDestroyer);
 	ComponentHandler* pComponentHandler;
 	_NEW(ComponentHandler, pComponentHandler);
 	pComponentHandler->name = name;
@@ -56,18 +56,18 @@ HRESULT ComponentManager_RegisterComponentHandler(char * name, CCF pCreator, CDF
 HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * pID)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
-	CEASSERT(pCM&&name&&pCreatorDesc&&pID);
+	CE1_ASSERT(pCM&&name&&pCreatorDesc&&pID);
 
 	ComponentHandler* pComponentHandler;
 	CCF pCCF;
 
 	//get the Componenthandler
-	ExecOnList(
+	CE1_LISTEXEC(
 		pCM->pComponentHandlers, pComponentHandler = (ComponentHandler*)List_Get(itr);
 		if (CHAREQ(pComponentHandler->name, name)) {
 		pCCF = pComponentHandler->pCreator;});
 
-	CEASSERT(pCCF && "Component type not supported");
+	CE1_ASSERT(pCCF && "Component type not supported");
 
 	//create the component
 	Component* pC;
@@ -76,7 +76,7 @@ HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * 
 
 	//create the componentdata
 	CE1_CALL((*pCCF)(pCreatorDesc, &(pC->pData)));
-	CEASSERT(pC->pData && "Component could not be created");
+	CE1_ASSERT(pC->pData && "Component could not be created");
 
 	//store component
 	return Vector_Pushback(pCM->pComponents, pC);
@@ -86,7 +86,7 @@ HRESULT ComponentManager_CreateComponent(char * name, void * pCreatorDesc, ID * 
 HRESULT ComponentManager_DestroyComponent(ID id)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
-	CEASSERT(pCM&&id);
+	CE1_ASSERT(pCM&&id);
 
 	//get the component
 	Component* pC;
@@ -95,12 +95,12 @@ HRESULT ComponentManager_DestroyComponent(ID id)
 	//get the destroyer
 	ComponentHandler* pComponentHandler;
 	CDF pDestroyer;
-	ExecOnList(
+	CE1_LISTEXEC(
 		pCM->pComponentHandlers, pComponentHandler = (ComponentHandler*)List_Get(itr);
 		if (CHAREQ(pComponentHandler->name, pC->name)) {
 		pDestroyer = pComponentHandler->pDestroyer;});
 
-	CEASSERT(pDestroyer && "Component type not supported");
+	CE1_ASSERT(pDestroyer && "Component type not supported");
 
 	//delete component data
 	CE1_CALL((*pDestroyer)(pC->pData));
@@ -114,9 +114,9 @@ HRESULT ComponentManager_DestroyComponent(ID id)
 HRESULT ComponentManager_GetComponent(ID id, void ** ppData)
 {
 	ComponentManager* pCM = Engine_GetComponentManager();
-	CEASSERT(pCM&&id);
+	CE1_ASSERT(pCM&&id);
 	Component* pC = (Component*)Vector_Get(pCM->pComponents, id);
-	CEASSERT(pC);
+	CE1_ASSERT(pC);
 	(*ppData) = pC->pData;
 	return S_OK;
 }
