@@ -47,16 +47,13 @@ HRESULT Parser_SubmitObject(Parser* pParser);
 HRESULT Parser_DeclareType(Parser* pParser, char* pTypeName, size_t size, ConvertFromStringToTypeFunction pConvertFromStringToTypeFunction);
 HRESULT Parser_DeclareVariable(Parser* pParser, char* pTypeName, char* pVariableName, ObjectHandlerFunction pObjectHandlerFunction);
 HRESULT Parser_RegisterOperator(Parser* pParser, char*, OperatorCode code);
-HRESULT Parser_ParseFile(Parser* pParser, String* pFileName, ObjectHandlerFunction pRootHandler);
+HRESULT Parser_ParseFile(Parser* pParser, char* pFileName, ObjectHandlerFunction pRootHandler);
 
 HRESULT Parser_ConvertFromStringToFloat(void* pObject, String* pString);
 HRESULT Parser_ConvertFromStringToBool(void* pObject, String* pString);
 HRESULT Parser_ConvertFromStringToString(void* pObject, String* pString);
 HRESULT Parser_ConvertFromStringToUINT(void* pObject, String* pString);
 HRESULT Parser_ConvertFromStringToLPCWSTR(void* pObject, String* pString);
-
-//HRESULT Parser_CollapseString(String* pObjectName, int index);
-//HRESULT Parser_CleanString(String* pObjectName);
 
 
 #endif

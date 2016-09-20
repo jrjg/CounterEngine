@@ -573,15 +573,13 @@ HRESULT Engine_LoadObjModel() {
 	CE1_CALL(Parser_DeclareVariable(pParser, "String", "mtllib", &ObjectModelHandler));
 	CE1_CALL(Parser_DeclareVariable(pParser, "String", "usemtl", &ObjectModelHandler));
 	
-	CE1_CALL(Parser_DeclareType(pParser,"XMFLOAT3",sizeof(XMFLOAT3),&Parser_ConvertStringToVertex));
+	//CE1_CALL(Parser_DeclareType(pParser,"XMFLOAT3",sizeof(XMFLOAT3),&Parser_ConvertStringToVertex));
 	
 	//register operators
 	CE1_CALL(Parser_RegisterOperator(pParser, "\n", OperatorCode::submit));
 	
 	//parse
-	String* pFileName;
-	CE1_STR(pFileName, "spaceCompound.obj");
-	CE1_CALL(Parser_ParseFile(pParser, pFileName, &ObjectModelHandler));
+	CE1_CALL(Parser_ParseFile(pParser, "spaceCompound.obj", &ObjectModelHandler));
 
 
 

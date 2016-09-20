@@ -4,9 +4,6 @@
 
 HRESULT FileReader_Read(char * filename, String** ppContent)
 {
-	String* pString = (*ppContent);
-	CE1_ASSERT(pString && "invalid String");
-
 	//open file
 	if (!filename) { return ERROR_SUCCESS; }
 	FILE *pFile = fopen(filename, "r");
@@ -19,18 +16,21 @@ HRESULT FileReader_Read(char * filename, String** ppContent)
 	fseek(pFile, pos, SEEK_SET);  // restore original position
 
 	//create buffer
-	char* pBuffer = (char*)malloc(length);
-	pString->pBuffer = pBuffer;
+	String* pString;
+	_NEW(String,pString);
+	pString->pBuffer = (char*)malloc(length);
 	pString->length = length;
 
 	//read file
 	int c;
 	for (int n = 0; ((c = getc(pFile)) != EOF);n++ ) {
-		pBuffer[n] = c;
+		pString->pBuffer[n] = c;
 	}
 
 	//close file
 	fclose(pFile);
+
+	*ppContent = pString;
 
 	return S_OK;
 }

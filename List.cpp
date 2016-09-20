@@ -87,7 +87,7 @@ HRESULT List_FullDelete(List* pList, BOOL deleteObject)
 	if (!pList) {
 		return S_OK;
 	}
-	CE1_CALL(ListCE1_DELeteAllElements(pList, deleteObject));
+	CE1_CALL(List_DeleteAllElements(pList, deleteObject));
 	CE1_DEL(pList);
 	return S_OK;
 }
@@ -101,7 +101,7 @@ HRESULT List_DeleteAllElements(List* pList, BOOL deleteObject)
 	for (Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)) {
 		if (itr2)
 		{
-			CE1_CALL(ListCE1_DELeteElement(pList, itr2->_id, deleteObject));
+			CE1_CALL(List_DeleteElement(pList, itr2->_id, deleteObject));
 		}
 		itr2 = itr;
 	}

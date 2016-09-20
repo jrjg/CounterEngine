@@ -30,7 +30,7 @@ HRESULT Parser_RegisterOperator(Parser* pParser, char* d, OperatorCode code)
 	CE1_NEW(Operator, pOperator);
 	CE1_STR(pOperator->pString,d);
 	pOperator->code = code;
-	List_PushBack(pParser->pOperators, (void*)pOperator);
+	List_PushBack(pParser->pOperators, (void*)pOperator); 
 	return S_OK;
 }
 
@@ -47,7 +47,7 @@ HRESULT Parser_DeclareType(Parser* pParser, char* pTypeName, size_t size, Conver
 
 HRESULT Parser_DeclareVariable(Parser * pParser, char * pTypeName, char * pVariableName, ObjectHandlerFunction pObjectHandlerFunction)
 {
-	CE1_ASSERT(pParser && pTypeName && pVariableName && "Parser_DeclareVariable");
+	CE1_ASSERT(pParser && pTypeName && pVariableName && "Parser_DeclareVariable"); 
 	CE1_NEW(Variable,pVar);
 	CE1_STR(pVar->pTypeName, pTypeName);
 	CE1_STR(pVar->pVariableName, pVariableName);
@@ -57,16 +57,16 @@ HRESULT Parser_DeclareVariable(Parser * pParser, char * pTypeName, char * pVaria
 }
 
 HRESULT Parser_SubmitObject(Parser* pParser) {
-	CE1_ASSERT(pParser && List_Length(pParser->pObjects)>0 && "parsing syntax errror");
+	CE1_ASSERT(pParser && List_Length(pParser->pObjects)>0 && "parsing syntax errror"); 
 	Object* pChildObject = (Object*)List_Pop(pParser->pObjects);
 	Object* pParentObject;
 	if (List_Length(pParser->pObjects) > 0) {
 		CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pParentObject));
+		CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	}
 	else {
-		(*pParser->pRootHandler)(NULL, pChildObject->pType->pTypeName, pChildObject->pInst);
+		CE1_CALL((*pParser->pRootHandler)(NULL, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	}
-	CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	CE1_DEL(pChildObject);
 }
 
@@ -117,7 +117,7 @@ HRESULT Parser_Destroy(Parser * pParser)
 }
 
 BOOL Parser_isOperator(Parser* pParser, char* pBuffer, Operator** ppOperator) {
-	CE1_ASSERT(pParser &&"invalid Parser");
+	CE1_ASSERT(pParser &&"invalid Parser"); 
 	Operator* pOperator;
 	CE1_LISTEXEC(
 		pParser->pOperators,
@@ -164,11 +164,11 @@ HRESULT Parser_GetTypeByName(Parser* pParser, String* pTypeName, Type** ppType){
 	return ERROR_SUCCESS;
 }
 
-HRESULT Parser_ParseFile(Parser * pParser, String* pFileName, ObjectHandlerFunction pRootHandler)
+HRESULT Parser_ParseFile(Parser * pParser, char* pFileName, ObjectHandlerFunction pRootHandler)
 {
 	CE1_ASSERT(pParser && pRootHandler && List_Length(pParser->pTypes)>0 && "invalid parser");
 	String* pFileContent;
-	CE1_CALL(FileReader_Read(pFileName->pBuffer, &(pFileContent)));
+	CE1_CALL(FileReader_Read(pFileName, &(pFileContent)));
 	pParser->pRootHandler = pRootHandler;
 
 	Variable* pVariable = 0;
@@ -181,9 +181,9 @@ HRESULT Parser_ParseFile(Parser * pParser, String* pFileName, ObjectHandlerFunct
 	Operator* pOperator;
 	CE1_NEW(String, pValueString);
 
-	for (BufferIndex = 0; BufferIndex < pFileContent->length; BufferIndex = BufferIndex + currentStatementIndex) {
+	for (BufferIndex = 0; BufferIndex < pFileContent->length; BufferIndex = BufferIndex + currentStatementIndex+1) {
 		for (currentStatementIndex = 0; ; currentStatementIndex++) {
-			if (Parser_isOperator(pParser, pFileContent->pBuffer + currentStatementIndex, &pOperator)) {
+			if (Parser_isOperator(pParser, pFileContent->pBuffer + (BufferIndex + currentStatementIndex) * sizeof(char), &pOperator)) {
 				switch (pOperator->code) {
 					case submit:
 						pValueString->length = currentStatementIndex- pOperator->pString->length; 
@@ -196,10 +196,10 @@ HRESULT Parser_ParseFile(Parser * pParser, String* pFileName, ObjectHandlerFunct
 						break;
 				}
 				break;
-			}else if (Parser_isVariable(pParser, pFileContent->pBuffer, &pVariable)) {
+			}else if (Parser_isVariable(pParser, pFileContent->pBuffer + (BufferIndex+currentStatementIndex) * sizeof(char), &pVariable)) {
 				_NEW(Object, pObj);
 				pObj->pVariable = pVariable;
-				CE1_CALL(pParser, Parser_GetTypeByName(pVariable->pTypeName, &pType));
+				CE1_CALL(Parser_GetTypeByName(pParser, pVariable->pTypeName, &pType));
 				CE1_CALL(Parser_CreateObjectFromType(pType, pObj));
 				CE1_CALL(List_PushBack(pParser->pObjects, pObj));
 				currentStatementIndex = pVariable->pVariableName->length;
@@ -225,6 +225,7 @@ HRESULT Parser_ConvertFromStringToBool(void* pObject, String* pString) {
 }
 
 HRESULT Parser_ConvertFromStringToString(void* pObject, String* pString) {
+	((String*)pObject)->pBuffer = (char*)malloc(pString->length*sizeof(char));
 	for (int i = 0; i < pString->length; i++) {
 		((String*)pObject)->pBuffer[i] = pString->pBuffer[i];
 	}
@@ -238,83 +239,9 @@ HRESULT Parser_ConvertFromStringToUINT(void* pObject, String* pString) {
 }
 
 HRESULT Parser_ConvertFromStringToLPCWSTR(void* pObject, String* pString) {
-	MultiByteToWideChar(CP_ACP, 0, pString->pBuffer, pString->length, (LPWSTR)pObject, pString->length);
+	LPCWSTR pWString = (wchar_t*)malloc((pString->length+2)*sizeof(wchar_t));
+	size_t convertedChars = 0;
+	mbstowcs_s(&convertedChars, (wchar_t*)pWString, pString->length+2, pString->pBuffer, pString->length+1);
+	*(LPCWSTR*)pObject = pWString;
 	return S_OK;
 }
-
-
-
-
-
-
-
-
-
-
-//HRESULT Parser_CollapseString(String* pObjectName, int index) {
-//	CE1_ASSERT(pObjectName);
-//	if (pObjectName->length == 0) {
-//		return S_OK;
-//	}
-//	if (index < pObjectName->length) {
-//		for (int i = index; i < pObjectName->length - 1; i++) {
-//			pObjectName->buffer[i] = pObjectName->buffer[i + 1];
-//		}
-//	}
-//	pObjectName->length--;
-//	return S_OK;
-//}
-//
-//HRESULT Parser_CleanString(String* pObjectName) {
-//	CE1_ASSERT(pObjectName);
-//	char c;
-//	for (int i = 0; i < pObjectName->length; i++) {
-//
-//		//single collapse
-//		c = pObjectName->buffer[i];
-//		if (c == ' '
-//			|| c == '"'
-//			|| c == '='
-//			) {
-//			CE1_CALL(Parser_CollapseString(pObjectName, i));
-//		}
-//
-//		//double collaps
-//		if (c == '\\' && pObjectName->buffer[i + 1] == 'n'
-//			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
-//			|| c == '\\' && pObjectName->buffer[i + 1] == 'r'
-//			|| c == '\\' && pObjectName->buffer[i + 1] == 'b'
-//			|| c == '\\' && pObjectName->buffer[i + 1] == 'f'
-//			|| c == '\\' && pObjectName->buffer[i + 1] == '\"'
-//			) {
-//			CE1_CALL(Parser_CollapseString(pObjectName, i));
-//			CE1_CALL(Parser_CollapseString(pObjectName, i));
-//		}
-//	}
-//
-//}
-
-//HRESULT Parser_RegisterHandler(Parser* pParser, String* pObjectName, HandlerFunction pHandlerFunction, HandlerOnCompleteFunction pOnCompleteHandlerFunction)
-//{
-//	CE1_ASSERT(pParser&&pObjectName&&pHandlerFunction);
-//	Handler* pHandler;
-//	_NEW(Handler, pHandler);
-//	pHandler->pHandlerFunction = pHandlerFunction;
-//	pHandler->pObjectName = pObjectName;
-//	pHandler->pHandlerOnCompleteFunction = pOnCompleteHandlerFunction;
-//	List_PushBack(pParser->pHandlers, pHandler);
-//	return S_OK;
-//}
-
-//HRESULT CallHandler(Parser* pParser, Handler* pHandler, size_t BufferIndex, size_t currentStatementIndex, String* pTempString) {
-//	Object* pCurrentObject = 0;
-//	CE1_ASSERT(pHandler&&"no valid Handler found");
-//
-//	//get the currently processed object
-//	CE1_CALL(List_GetLast(pParser->pObjects, (void**)&pCurrentObject));
-//
-//	//call the handler function and submit the currently processed object and buffer snippet
-//	pTempString->buffer = pParser->pFileContent->pBuffer + BufferIndex * sizeof(char*);
-//	pTempString->length = currentStatementIndex;
-//	CE1_CALL((*(pHandler->pHandlerFunction))((void**)&pCurrentObject, pTempString));
-//}

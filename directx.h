@@ -131,7 +131,7 @@ typedef ObjModel ObjModel;
 
 struct SurfaceMaterial
 {
-	String* pMatName;
+	struct String* pMatName;
 	XMFLOAT4 difColor;
 	int texArrayIndex;
 	bool hasTexture;

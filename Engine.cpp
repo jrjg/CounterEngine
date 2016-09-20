@@ -37,14 +37,14 @@ struct Engine
 	ComponentManager* pCM;
 	ResourceManager* pRM;
 
-	LPWSTR WINDOWTITLE;
+	LPCWSTR WINDOWTITLE;
 	float BUFFERWIDTH;
 	float BUFFERHEIGHT;
 	bool FULLSCREEN;
 	Parser* pConfigParser;
 };
 
-LPWSTR Engine_WINDOWTITLE() {
+LPCWSTR Engine_WINDOWTITLE() {
 	CE1_ASSERT(gpEngine);
 	return gpEngine->WINDOWTITLE;
 }
@@ -143,26 +143,29 @@ HRESULT Engine_ShutDown()
 #define CASE(NAME,EXEC)if (CE1_CMPSTR(pObjName->pBuffer, NAME, pObjName->length)) {EXEC;return S_OK;}
 
 HRESULT Engine_ConfigHandler(void* p0,String* pObjName,void* pObj) {
-	CASE("Fullscreen",gpEngine->FULLSCREEN = *(bool*)pObj);
-	CASE("Windowtitle", gpEngine->WINDOWTITLE = *(LPWSTR*)pObj);
-	CASE("ResX", gpEngine->BUFFERHEIGHT = *(float*)pObj);
-	CASE("ResY", gpEngine->BUFFERWIDTH = *(float*)pObj);
+	CASE("Fullscreen", gpEngine->FULLSCREEN = *(bool*)pObj);
+	CASE("Windowtitle", gpEngine->WINDOWTITLE = *(LPCWSTR*)pObj);
+	CASE("ResX", gpEngine->BUFFERWIDTH = *(float*)pObj);
+	CASE("ResY", gpEngine->BUFFERHEIGHT = *(float*)pObj);
 	CASE("Speed", gpEngine->_tickdelay = *(UINT*)pObj);
 	CE1_ASSERT(0&&"unknown Object received");
 }
 
-HRESULT Engine_LoadConfig() {
-	String* pVarName;
-	String* pTypeName;
+HRESULT Engine_LoadConfig(void* p0) {
 	if (!gpEngine->pConfigParser) {
 		gpEngine->pConfigParser = Parser_New();
 		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "Bool", "Fullscreen", &Engine_ConfigHandler));
+		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "Float", "ResX", &Engine_ConfigHandler));
+		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "Float", "ResY", &Engine_ConfigHandler));
+		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "UINT", "Speed", &Engine_ConfigHandler));
+		CE1_CALL(Parser_DeclareVariable(gpEngine->pConfigParser, "LPCWSTR", "Windowtitle", &Engine_ConfigHandler));
+
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, ";",OperatorCode::submit));
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, " ", OperatorCode::ignore));
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, "\n", OperatorCode::ignore));
 	}
-	CE1_STR(pVarName, "Config.txt");
-	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, pVarName, &Engine_ConfigHandler));
+	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, "Config.txt", &Engine_ConfigHandler));
+	CE1_CALL(Parser_Destroy(gpEngine->pConfigParser));
 	return S_OK;
 }
 
@@ -183,6 +186,8 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		gpEngine->BUFFERHEIGHT = 600;
 		gpEngine->FULLSCREEN = false;
 		gpEngine->WINDOWTITLE = L"Counter Engine";
+
+		Engine_LoadConfig(NULL);
 		
 		_NEW(WinParams, gpEngine->_pWinParams);
 		if (gpEngine->_pWinParams) {
@@ -218,7 +223,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		
 
 		EventManager_RegisterForEvent(EVENT_END,&Engine_Terminate);
-		//EventManager_RegisterForEvent(EVENT_START, &Engine_LoadConfig);
+		//EventManager_RegisterForEvent(EVENT_START, &Engine_LoadConfig); //this too late
 
 		EventManager_QueueEvent(EVENT_START,NULL);
 	}
