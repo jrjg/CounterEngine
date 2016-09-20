@@ -2,4 +2,4 @@ Fullscreen false;
 ResX 800;
 ResY 600;
 Windowtitle Hallo;
-Speed 100;
+Speed 10;
