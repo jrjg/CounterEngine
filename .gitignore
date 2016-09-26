@@ -55,3 +55,8 @@ x64/Release/XD.tlog/link.write.1.tlog
 *.filters
 *.user
 *.idb
+Resource/Configuration/Config.txt
+*.hlsl
+Resource/Texture/b1dirt005.jpg
+*.jpg
+Resource/Texture/skymap.dds
