@@ -30,6 +30,7 @@ struct ComponentMgr* Engine_GetCmpMgr(void);
 struct CameraManager* Engine_GetCameraManager(void);
 struct ResourceManager* Engine_GetResourceManager(void);
 struct ComponentManager* Engine_GetComponentManager(void);
+struct Camera* Engine_GetCamera();
 
 HRESULT Engine_ShutDown(void);
 HRESULT Engine_Run(void);

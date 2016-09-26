@@ -23,24 +23,31 @@ HRESULT Controller_Run(TIME time)
 {
 	Controller* pController = Engine_GetController();
 	CE1_ASSERT(pController&&time);
-	/*if (_kbhit())
-	{
-		ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector,_getch());
-		if (pEventid)
-		{
-			EventManager_QueueEvent((*pEventid), NULL);
-		}
-	}*/
 	return S_OK;
 }
 
-HRESULT Controller_EvalKey(void* pData) {
+HRESULT Controller_EvalKeyDown(void* pData) {
 	Controller* pController = Engine_GetController();
 	CE1_ASSERT(pController&&pData);
 	ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector, *(WPARAM*)pData);
+	CE1_NEW(bool,pDown);
+	*pDown = true;
 	if (pEventid)
 	{
-		EventManager_QueueEvent((*pEventid), NULL);
+		EventManager_QueueEvent((*pEventid), pDown);
+	}
+	return S_OK;
+}
+
+HRESULT Controller_EvalKeyUp(void* pData) {
+	Controller* pController = Engine_GetController();
+	CE1_ASSERT(pController&&pData);
+	ID* pEventid = (ID*)Vector_Get(pController->_pActiveControls->_pControlVector, *(WPARAM*)pData);
+	CE1_NEW(bool, pDown);
+	*pDown = false;
+	if (pEventid)
+	{
+		EventManager_QueueEvent((*pEventid), pDown);
 	}
 	return S_OK;
 }

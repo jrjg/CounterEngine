@@ -6,8 +6,8 @@
 #include "Resource.h"
 #include "ComponentManager.h"
 #include "Parser.h"
+#include "Camera.h"
 //#include "SceneManager.h"
-//#include "CameraManager.h"
 //#include "LightManager.h"
 #include "directx.h"
 
@@ -34,8 +34,6 @@
 
 	return S_OK;
 }
-
-
 
 HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut) {
 	CE1_ASSERT(pFileName&&szEntryPoint&&szShaderModel);
@@ -75,12 +73,12 @@ HRESULT cd3d11_CompileShader(LPCWSTR pFileName, LPCSTR szEntryPoint, LPCSTR szSh
 	return S_OK;
 }
 
-HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
-	CE1_ASSERT(pd3d11);
-	pd3d11->camView = XMMatrixLookAtLH(XMVectorSet(0.0f, 3.0f, -4.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, Engine_BUFFERWIDTH() / Engine_BUFFERHEIGHT(), 1.0f, 1000.0f);
-	return S_OK;
-}
+//HRESULT cd3d11_initCamera(cd3d11* pd3d11) {
+//	CE1_ASSERT(pd3d11);
+//	pd3d11->camView = XMMatrixLookAtLH(XMVectorSet(0.0f, 3.0f, -4.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+//	pd3d11->camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, Engine_BUFFERWIDTH() / Engine_BUFFERHEIGHT(), 1.0f, 1000.0f);
+//	return S_OK;
+//}
 
 //BOOL cd3d11_setupRenderVertexShader(Scene* pScene, SceneNode* pSceneNode) {
 HRESULT cd3d11_setupRenderVertexShader() {
@@ -194,13 +192,16 @@ HRESULT cd3d11_NEW(cd3d11** ppd3d11) {
 	//pd3d11->pClsColor = (FLOAT*)malloc(sizeof(FLOAT) * 4);
 	pd3d11->pClsColor[0] = 0.8f; pd3d11->pClsColor[1] = 0.8f; pd3d11->pClsColor[2] = 0.8f; pd3d11->pClsColor[3] = 1.0f;
 	pd3d11->pShaders = Vector_New(sizeof(void*), 15);
+
+	pd3d11->World = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+
+	ShowCursor(false);
+
 	CE1_CALL(cd3d11_createShaders(pd3d11));
 
 	CE1_CALL(cd3d11_CreateDemoObject(pd3d11));
 
 	CE1_CALL(cd3d11_CreateAndSetViewport(pd3d11));
-
-	CE1_CALL(cd3d11_initCamera(pd3d11));
 
 	CE1_CALL(cd3d11_registerHandlers(pd3d11));
 
@@ -252,7 +253,9 @@ HRESULT cd3d11_Run(TIME elapsed) {
 
 	pd3d11->pImmediateContext->OMSetRenderTargets(1, &(pd3d11->pView), pd3d11->pDepthView);
 
-	pd3d11->WorldViewProjection = pd3d11->World * pd3d11->camView * pd3d11->camProjection;
+	XMMATRIX CamViewProjection = *Camera_GetViewTimesProjection(Engine_GetCamera());
+	pd3d11->WorldViewProjection = pd3d11->World * CamViewProjection;
+	//pd3d11->WorldViewProjection = pd3d11->World * pd3d11->camView * pd3d11->camProjection;
 	//cbPerObj.WVP = XMMatrixTranspose(pd3d11->WorldViewProjection);
 
 	CE1_CALL(cd3d11_clearTargets());
@@ -265,6 +268,8 @@ HRESULT cd3d11_Run(TIME elapsed) {
 	pd3d11->pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
 	CE1_CALL(cd3d11_SetTexture(&(pd3d11->pDemoObject->pResView), &(pd3d11->pDemoObject->pSamplerState)));
+
+	pd3d11->pImmediateContext->RSSetState(pd3d11->pRasterizerState);
 
 	pd3d11->pImmediateContext->DrawIndexed(pd3d11->pDemoObject->numPolys*3,0,0);
 
@@ -353,9 +358,10 @@ HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
 	pd3d11->pDemoObject->stride = sizeof(D3D11Vertex_UnlitTextured);
 
 	//texture
-	CE1_CALL(CreateWICTextureFromFile(pd3d11->pDevice, L"LUL.jpg", &(pd3d11->pDemoObject->pTex), &(pd3d11->pDemoObject->pResView)));
+	CE1_CALL(CreateWICTextureFromFile(pd3d11->pDevice, L"metalpanel.jpg", &(pd3d11->pDemoObject->pTex), &(pd3d11->pDemoObject->pResView)));
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
+
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -436,6 +442,7 @@ HRESULT cd3d11_DELETE(void) {
 
 	pd3d11->pSwapChain->SetFullscreenState(false, NULL);
 	Vector_Delete(pd3d11->pShaders);
+	SAFE_RELEASE(pd3d11->pRasterizerState);
 	SAFE_RELEASE(pd3d11->pView);
 	SAFE_RELEASE(pd3d11->pDepthView);
 	SAFE_RELEASE(pd3d11->pDepthStencilBuffer);
@@ -467,7 +474,7 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 
 	pSCD->BufferDesc.Width = Engine_BUFFERWIDTH();
 	pSCD->BufferDesc.Height = Engine_BUFFERHEIGHT();
-	pSCD->BufferDesc.RefreshRate.Numerator =60;
+	pSCD->BufferDesc.RefreshRate.Numerator =120;
 	pSCD->BufferDesc.RefreshRate.Denominator = 1;
 	pSCD->BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	//pSCD->BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
@@ -534,6 +541,14 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	desc2.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	desc2.Flags = NULL;
 	CE1_CALL(pd3d11->pDevice->CreateDepthStencilView(pd3d11->pDepthStencilBuffer, &desc2, &pd3d11->pDepthView));
+
+	D3D11_RASTERIZER_DESC cmdesc;
+	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.CullMode = D3D11_CULL_NONE;
+	cmdesc.FrontCounterClockwise = true;
+	CE1_CALL(pd3d11->pDevice->CreateRasterizerState(&cmdesc, &pd3d11->pRasterizerState));
+
 	return S_OK;
 }
 

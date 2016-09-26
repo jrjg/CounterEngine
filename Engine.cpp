@@ -9,8 +9,8 @@
 #include "ComponentManager.h"
 #include "Resource.h"
 //#include "ComponentMgr.h"
-//#include "CameraManager.h"
 //#include "SceneManager.h"
+#include "Camera.h"
 #include "Parser.h"
 #include "Engine.h"
 
@@ -36,6 +36,7 @@ struct Engine
 	WinParams* _pWinParams;
 	ComponentManager* pCM;
 	ResourceManager* pRM;
+	Camera* pCamera;
 
 	LPCWSTR WINDOWTITLE;
 	float BUFFERWIDTH;
@@ -74,6 +75,12 @@ CStrike* Engine_GetCStrike()
 {
 	CE1_ASSERT(gpEngine);
 	return gpEngine->_pCStrike;
+}
+
+Camera* Engine_GetCamera()
+{
+	CE1_ASSERT(gpEngine);
+	return gpEngine->pCamera;
 }
 
 EventManager* Engine_GetEM()
@@ -187,7 +194,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		gpEngine->FULLSCREEN = false;
 		gpEngine->WINDOWTITLE = L"Counter Engine";
 
-		Engine_LoadConfig(NULL);
+		CE1_CALL(Engine_LoadConfig(NULL));
 		
 		_NEW(WinParams, gpEngine->_pWinParams);
 		if (gpEngine->_pWinParams) {
@@ -207,6 +214,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		CE1_CALL(WindowMgr_NEW(&gpEngine->_pWindowMgr));
 		gpEngine->_pCStrike = CStrike_NEW();
 		CE1_CALL(cd3d11_NEW(&gpEngine->_pCD3D11));
+		CE1_CALL(Camera_New(&gpEngine->pCamera));
 		//gpEngine->_pCMGR = CameraManager_New();
 		//gpEngine->_pSMGR = SceneManager_NEW();
 		
@@ -216,14 +224,13 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		ProcessManager_NewProcess(&Engine_WaitTimer,0);				//timer
 		ProcessManager_NewProcess(&EventManager_Run, 10);			//eventmanager
 		ProcessManager_NewProcess(&Engine_UpdateUpTime, 10);		//updating uptime mostly test process
-		ProcessManager_NewProcess(&Controller_Run, 100);			//controller
+		ProcessManager_NewProcess(&Controller_Run, 20);			//controller
 		ProcessManager_NewProcess(&WindowMgr_Run, 20);				//WindowMgr
 		ProcessManager_NewProcess(&CStrike_Run, 10);				//WindowMgr
 		ProcessManager_NewProcess(&cd3d11_Run, (1000.0f)/(100.0f));					//cd3d11
 		
 
 		EventManager_RegisterForEvent(EVENT_END,&Engine_Terminate);
-		//EventManager_RegisterForEvent(EVENT_START, &Engine_LoadConfig); //this too late
 
 		EventManager_QueueEvent(EVENT_START,NULL);
 	}

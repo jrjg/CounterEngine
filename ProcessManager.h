@@ -13,5 +13,7 @@ HRESULT ProcessManager_Delete(void);
 ProcessManager* ProcessManager_New(void);
 HRESULT ProcessManager_Run(TIME);
 HRESULT ProcessManager_RunProcess(Process*, TIME);
+HRESULT ProcessManager_PauseProcess(ID processID);
+HRESULT ProcessManager_ContinueProcess(ID processID);
 
 #endif

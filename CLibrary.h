@@ -19,6 +19,7 @@
 #include <time.h>
 #include <Windows.h>
 #include <conio.h>
+#include <WinUser.h>
 
 
 #include <d3d12.h>

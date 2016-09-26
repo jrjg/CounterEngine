@@ -89,6 +89,7 @@ struct cd3d11 {
 	ID3D11RenderTargetView* pView;
 	ID3D11Texture2D* pDepthStencilBuffer;
 	ID3D11DepthStencilView* pDepthView;
+	ID3D11RasterizerState* pRasterizerState;
 	VertexObject* pDemoObject;
 	struct Vector* pShaders;
 	unsigned int vsID;

@@ -12,6 +12,7 @@ HRESULT Controller_SetControls(ID);
 ID Controller_NewControls();
 HRESULT Controller_AddControl(ID, KEYCODE, ID);
 HRESULT Controller_Run(TIME);
-HRESULT Controller_EvalKey(void*);
+HRESULT Controller_EvalKeyDown(void* pData);
+HRESULT Controller_EvalKeyUp(void* pData);
 
 #endif

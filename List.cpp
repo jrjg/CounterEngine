@@ -19,6 +19,18 @@ HRESULT List_Copy(List* pFrom, List* pTo) {
 	return S_OK;
 }
 
+HRESULT List_Get(List* pList, ID id,void** ppObject) {
+	CE1_ASSERT(pList&&"invalid List");
+	CE1_LISTEXEC(
+		pList,
+		if (itr->_id == id) {
+			(*ppObject) = List_Get(itr);
+			return S_OK;
+		}
+	);
+	return ERROR_SUCCESS;
+}
+
 List* List_New(unsigned long elemsize)
 {
 	CE1_ASSERT(elemsize != 0 && elemsize&&"list cannot hold elements of size 0"&&"List_New");

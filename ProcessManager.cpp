@@ -10,6 +10,7 @@ struct Process
 	PCB _pCallBack;
 	TIME _wait;
 	TIME _waited;
+	bool running;
 	ID _id;
 };
 
@@ -45,6 +46,7 @@ ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
 	pProcess->_id = pPM->_idcnt;
 	pProcess->_wait = wait;
 	pProcess->_waited = 0;
+	pProcess->running = true;
 	ID* pListID;
 	_NEW(ID, pListID);
 	(*pListID) = List_PushBack(pPM->_pProcessList, pProcess);
@@ -96,16 +98,56 @@ HRESULT ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
 	return S_OK;
 }
 
+HRESULT ProcessManager_PauseProcess(ID processID) {
+	ProcessManager* pPM = Engine_GetPM();
+	CE1_ASSERT(pPM);
+	Process* pProcess;
+	if (List_Length(pPM->_pProcessList) > 0)
+	{
+		CE1_LISTEXEC(
+			pPM->_pProcessList,
+			pProcess = (Process*)List_Get(itr);
+			if (pProcess->_id == processID) {
+				pProcess->running = false;
+				return S_OK;
+			}
+		);
+	}
+	return S_OK;
+}
+
+HRESULT ProcessManager_ContinueProcess(ID processID) {
+	ProcessManager* pPM = Engine_GetPM();
+	CE1_ASSERT(pPM);
+	Process* pProcess;
+	if (List_Length(pPM->_pProcessList) > 0)
+	{
+		CE1_LISTEXEC(
+			pPM->_pProcessList,
+			pProcess = (Process*)List_Get(itr);
+			if (pProcess->_id == processID) {
+				pProcess->running = true;
+				return S_OK;
+			}
+		);
+	}
+	return S_OK;
+}
+
 HRESULT ProcessManager_Run(TIME elapsed)
 {
 	ProcessManager* pPM = Engine_GetPM();
 	CE1_ASSERT(elapsed&&pPM);
+	Process* pProcess;
 	if (List_Length(pPM->_pProcessList) > 0)
 	{
-		for (Iterator itr = List_Iterator(pPM->_pProcessList); itr != NULL; itr = List_Next(itr))
-		{
-			CE1_CALL(ProcessManager_RunProcess((Process*)List_Get(itr), elapsed));
-		}
+		CE1_LISTEXEC(
+			pPM->_pProcessList,
+			pProcess = (Process*)List_Get(itr);
+			if (pProcess->running) {
+				CE1_CALL(ProcessManager_RunProcess(pProcess, elapsed));
+			}
+		);
 	}
 	return S_OK;
 }

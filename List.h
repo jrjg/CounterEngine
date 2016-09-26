@@ -31,4 +31,5 @@ void* List_Get(ListElement*);				// returns object contained by given element
 void* List_Pop(List*);						// returns object of the first element, deletes first element, does not delete object
 HRESULT List_GetLast(List* pList, void** ppObject);
 HRESULT List_Copy(List* pFrom, List* pTo);
+HRESULT List_Get(List* pList, ID id, void** ppObject);
 #endif // !INCLUDE_LIST

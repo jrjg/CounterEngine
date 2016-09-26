@@ -5,7 +5,7 @@
 
 
 typedef unsigned int TIME;									//time
-typedef unsigned int ID;									//unique identifier
+typedef int ID;									//unique identifier
 typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define _DBG TRUE										//DEBUG MODE ACTIVATED
 #define _NEW(StructName,Pointer) Pointer = (StructName*)malloc(sizeof(StructName)); ZeroMemory(Pointer, sizeof(StructName));			//ALLOCATE MEMORY
@@ -34,7 +34,7 @@ typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define CE1_ASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 #define CE1_LISTEXEC(pList,Exec) for(Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)){Exec}
 
-typedef enum { EVENT_NULL, EVENT_KEYDOWN, EVENT_CHECKFORFULLROWS, EVENT_FIXBLOCK, EVENT_MOVEFIX, EVENT_START, EVENT_END, EVENT_MOVELEFT, EVENT_MOVERIGHT, EVENT_MOVEDOWN, EVENT_ROTATECW, EVENT_ROTATECCW, EVENT_SPAWNBLOCK, EVENT_NEWGAME } EVENTTYPE;
+typedef enum { EVENT_NULL, EVENT_KEYDOWN, EVENT_KEYUP, EVENT_MOVEBACK, EVENT_MOVEFORWARD, EVENT_CHECKFORFULLROWS, EVENT_FIXBLOCK, EVENT_MOVEFIX, EVENT_START, EVENT_END, EVENT_MOVELEFT, EVENT_MOVERIGHT, EVENT_MOVEUP, EVENT_MOVEDOWN, EVENT_ADDYAW, EVENT_ADDPITCH, EVENT_ROTATECW, EVENT_ROTATECCW, EVENT_SPAWNBLOCK, EVENT_NEWGAME } EVENTTYPE;
 typedef enum {RenderPass_0, RenderPass_Static = RenderPass_0, RenderPass_Actor, RenderPass_Sky, RenderPass_NotRendered, RenderPass_Last} RenderPass;
 typedef enum {AlphaOpague,AlphaTexture,AlphaMaterial,AlphaVertex} AlphaType;
 

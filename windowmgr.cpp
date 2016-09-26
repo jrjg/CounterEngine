@@ -74,13 +74,18 @@ HRESULT WindowMgr_Run(TIME elapsed) {
 	{
 		switch (msg.message)
 		{
-			case WM_KEYDOWN:
+			/*case WM_KEYDOWN:
 			{
-				WPARAM* pWParam;
-				_NEW(WPARAM, pWParam);
+				CE1_NEW(WPARAM, pWParam);
 				(*pWParam) = msg.wParam;
 				EventManager_QueueEvent(EVENT_KEYDOWN, (void*)pWParam);
 			}
+			case WM_KEYUP:
+			{
+				CE1_NEW(WPARAM, pWParam);
+				(*pWParam) = msg.wParam;
+				EventManager_QueueEvent(EVENT_KEYUP, (void*)pWParam);
+			}*/
 			default:
 			{
 				TranslateMessage(&msg);
