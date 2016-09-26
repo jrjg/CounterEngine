@@ -12,6 +12,7 @@
 //#include "SceneManager.h"
 #include "Camera.h"
 #include "Parser.h"
+#include "Skybox.h"
 #include "Engine.h"
 
 
@@ -37,6 +38,7 @@ struct Engine
 	ComponentManager* pCM;
 	ResourceManager* pRM;
 	Camera* pCamera;
+	Skybox* pSkybox;
 
 	LPCWSTR WINDOWTITLE;
 	float BUFFERWIDTH;
@@ -69,6 +71,12 @@ cd3d11* Engine_GetCD3D11()
 {
 	CE1_ASSERT(gpEngine);
 	return gpEngine->_pCD3D11;
+}
+
+Skybox* Engine_GetSkybox()
+{
+	CE1_ASSERT(gpEngine);
+	return gpEngine->pSkybox;
 }
 
 CStrike* Engine_GetCStrike()
@@ -171,7 +179,7 @@ HRESULT Engine_LoadConfig(void* p0) {
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, " ", OperatorCode::ignore));
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, "\n", OperatorCode::ignore));
 	}
-	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, "Config.txt", &Engine_ConfigHandler));
+	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, "Resource/Configuration/Config.txt", &Engine_ConfigHandler));
 	CE1_CALL(Parser_Destroy(gpEngine->pConfigParser));
 	return S_OK;
 }
@@ -215,6 +223,7 @@ HRESULT Engine_StartUp(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd
 		gpEngine->_pCStrike = CStrike_NEW();
 		CE1_CALL(cd3d11_NEW(&gpEngine->_pCD3D11));
 		CE1_CALL(Camera_New(&gpEngine->pCamera));
+		CE1_CALL(Skybox_New(&gpEngine->pSkybox));
 		//gpEngine->_pCMGR = CameraManager_New();
 		//gpEngine->_pSMGR = SceneManager_NEW();
 		

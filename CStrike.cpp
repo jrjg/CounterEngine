@@ -11,19 +11,12 @@ CStrike* CStrike_NEW() {
 	srand(time(NULL));
 	CStrike_CreateControls(pCStrike);
 	Controller_SetControls(pCStrike->_ctrlsGame);
-
-	//EventManager_RegisterForEvent(EVENT_KEYDOWN, &Controller_EvalKeyDown);
-	//EventManager_RegisterForEvent(EVENT_KEYUP, &Controller_EvalKeyUp);
 	return pCStrike;
 }
 
 HRESULT CStrike_Run(TIME elapsed) {
 	cd3d11* pcd3d11 = Engine_GetCD3D11();
 	CE1_ASSERT(pcd3d11&&elapsed);
-	/*pcd3d11->rot += .0005f*elapsed;
-	if (pcd3d11->rot > 6.26f)
-		pcd3d11->rot = 0.0f;*/
-	//pcd3d11->World = XMMatrixTranslation(0.0f,0.0f, 0.0f) * XMMatrixRotationAxis(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), pcd3d11->rot);
 	return S_OK;
 }
 

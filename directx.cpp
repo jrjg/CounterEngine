@@ -7,6 +7,7 @@
 #include "ComponentManager.h"
 #include "Parser.h"
 #include "Camera.h"
+#include "Skybox.h"
 //#include "SceneManager.h"
 //#include "LightManager.h"
 #include "directx.h"
@@ -175,11 +176,11 @@ HRESULT cd3d11_setupRenderPixelShader()
 HRESULT cd3d11_createShaders(cd3d11* pd3d11) {
 	CE1_ASSERT(pd3d11);
 	cd3d11_VertexShader* pcd3d11VertexShader;
-	CE1_CALL(cd3d11_createVertexShader(pd3d11, "VSMain", L"VS.hlsl", "vs_5_0",&pcd3d11VertexShader));
+	CE1_CALL(cd3d11_createVertexShader(pd3d11, "VSMain", L"Resource/Shader/VS.hlsl", "vs_5_0",&pcd3d11VertexShader));
 	pd3d11->vsID = Vector_Pushback(pd3d11->pShaders, pcd3d11VertexShader);
 	
 	cd3d11_PixelShader* pcd3d11PixelShader;
-	CE1_CALL(cd3d11_createPixelShader(pd3d11, "PSMain" ,L"PS.hlsl", "ps_5_0", &pcd3d11PixelShader));
+	CE1_CALL(cd3d11_createPixelShader(pd3d11, "PSMain" ,L"Resource/Shader/PS.hlsl", "ps_5_0", &pcd3d11PixelShader));
 	pd3d11->psID = Vector_Pushback(pd3d11->pShaders, pcd3d11PixelShader);
 	return S_OK;
 }
@@ -273,6 +274,9 @@ HRESULT cd3d11_Run(TIME elapsed) {
 
 	pd3d11->pImmediateContext->DrawIndexed(pd3d11->pDemoObject->numPolys*3,0,0);
 
+	Skybox* pSkybox = Engine_GetSkybox();
+	if (pSkybox->alive) { CE1_CALL(Skybox_Render(pSkybox)); }
+
 	CE1_CALL(pd3d11->pSwapChain->Present(0, 0));
 	
 	
@@ -358,7 +362,7 @@ HRESULT cd3d11_CreateDemoObject(cd3d11* pd3d11) {
 	pd3d11->pDemoObject->stride = sizeof(D3D11Vertex_UnlitTextured);
 
 	//texture
-	CE1_CALL(CreateWICTextureFromFile(pd3d11->pDevice, L"metalpanel.jpg", &(pd3d11->pDemoObject->pTex), &(pd3d11->pDemoObject->pResView)));
+	CE1_CALL(CreateWICTextureFromFile(pd3d11->pDevice, L"Resource/Texture/metalpanel.jpg", &(pd3d11->pDemoObject->pTex), &(pd3d11->pDemoObject->pResView)));
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 

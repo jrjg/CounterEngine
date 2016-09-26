@@ -40,6 +40,7 @@
 
 //#include <DirectXTex.h>
 #include <WICTextureLoader.h>
+#include <DDSTextureLoader.h>
 
 
 
