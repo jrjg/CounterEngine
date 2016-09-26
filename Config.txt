@@ -1,5 +1,0 @@
-Fullscreen true;
-ResX 1920;
-ResY 1080;
-Windowtitle Counter_Engine;
-Speed 10;
