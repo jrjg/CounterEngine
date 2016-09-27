@@ -33,6 +33,7 @@ typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define CE1_STR(pS,pC) pS = (String*)malloc(sizeof(String)); ZeroMemory(pS, sizeof(String));pS->length = strlen(pC); pS->pBuffer = (char*)malloc(strlen(pC)*sizeof(char)); ZeroMemory(pS->pBuffer, strlen(pC)*sizeof(char)); for(int i=0;i<pS->length;i++){pS->pBuffer[i] = pC[i];};
 #define CE1_ASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 #define CE1_LISTEXEC(pList,Exec) for(Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)){Exec}
+#define CE1_VECEXEC(pVector,Exec) for(unsigned int i = 0; i < Vector_Last(pVector); i++){Exec}
 
 typedef enum { EVENT_NULL, EVENT_KEYDOWN, EVENT_KEYUP, EVENT_MOVEBACK, EVENT_MOVEFORWARD, EVENT_CHECKFORFULLROWS, EVENT_FIXBLOCK, EVENT_MOVEFIX, EVENT_START, EVENT_END, EVENT_MOVELEFT, EVENT_MOVERIGHT, EVENT_MOVEUP, EVENT_MOVEDOWN, EVENT_ADDYAW, EVENT_ADDPITCH, EVENT_ROTATECW, EVENT_ROTATECCW, EVENT_SPAWNBLOCK, EVENT_NEWGAME } EVENTTYPE;
 typedef enum {RenderPass_0, RenderPass_Static = RenderPass_0, RenderPass_Actor, RenderPass_Sky, RenderPass_NotRendered, RenderPass_Last} RenderPass;

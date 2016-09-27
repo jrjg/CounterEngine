@@ -30,6 +30,11 @@ Vector* Vector_New(unsigned long elemsize, unsigned int elemcnt)
 	return pVector;
 }
 
+HRESULT Vector_GetMem(Vector* pVector, void** ppMem) {
+	*ppMem = pVector->_pMem;
+	return S_OK;
+}
+
 unsigned int Vector_Last(Vector* pVector)
 {
 	CE1_ASSERT(pVector);

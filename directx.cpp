@@ -556,62 +556,6 @@ HRESULT cd3d11_getSwapChain(cd3d11* pd3d11) {
 	return S_OK;
 }
 
-#define CASE(NAME,EXEC)if (CE1_CMPSTR(pChildName->pBuffer, NAME, pChildName->length)) {EXEC;return S_OK;}
-
-HRESULT ObjectModelHandler(void* pParent, String* pChildName, void* pChild) {
-	CASE("#", 1); /*skip comments*/
-	CASE("v",	  /*vertex*/
-		
-	);
-	CASE("vt",	  /*vertex texture coord*/
-
-	);
-	CASE("vn",	  /*vertex normal*/
-
-	);
-	CASE("g",	  /*group*/
-
-	);
-	CASE("mtllib",	  /*mtllib*/
-
-	);
-	CASE("usemtl",	  /*usemtl*/
-
-	);
-	CE1_ASSERT(0 && "unknown Object received");
-}
-
-HRESULT Engine_LoadObjModel() {
-	Parser* pParser = Parser_New();
-	//declare variables
-	CE1_CALL(Parser_DeclareVariable(pParser, "String", "#", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "v", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "vt", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "vn", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "String", "g", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "String", "mtllib", &ObjectModelHandler));
-	CE1_CALL(Parser_DeclareVariable(pParser, "String", "usemtl", &ObjectModelHandler));
-	
-	//CE1_CALL(Parser_DeclareType(pParser,"XMFLOAT3",sizeof(XMFLOAT3),&Parser_ConvertStringToVertex));
-	
-	//register operators
-	CE1_CALL(Parser_RegisterOperator(pParser, "\n", OperatorCode::submit));
-	
-	//parse
-	CE1_CALL(Parser_ParseFile(pParser, "spaceCompound.obj", &ObjectModelHandler));
-
-
-
-	CE1_NEW(ObjModel,pObject);
-	pObject;
-
-	Vector* pMaterial = Vector_New(sizeof(SurfaceMaterial*),100);
-	
-
-
-}
-
-
 
 //ID3D11Buffer* cd3d11_CreateStructuredBuffer(UINT count, UINT structsize, bool CPUWritable, bool GPUWritable, D3D11_SUBRESOURCE_DATA* pData) {
 //	cd3d11* pd3d11 = Engine_GetCD3D11();

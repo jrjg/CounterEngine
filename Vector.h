@@ -15,5 +15,6 @@ void* Vector_Get(Vector* pVector, unsigned int);
 unsigned int Vector_Capacity(Vector*);
 unsigned int Vector_Last(Vector*);
 unsigned int Vector_Pushback(Vector*, void*);
+HRESULT Vector_GetMem(Vector* pVector, void** ppMem);
 
 #endif // !INCLUDE_VECTOR
