@@ -179,7 +179,7 @@ HRESULT Engine_LoadConfig(void* p0) {
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, " ", OperatorCode::ignore));
 		CE1_CALL(Parser_RegisterOperator(gpEngine->pConfigParser, "\n", OperatorCode::ignore));
 	}
-	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, "Resource/Configuration/Config.txt", &Engine_ConfigHandler));
+	CE1_CALL(Parser_ParseFile(gpEngine->pConfigParser, "Resource/Configuration/Config.txt", &Engine_ConfigHandler,NULL));
 	CE1_CALL(Parser_Destroy(gpEngine->pConfigParser));
 	return S_OK;
 }

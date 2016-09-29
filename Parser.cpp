@@ -5,7 +5,6 @@
 #include "Parser.h"
 
 
-
 Parser * Parser_New()
 {
 	Parser* pParser;
@@ -65,7 +64,7 @@ HRESULT Parser_SubmitObject(Parser* pParser) {
 		CE1_CALL((*pParentObject->pVariable->pObjectHandlerFunction)(pParentObject, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	}
 	else {
-		CE1_CALL((*pParser->pRootHandler)(NULL, pChildObject->pVariable->pVariableName, pChildObject->pInst));
+		CE1_CALL((*pParser->pRootHandler)(pParser->pRoot, pChildObject->pVariable->pVariableName, pChildObject->pInst));
 	}
 	CE1_DEL(pChildObject);
 }
@@ -164,12 +163,18 @@ HRESULT Parser_GetTypeByName(Parser* pParser, String* pTypeName, Type** ppType){
 	return ERROR_SUCCESS;
 }
 
-HRESULT Parser_ParseFile(Parser * pParser, char* pFileName, ObjectHandlerFunction pRootHandler)
+HRESULT Parser_SortVariables(Parser * pParser) {
+	void* pNewFirstElem;
+	
+}
+
+HRESULT Parser_ParseFile(Parser * pParser, char* pFileName, ObjectHandlerFunction pRootHandler, void* pRoot)
 {
 	CE1_ASSERT(pParser && pRootHandler && List_Length(pParser->pTypes)>0 && "invalid parser");
 	String* pFileContent;
 	CE1_CALL(FileReader_Read(pFileName, &(pFileContent)));
 	pParser->pRootHandler = pRootHandler;
+	pParser->pRoot = pRoot;
 
 	Variable* pVariable = 0;
 	Object* pCurrentObject = 0;
