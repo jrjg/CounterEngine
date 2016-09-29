@@ -26,7 +26,7 @@ HRESULT ResourceManager_DELETE()
 	return S_OK;
 }
 
-ID ResourceManager_LoadResource(char* name)
+HRESULT ResourceManager_LoadResource(char* name,ID** ppID)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
 	CE1_ASSERT(pRM&&name);
@@ -55,7 +55,8 @@ ID ResourceManager_LoadResource(char* name)
 	CE1_ASSERT(pRes->ResourceExtra && "Resource could not be loaded");
 
 	//store resource
-	return Vector_Pushback(pRM->pResources, pRes);
+	**ppID = Vector_Pushback(pRM->pResources, pRes);
+	return S_OK;
 }
 
 HRESULT ResourceManager_GetFormatName(char* from, char* to) {

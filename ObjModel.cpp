@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "List.h"
 #include "Parser.h"
+#include "Resource.h"
 
 #include "ObjModel.h"
 
@@ -41,7 +42,7 @@ HRESULT ObjModel_New(ObjModel ** ppObjModel)
 	pObjModel->pMeshSubsetTexture = Vector_New(sizeof(int), expectedMeshSubsetCount);
 
 	int expectedTextureCount = 10;
-	pObjModel->pMeshSRV = Vector_New(sizeof(ID3D11ShaderResourceView*), expectedTextureCount);
+	pObjModel->pMeshSRV = Vector_New(sizeof(ID*), expectedTextureCount);
 	pObjModel->pTextureNameArray = Vector_New(sizeof(String*), expectedTextureCount);
 
 	pObjModel->pSurfaceMaterial = Vector_New(sizeof(SurfaceMaterial*), expectedTextureCount);
@@ -537,7 +538,7 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 									);
 									if (!alreadyLoaded)
 									{
-
+										CE1_CALL(ResourceManager_LoadResource());
 										ID3D11ShaderResourceView* tempMeshSRV;
 										hr = D3DX11CreateShaderResourceViewFromFile(d3d11Device, fileNamePath.c_str(),
 											NULL, NULL, &tempMeshSRV, NULL);
