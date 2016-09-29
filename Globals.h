@@ -31,6 +31,7 @@ typedef int KEYCODE;								//provisorische variable für tastatur tasten
 #define cd3d11_CONSTANTBUFFER_LIGHTING 0
 
 #define CE1_STR(pS,pC) pS = (String*)malloc(sizeof(String)); ZeroMemory(pS, sizeof(String));pS->length = strlen(pC); pS->pBuffer = (char*)malloc(strlen(pC)*sizeof(char)); ZeroMemory(pS->pBuffer, strlen(pC)*sizeof(char)); for(int i=0;i<pS->length;i++){pS->pBuffer[i] = pC[i];};
+#define CE1_WSTR(pS,pC) pS = (WString*)malloc(sizeof(WString)); ZeroMemory(pS, sizeof(WString));pS->length = wcslen(pC); pS->pBuffer = (wchar_t*)malloc(wcslen(pC)*sizeof(wchar_t)); ZeroMemory(pS->pBuffer, wcslen(pC)*sizeof(wchar_t)); for(int i=0;i<pS->length;i++){pS->pBuffer[i] = pC[i];};
 #define CE1_ASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);return ERROR_SUCCESS;}
 #define CE1_LISTEXEC(pList,Exec) for(Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr)){Exec}
 #define CE1_VECEXEC(pVector,Exec) for(unsigned int i = 0; i < Vector_Last(pVector); i++){Exec}

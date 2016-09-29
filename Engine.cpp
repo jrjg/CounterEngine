@@ -277,11 +277,41 @@ BOOL CHAREQ(char * a, char * b)
 	return true;
 }
 
-BOOL CE1_CMPSTR(char * a, char * b, size_t l)
+BOOL CE1_CMPCHARBYL(char * a, char * b, size_t l)
 {
 	CE1_ASSERT(a&&b&&l);
 	for (size_t n = 0; n < l; n++) {
 		if (a[n] != b[n]) { return false; }
+	}
+	return true;
+}
+
+BOOL CE1_CompareStrings(String* pS1, String* pS2) {
+	CE1_ASSERT(pS1&&pS2);
+	if (pS1->length != pS2->length) {
+		return false;
+	}
+	else {
+		for (UINT i = 0; i < pS2->length; i++) {
+			if (pS1->pBuffer[i] != pS2->pBuffer[i]) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+BOOL CE1_CompareWStrings(WString* pS1, WString* pS2) {
+	CE1_ASSERT(pS1&&pS2);
+	if (pS1->length != pS2->length) {
+		return false;
+	}
+	else {
+		for (UINT i = 0; i < pS2->length; i++) {
+			if (pS1->pBuffer[i] != pS2->pBuffer[i]) {
+				return false;
+			}
+		}
 	}
 	return true;
 }

@@ -35,6 +35,17 @@ HRESULT Vector_GetMem(Vector* pVector, void** ppMem) {
 	return S_OK;
 }
 
+HRESULT Vector_Erase(Vector * pVector, UINT index, bool deletecontent)
+{
+	CE1_ASSERT(pVector&&"Vector_Erase");
+	if (pVector->_elems > 0) {
+		CE1_CALL(Vector_DeleteElement(pVector, index, deletecontent));
+		CE1_CALL(Vector_Insert(pVector,index, Vector_Get(pVector,Vector_Last(pVector))));
+		CE1_CALL(Vector_DeleteElement(pVector, Vector_Last(pVector), false));
+	}
+	return S_OK;
+}
+
 unsigned int Vector_Last(Vector* pVector)
 {
 	CE1_ASSERT(pVector);
@@ -57,7 +68,7 @@ HRESULT Vector_Delete(Vector* pVector)
 	return S_OK;
 }
 
-HRESULT Vector_DeleteAllElements(Vector* pVector)
+HRESULT Vector_DeleteAllElements(Vector* pVector, bool deletecontent)
 {
 	if (!pVector) {
 		return S_OK;
@@ -66,29 +77,30 @@ HRESULT Vector_DeleteAllElements(Vector* pVector)
 	{
 		for (unsigned int i = 0; i < pVector->_last; i++)
 		{
-			CE1_CALL(Vector_DeleteElement(pVector, i));
+			CE1_CALL(Vector_DeleteElement(pVector, i, deletecontent));
 		}
 	}
 	return S_OK;
 }
 
-HRESULT Vector_FullDelete(Vector* pVector)
+HRESULT Vector_FullDelete(Vector* pVector, bool deletecontent)
 {
 	if (!pVector) {
 		return S_OK;
 	}
-	CE1_CALL(Vector_DeleteAllElements(pVector));
+	CE1_CALL(Vector_DeleteAllElements(pVector, deletecontent));
 	CE1_CALL(Vector_Delete(pVector));
 	return S_OK;
 }
 
-HRESULT Vector_DeleteElement(Vector* pVector, unsigned int index)
+HRESULT Vector_DeleteElement(Vector* pVector, unsigned int index,bool deletecontent)
 {
 	if (!pVector) {
 		return S_OK;
 	}
-	CE1_DEL(Vector_Get(pVector, index));
+	if (deletecontent) { CE1_DEL(Vector_Get(pVector, index)) };
 	pVector->_elems--;
+	ZeroMemory((char*)(pVector->_pMem) + index * pVector->_elemsize, pVector->_elemsize);
 	if (pVector->_last == index)
 	{
 		unsigned int i;

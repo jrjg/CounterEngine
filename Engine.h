@@ -7,6 +7,12 @@ struct String {
 };
 typedef struct String String;
 
+struct WString {
+	wchar_t* pBuffer;
+	size_t length;
+};
+typedef struct WString WString;
+
 struct Engine;
 struct WinParams {
 	HINSTANCE hInstance;
@@ -48,6 +54,8 @@ HRESULT Engine_LoadConfig(void*);
 HRESULT Engine_ConfigHandler(void* p0, String* pObjName, void* pObj);
 
 BOOL CHAREQ(char * a, char * b);
-BOOL CE1_CMPSTR(char * a, char * b,size_t l);
+BOOL CE1_CMPCHARBYL(char * a, char * b, size_t l);
+BOOL CE1_CompareStrings(String* pS1, String* pS2);
+BOOL CE1_CompareWStrings(WString* pS1, WString* pS2);
 
 #endif

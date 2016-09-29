@@ -20,6 +20,10 @@
 #include <Windows.h>
 #include <conio.h>
 #include <WinUser.h>
+#include <vector>
+#include <fstream>
+#include <istream>
+#include <sstream>
 
 
 #include <d3d12.h>
