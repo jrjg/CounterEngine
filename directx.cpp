@@ -12,6 +12,58 @@
 //#include "LightManager.h"
 #include "directx.h"
 
+//HRESULT XCreateBlendstateTransparency(cd3d11* pD3D) {
+//	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+//	ZeroMemory(&rtbd, sizeof(rtbd));
+//	rtbd.BlendEnable = true;
+//	rtbd.SrcBlend = D3D11_BLEND_INV_SRC_ALPHA;
+//	rtbd.DestBlend = D3D11_BLEND_SRC_ALPHA;
+//	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+//	rtbd.SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+//	rtbd.DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+//	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+//	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+//
+//	D3D11_BLEND_DESC blendDesc;
+//	ZeroMemory(&blendDesc, sizeof(blendDesc));
+//	blendDesc.AlphaToCoverageEnable = false;
+//	blendDesc.RenderTarget[0] = rtbd;
+//
+//	Engine_GetCD3D11()->pDevice->CreateBlendState(&blendDesc, &Engine_GetCD3D11()->pBlendStateTransparency);
+//	return S_OK;
+//}
+
+
+HRESULT XCreateRasterizerCullNone(cd3d11* pD3D) {
+	D3D11_RASTERIZER_DESC cmdesc;
+	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.FrontCounterClockwise = false;
+	cmdesc.CullMode = D3D11_CULL_NONE;
+	CE1_CALL(pD3D->pDevice->CreateRasterizerState(&cmdesc, &pD3D->RSCullNone));
+	return S_OK;
+}
+HRESULT XCreateDepthStencilState(cd3d11* pD3D) {
+	D3D11_DEPTH_STENCIL_DESC dssDesc;
+	ZeroMemory(&dssDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+	dssDesc.DepthEnable = true;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	CE1_CALL(pD3D->pDevice->CreateDepthStencilState(&dssDesc, &pD3D->DSLessEqual));
+	return S_OK;
+}
+
+HRESULT XCreateConstBuffer(cd3d11* pd3d11) {
+	D3D11_BUFFER_DESC cbbd;
+	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof(cbPerObject);
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbbd.CPUAccessFlags = 0;
+	cbbd.MiscFlags = 0;
+	CE1_CALL(Engine_GetCD3D11()->pDevice->CreateBuffer(&cbbd, NULL, &pd3d11->cbPerObjectBuffer));
+}
+
  HRESULT cd3d11_CreateConstantBuffer(cd3d11* pd3d11,UINT size, bool dynamic, bool CPUupdates, D3D11_SUBRESOURCE_DATA* pData, ID3D11Buffer** ppBuffer) {
 	CE1_ASSERT(pd3d11&&size);
 	D3D11_BUFFER_DESC desc;
@@ -205,6 +257,14 @@ HRESULT cd3d11_NEW(cd3d11** ppd3d11) {
 	CE1_CALL(cd3d11_CreateAndSetViewport(pd3d11));
 
 	CE1_CALL(cd3d11_registerHandlers(pd3d11));
+
+	CE1_CALL(XCreateConstBuffer(pd3d11));
+
+	CE1_CALL(XCreateRasterizerCullNone(pd3d11));
+
+	CE1_CALL(XCreateDepthStencilState(pd3d11));
+
+	//CE1_CALL(XCreateBlendstateTranparency(pd3d11));
 
 	return S_OK;
 }
@@ -400,8 +460,8 @@ HRESULT Component_CreateRenderComponent(void * pCreatorDesc, void ** ppData)
 {
 	CE1_ASSERT(pCreatorDesc);
 	RenderComponent* pRC = (RenderComponent*)(*ppData);
-	RenderComponentDesc *pDesc = (RenderComponentDesc*)pCreatorDesc;
-	pRC->TexResID = ResourceManager_LoadResource(pDesc->texturename);
+	RenderComponentDesc *pDesc = (RenderComponentDesc*)pCreatorDesc; 
+	ResourceManager_LoadResource(pDesc->texturename, &pRC->TexResID);
 	return S_OK;
 }
 
@@ -446,6 +506,8 @@ HRESULT cd3d11_DELETE(void) {
 
 	pd3d11->pSwapChain->SetFullscreenState(false, NULL);
 	Vector_Delete(pd3d11->pShaders);
+	SAFE_RELEASE(pd3d11->DSLessEqual);
+	SAFE_RELEASE(pd3d11->RSCullNone);
 	SAFE_RELEASE(pd3d11->pRasterizerState);
 	SAFE_RELEASE(pd3d11->pView);
 	SAFE_RELEASE(pd3d11->pDepthView);
@@ -455,6 +517,8 @@ HRESULT cd3d11_DELETE(void) {
 	SAFE_RELEASE(pd3d11->pImmediateContext);
 	SAFE_RELEASE(pd3d11->pDebug); 
 	SAFE_RELEASE(pd3d11->pDevice);
+
+	SAFE_RELEASE(pd3d11->cbPerObjectBuffer);
 
 	SAFE_RELEASE(pd3d11->pDemoObject->pIndexBuffer);
 	SAFE_RELEASE(pd3d11->pDemoObject->pVertexBuffer);

@@ -26,7 +26,7 @@ HRESULT ResourceManager_DELETE()
 	return S_OK;
 }
 
-HRESULT ResourceManager_LoadResource(char* name,ID** ppID)
+HRESULT ResourceManager_LoadResource(char* name,ID* pID)
 {
 	ResourceManager* pRM = Engine_GetResourceManager();
 	CE1_ASSERT(pRM&&name);
@@ -55,8 +55,22 @@ HRESULT ResourceManager_LoadResource(char* name,ID** ppID)
 	CE1_ASSERT(pRes->ResourceExtra && "Resource could not be loaded");
 
 	//store resource
-	**ppID = Vector_Pushback(pRM->pResources, pRes);
+	*pID = Vector_Pushback(pRM->pResources, pRes);
 	return S_OK;
+}
+
+HRESULT ResourceManager_LoadResource(String * pName, ID * pID)
+{
+	CE1_CALL(ResourceManager_LoadResource(name->pBuffer, pID));
+	return S_OK;
+}
+
+HRESULT ResourceManager_LoadResource(WString * pName, ID * pID)
+{
+	char* pCharName = (char*)malloc(sizeof(char)*pName->length);
+	wcstombs(pCharName, pName->pBuffer, pName->length);
+	CE1_CALL(ResourceManager_LoadResource(pCharName,pID));
+	return E_NOTIMPL;
 }
 
 HRESULT ResourceManager_GetFormatName(char* from, char* to) {

@@ -4,14 +4,15 @@
 #include "List.h"
 #include "Parser.h"
 #include "Resource.h"
-
+#include "directx.h"
+#include "Camera.h"
 #include "ObjModel.h"
 
 struct SurfaceMaterial
 {
-	struct String* name;
+	struct WString* pName;
 	XMFLOAT4 difColor;
-	int texArrayIndex;
+	ID TexResID;
 	bool hasTexture;
 	bool transparent;
 };
@@ -26,9 +27,9 @@ struct ObjModel {
 	struct Vector* pMeshSubsetIndexStart;
 	struct Vector* pMeshSubsetTexture;
 	struct Vector* pMeshSRV;
-	struct Vector* pTextureNameArray;
 	struct Vector* pSurfaceMaterial;
-
+	UINT stride;
+	XMMATRIX meshworld;
 };
 
 HRESULT ObjModel_New(ObjModel ** ppObjModel)
@@ -43,7 +44,6 @@ HRESULT ObjModel_New(ObjModel ** ppObjModel)
 
 	int expectedTextureCount = 10;
 	pObjModel->pMeshSRV = Vector_New(sizeof(ID*), expectedTextureCount);
-	pObjModel->pTextureNameArray = Vector_New(sizeof(String*), expectedTextureCount);
 
 	pObjModel->pSurfaceMaterial = Vector_New(sizeof(SurfaceMaterial*), expectedTextureCount);
 
@@ -71,21 +71,59 @@ HRESULT ObjModel_Delete(ObjModel* pObjModel)
 	CE1_VECEXEC(
 		pObjModel->pSurfaceMaterial,
 		pSurfaceMaterial = (SurfaceMaterial*)Vector_Get(pObjModel->pSurfaceMaterial, i);
-		CE1_DEL(pSurfaceMaterial->name->pBuffer);
-		CE1_DEL(pSurfaceMaterial->name);
+		CE1_DEL(pSurfaceMaterial->pName->pBuffer);
+		CE1_DEL(pSurfaceMaterial->pName);
 	);
 	CE1_CALL(Vector_FullDelete(pObjModel->pSurfaceMaterial,true));
-
-	CE1_CALL(Vector_FullDelete(pObjModel->pTextureNameArray,true));
 
 	CE1_DEL(pObjModel);
 	return S_OK;
 }
 
+HRESULT ObjModel_LoadFromFile(ObjModel* pObjModel, String* pFile) {
+	CE1_CALL(ObjModel_LoadFromFile(pObjModel, pFile, true, false));
+	return S_OK;
+}
+
+HRESULT ObjModel_Render(ObjModel * pObjModel)
+{
+	UINT offset = 0;
+	XMMATRIX WVP;
+	cbPerObject cbPerObj;
+	SurfaceMaterial* pSM;
+	XMMATRIX VP = *Camera_GetViewTimesProjection(Engine_GetCamera());
+	ID3D11ShaderResourceView* pSRV;
+	ID3D11DeviceContext* pDC = Engine_GetCD3D11()->pImmediateContext;
+	for (int i = 0; i < pObjModel->meshSubsets; ++i)
+	{
+		pDC->IASetIndexBuffer(pObjModel->meshIndexBuff, DXGI_FORMAT_R32_UINT, 0);
+		pDC->IASetVertexBuffers(0, 1, &pObjModel->meshVertBuff, &pObjModel->stride, &offset);
+		WVP = pObjModel->meshWorld * VP;
+		cbPerObj.WVP = XMMatrixTranspose(WVP);
+		cbPerObj.World = XMMatrixTranspose(pObjModel->meshWorld);
+		pSM = (SurfaceMaterial*)Vector_Get(pObjModel->pSurfaceMaterial, *(int*)Vector_Get(pObjModel->pMeshSubsetTexture, i));
+		cbPerObj.difColor = pSM->difColor;
+		cbPerObj.hasTexture = pSM->hasTexture;
+		pDC->UpdateSubresource(Engine_GetCD3D11()->cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+		pDC->VSSetConstantBuffers(0, 1, &Engine_GetCD3D11()->cbPerObjectBuffer);
+		pDC->PSSetConstantBuffers(1, 1, &Engine_GetCD3D11()->cbPerObjectBuffer);
+		if (pSM->hasTexture) {
+			ResourceManager_GetResource(pSM->TexResID, (void**)&pSRV);
+		}
+		pDC->PSSetShaderResources(0, 1, &pSRV);
+		//pDC->PSSetSamplers(0, 1, &CubesTexSamplerState);
+		pDC->RSSetState(Engine_GetCD3D11()->RSCullNone);
+		int indexStart = *(int*)Vector_Get(pObjModel->pMeshSubsetIndexStart,i);
+		int indexDrawAmount = *(int*)Vector_Get(pObjModel->pMeshSubsetIndexStart, i+1) - indexStart;
+		if (!pSM->transparent) {
+			pDC->DrawIndexed(indexDrawAmount, indexStart, 0);
+		}
+	}
+	return S_OK;
+}
+
 HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoordSys,bool computeNormals)
 {
-	HRESULT hr = 0;
-
 	std::wifstream fileIn(pFile->pBuffer);
 	std::wstring meshMatLib; 
 	std::vector<DWORD> indices;
@@ -526,47 +564,19 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 									bool alreadyLoaded = false;
 									WString* pFileNamePath;
 									CE1_WSTR(pFileNamePath, fileNamePath.c_str());
-									WString* pTexName;
-									CE1_VECEXEC(
-										pObjModel->pTextureNameArray,
-										pTexName = (WString*)Vector_Get(pObjModel->pTextureNameArray,i);
-										if (CE1_CompareWStrings(pTexName, pFileNamePath)) {
-											alreadyLoaded = true;
-											pCurrentMat->texArrayIndex = i;
-											pCurrentMat->hasTexture = true;
-										}
-									);
-									if (!alreadyLoaded)
-									{
-										CE1_CALL(ResourceManager_LoadResource());
-										ID3D11ShaderResourceView* tempMeshSRV;
-										hr = D3DX11CreateShaderResourceViewFromFile(d3d11Device, fileNamePath.c_str(),
-											NULL, NULL, &tempMeshSRV, NULL);
-										if (SUCCEEDED(hr))
-										{
-											textureNameArray.push_back(fileNamePath.c_str());
-											material[matCount - 1].texArrayIndex = meshSRV.size();
-											meshSRV.push_back(tempMeshSRV);
-											material[matCount - 1].hasTexture = true;
-										}
-									}
+									CE1_CALL(ResourceManager_LoadResource(pFileNamePath, &pCurrentMat->TexResID));
+									pCurrentMat->hasTexture = true;
 								}
 							}
-							//map_d - alpha map
 							else if (checkChar == 'd')
 							{
-								//Alpha maps are usually the same as the diffuse map
-								//So we will assume that for now by only enabling
-								//transparency for this material, as we will already
-								//be using the alpha channel in the diffuse map
-								material[matCount - 1].transparent = true;
+								pCurrentMat->transparent = true;
 							}
 						}
 					}
 				}
 				break;
-
-			case 'n':    //newmtl - Declare new material
+			case 'n':
 				checkChar = fileIn.get();
 				if (checkChar == 'e')
 				{
@@ -585,14 +595,14 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 									checkChar = fileIn.get();
 									if (checkChar == ' ')
 									{
-										//New material, set its defaults
-										SurfaceMaterial tempMat;
-										material.push_back(tempMat);
-										fileIn >> material[matCount].matName;
-										material[matCount].transparent = false;
-										material[matCount].hasTexture = false;
-										material[matCount].texArrayIndex = 0;
-										matCount++;
+										CE1_NEW(SurfaceMaterial, pTempMat);
+										Vector_Pushback(pObjModel->pSurfaceMaterial, pTempMat);
+										std::wstring tempWString;
+										fileIn >> tempWString;
+										CE1_WSTR(pCurrentMat->pName,tempWString.c_str());
+										pCurrentMat->transparent = false;
+										pCurrentMat->hasTexture = false;
+										pCurrentMat->TexResID = 0;
 										kdset = false;
 									}
 								}
@@ -601,7 +611,6 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 					}
 				}
 				break;
-
 			default:
 				break;
 			}
@@ -609,96 +618,45 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 	}
 	else
 	{
-		SwapChain->SetFullscreenState(false, NULL);    //Make sure we are out of fullscreen
-
-		std::wstring message = L"Could not open: ";
-		message += meshMatLib;
-
-		MessageBox(0, message.c_str(),
-			L"Error", MB_OK);
-
-		return false;
+		CE1_ASSERT(0&&"Could not open material lib");
+		return ERROR_SUCCESS;
 	}
-
-	//Set the subsets material to the index value
-	//of the its material in our material array
-	for (int i = 0; i < meshSubsets; ++i)
-	{
-		bool hasMat = false;
-		for (int j = 0; j < material.size(); ++j)
-		{
-			if (meshMaterials[i] == material[j].matName)
-			{
-				subsetMaterialArray.push_back(j);
-				hasMat = true;
-			}
-		}
-		if (!hasMat)
-			subsetMaterialArray.push_back(0); //Use first material in array
-	}
-
-	std::vector<Vertex> vertices;
-	Vertex tempVert;
-
-	//Create our vertices using the information we got 
-	//from the file and store them in a vector
+	std::vector<Vertex_UnlitTextured> vertices;
+	Vertex_UnlitTextured tempVert;
 	for (int j = 0; j < totalVerts; ++j)
 	{
-		tempVert.pos = vertPos[vertPosIndex[j]];
-		tempVert.normal = vertNorm[vertNormIndex[j]];
-		tempVert.texCoord = vertTexCoord[vertTCIndex[j]];
-
+		tempVert.Pos = vertPos[vertPosIndex[j]];
+		tempVert.Normal = vertNorm[vertNormIndex[j]];
+		tempVert.Uv = vertTexCoord[vertTCIndex[j]];
 		vertices.push_back(tempVert);
 	}
-
-	//////////////////////Compute Normals///////////////////////////
-	//If computeNormals was set to true then we will create our own
-	//normals, if it was set to false we will use the obj files normals
 	if (computeNormals)
 	{
 		std::vector<XMFLOAT3> tempNormal;
-
-		//normalized and unnormalized normals
 		XMFLOAT3 unnormalized = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-		//Used to get vectors (sides) from the position of the verts
 		float vecX, vecY, vecZ;
-
-		//Two edges of our triangle
 		XMVECTOR edge1 = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 		XMVECTOR edge2 = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-
-		//Compute face normals
 		for (int i = 0; i < meshTriangles; ++i)
 		{
-			//Get the vector describing one edge of our triangle (edge 0,2)
-			vecX = vertices[indices[(i * 3)]].pos.x - vertices[indices[(i * 3) + 2]].pos.x;
-			vecY = vertices[indices[(i * 3)]].pos.y - vertices[indices[(i * 3) + 2]].pos.y;
-			vecZ = vertices[indices[(i * 3)]].pos.z - vertices[indices[(i * 3) + 2]].pos.z;
-			edge1 = XMVectorSet(vecX, vecY, vecZ, 0.0f);    //Create our first edge
-
-															//Get the vector describing another edge of our triangle (edge 2,1)
-			vecX = vertices[indices[(i * 3) + 2]].pos.x - vertices[indices[(i * 3) + 1]].pos.x;
-			vecY = vertices[indices[(i * 3) + 2]].pos.y - vertices[indices[(i * 3) + 1]].pos.y;
-			vecZ = vertices[indices[(i * 3) + 2]].pos.z - vertices[indices[(i * 3) + 1]].pos.z;
-			edge2 = XMVectorSet(vecX, vecY, vecZ, 0.0f);    //Create our second edge
-
-															//Cross multiply the two edge vectors to get the un-normalized face normal
+			vecX = vertices[indices[(i * 3)]].Pos.x - vertices[indices[(i * 3) + 2]].Pos.x;
+			vecY = vertices[indices[(i * 3)]].Pos.y - vertices[indices[(i * 3) + 2]].Pos.y;
+			vecZ = vertices[indices[(i * 3)]].Pos.z - vertices[indices[(i * 3) + 2]].Pos.z;
+			edge1 = XMVectorSet(vecX, vecY, vecZ, 0.0f);
+			vecX = vertices[indices[(i * 3) + 2]].Pos.x - vertices[indices[(i * 3) + 1]].Pos.x;
+			vecY = vertices[indices[(i * 3) + 2]].Pos.y - vertices[indices[(i * 3) + 1]].Pos.y;
+			vecZ = vertices[indices[(i * 3) + 2]].Pos.z - vertices[indices[(i * 3) + 1]].Pos.z;
+			edge2 = XMVectorSet(vecX, vecY, vecZ, 0.0f);
 			XMStoreFloat3(&unnormalized, XMVector3Cross(edge1, edge2));
-			tempNormal.push_back(unnormalized);            //Save unormalized normal (for normal averaging)
+			tempNormal.push_back(unnormalized);
 		}
-
-		//Compute vertex normals (normal Averaging)
 		XMVECTOR normalSum = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 		int facesUsing = 0;
 		float tX;
 		float tY;
 		float tZ;
-
-		//Go through each vertex
 		for (int i = 0; i < totalVerts; ++i)
 		{
-			//Check which triangles use this vertex
 			for (int j = 0; j < meshTriangles; ++j)
 			{
 				if (indices[j * 3] == i ||
@@ -708,157 +666,43 @@ HRESULT ObjModel_LoadFromFile(ObjModel * pObjModel, String * pFile,bool isRHCoor
 					tX = XMVectorGetX(normalSum) + tempNormal[j].x;
 					tY = XMVectorGetY(normalSum) + tempNormal[j].y;
 					tZ = XMVectorGetZ(normalSum) + tempNormal[j].z;
-
-					normalSum = XMVectorSet(tX, tY, tZ, 0.0f);    //If a face is using the vertex, add the unormalized face normal to the normalSum
+					normalSum = XMVectorSet(tX, tY, tZ, 0.0f);
 					facesUsing++;
 				}
 			}
-
-			//Get the actual normal by dividing the normalSum by the number of faces sharing the vertex
 			normalSum = normalSum / facesUsing;
-
-			//Normalize the normalSum vector
 			normalSum = XMVector3Normalize(normalSum);
-
-			//Store the normal in our current vertex
-			vertices[i].normal.x = XMVectorGetX(normalSum);
-			vertices[i].normal.y = XMVectorGetY(normalSum);
-			vertices[i].normal.z = XMVectorGetZ(normalSum);
-
-			//Clear normalSum and facesUsing for next vertex
+			vertices[i].Normal.x = XMVectorGetX(normalSum);
+			vertices[i].Normal.y = XMVectorGetY(normalSum);
+			vertices[i].Normal.z = XMVectorGetZ(normalSum);
 			normalSum = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 			facesUsing = 0;
-
 		}
 	}
-
-	//Create index buffer
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth = sizeof(DWORD) * meshTriangles * 3;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
-
 	D3D11_SUBRESOURCE_DATA iinitData;
-
 	iinitData.pSysMem = &indices[0];
-	d3d11Device->CreateBuffer(&indexBufferDesc, &iinitData, indexBuff);
+	Engine_GetCD3D11()->pDevice->CreateBuffer(&indexBufferDesc, &iinitData, &pObjModel->meshIndexBuff);
 
-	//Create Vertex Buffer
+	pObjModel->stride = sizeof(Vertex_UnlitTextured);
+
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * totalVerts;
+	vertexBufferDesc.ByteWidth = pObjModel->stride * totalVerts;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
-
 	D3D11_SUBRESOURCE_DATA vertexBufferData;
-
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = &vertices[0];
-	hr = d3d11Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, vertBuff);
+	Engine_GetCD3D11()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pObjModel->meshVertBuff);
 
-	return true;
 	return S_OK;
 }
-
-
-
-
-//struct ObjModelCreator {
-//	ObjModel* pObjModel;
-//
-//	bool isRHCoordSys;
-//	bool computeNormals;
-//	bool hasNorm;
-//	String* pMatLibName;
-//	Vector* pIndices;
-//	Vector* pVertPos;
-//	Vector* pVertNorm;
-//	Vector* pVertTexCoord;
-//	Vector* pMeshMaterials;
-//	int vIndex;
-//};
-//
-//HRESULT ObjModel_NewCreator(ObjModelCreator** ppObjModelCreator) {
-//	_NEW(ObjModelCreator, *ppObjModelCreator);
-//	ObjModelCreator* pObjModelCreator = *ppObjModelCreator;
-//	CE1_CALL(ObjModel_New(&pObjModelCreator->pObjModel));
-//	pObjModelCreator->isRHCoordSys = false;
-//	pObjModelCreator->computeNormals = true;
-//	pObjModelCreator->pMatLibName = 0;
-//	pObjModelCreator->pIndices = Vector_New(sizeof(DWORD*), 100);
-//	pObjModelCreator->pVertPos = Vector_New(sizeof(XMFLOAT3*), 100);
-//	pObjModelCreator->pVertNorm = Vector_New(sizeof(XMFLOAT3*), 100);
-//	pObjModelCreator->pVertTexCoord = Vector_New(sizeof(XMFLOAT2*), 100);
-//	pObjModelCreator->pMeshMaterials = Vector_New(sizeof(String*), 100);
-//	pObjModelCreator->hasNorm = false;
-//	pObjModelCreator->vIndex = 0;
-//	return S_OK;
-//}
-//
-//
-//
-//#define CASE(NAME,EXEC)if (CE1_CMPSTR(pChildName->pBuffer, NAME, pChildName->length)) {EXEC;return S_OK;}
-//
-//HRESULT ObjModel_Handler(void* pParent, String* pChildName, void* pChild) {
-//	ObjModelCreator* pObjModelCreator = (ObjModelCreator*)pParent;
-//	CE1_ASSERT(pObjModelCreator&&pChildName&&pChild&&"ObjModel_Handler");
-//
-//	CASE("#", 1);
-//	CASE("v",
-//		if (pObjModelCreator->isRHCoordSys) { ((XMFLOAT3*)pChild)->z *= -1.0f; }
-//	Vector_Pushback(pObjModelCreator->pVertPos, pChild);
-//	);
-//	CASE("vt",
-//		if (pObjModelCreator->isRHCoordSys) { ((XMFLOAT2*)pChild)->y *= -1.0f; }
-//	Vector_Pushback(pObjModelCreator->pVertTexCoord, pChild);
-//	);
-//	CASE("vn",
-//		if (pObjModelCreator->isRHCoordSys) { ((XMFLOAT3*)pChild)->z *= -1.0f; }
-//	Vector_Pushback(pObjModelCreator->pVertNorm, pChild);
-//	pObjModelCreator->hasNorm = true;
-//	);
-//	CASE("g",
-//		CE1_NEW(int, pIndex);
-//	*pIndex = pObjModelCreator->vIndex;
-//	Vector_Pushback(pObjModelCreator->pObjModel->pMeshSubsetIndexStart, pIndex);
-//	pObjModelCreator->pObjModel->meshSubsets++;
-//	);
-//	CASE("f",
-//
-//		);
-//	CASE("mtllib",
-//
-//		);
-//	CASE("usemtl",
-//
-//		);
-//	CE1_ASSERT(0 && "unknown Object received");
-//}
-//
-//HRESULT ObjModel_LoadFromFile(String* pObjFilename) {
-//	Parser* pParser = Parser_New();
-//	CE1_CALL(Parser_DeclareVariable(pParser, "String", "mtllib", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "String", "usemtl", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "vt", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "vn", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "XMFLOAT3", "v", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "String", "g", &ObjectModelHandler));
-//	CE1_CALL(Parser_DeclareVariable(pParser, "String", "#", &ObjectModelHandler));
-//
-//
-//	//CE1_CALL(Parser_DeclareType(pParser,"XMFLOAT3",sizeof(XMFLOAT3),&Parser_ConvertStringToVertex));
-//	CE1_CALL(Parser_RegisterOperator(pParser, "\n", OperatorCode::submit));
-//
-//	//parse
-//	ObjModelCreator* pObjModelCreator;
-//	CE1_CALL(ObjModel_NewCreator(&pObjModelCreator));
-//	CE1_CALL(Parser_ParseFile(pParser, "spaceCompound.obj", &ObjectModelHandler, pObjModelCreator));
-//
-//}

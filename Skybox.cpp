@@ -18,54 +18,38 @@ HRESULT Skybox_New(Skybox** ppSkybox)
 	return S_OK;
 }
 
-HRESULT Skybox_CreateConstBuffer(Skybox* pSkybox) {
-	D3D11_BUFFER_DESC cbbd;
-	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-	cbbd.Usage = D3D11_USAGE_DEFAULT;
-	cbbd.ByteWidth = sizeof(cbPerObject);
-	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cbbd.CPUAccessFlags = 0;
-	cbbd.MiscFlags = 0;
-	CE1_CALL(Engine_GetCD3D11()->pDevice->CreateBuffer(&cbbd, NULL, &pSkybox->cbPerObjectBuffer));
-}
+//HRESULT Skybox_CreateConstBuffer(Skybox* pSkybox) {
+//	D3D11_BUFFER_DESC cbbd;
+//	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+//	cbbd.Usage = D3D11_USAGE_DEFAULT;
+//	cbbd.ByteWidth = sizeof(cbPerObject);
+//	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//	cbbd.CPUAccessFlags = 0;
+//	cbbd.MiscFlags = 0;
+//	CE1_CALL(Engine_GetCD3D11()->pDevice->CreateBuffer(&cbbd, NULL, &pSkybox->cbPerObjectBuffer));
+//}
 
 HRESULT Skybox_Render(Skybox* pSkybox) {
+
 	Engine_GetCD3D11()->pImmediateContext->IASetIndexBuffer(pSkybox->sphereIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	Engine_GetCD3D11()->pImmediateContext->IASetVertexBuffers(0, 1, &pSkybox->sphereVertBuffer, &pSkybox->stride, &pSkybox->offset);
 	
-	pSkybox->WVP = pSkybox->sphereWorld * (*Camera_GetViewTimesProjection(Engine_GetCamera()));
-	pSkybox->cbPerObj.WVP = XMMatrixTranspose(pSkybox->WVP);
-	pSkybox->cbPerObj.World = XMMatrixTranspose(pSkybox->sphereWorld);
-	Engine_GetCD3D11()->pImmediateContext->UpdateSubresource(pSkybox->cbPerObjectBuffer, 0, NULL, &pSkybox->cbPerObj, 0, 0);
-	Engine_GetCD3D11()->pImmediateContext->VSSetConstantBuffers(0, 1, &pSkybox->cbPerObjectBuffer);
+	XMMATRIX WVP = pSkybox->sphereWorld * (*Camera_GetViewTimesProjection(Engine_GetCamera()));
+	cbPerObject cbPerObj;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	cbPerObj.World = XMMatrixTranspose(pSkybox->sphereWorld);
+	Engine_GetCD3D11()->pImmediateContext->UpdateSubresource(Engine_GetCD3D11()->cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	Engine_GetCD3D11()->pImmediateContext->VSSetConstantBuffers(0, 1, &Engine_GetCD3D11()->cbPerObjectBuffer);
 	Engine_GetCD3D11()->pImmediateContext->PSSetShaderResources(0, 1, &pSkybox->smrv);
 	//Engine_GetCD3D11()->pImmediateContext->PSSetSamplers(0, 1, &CubesTexSamplerState);
 
 	Engine_GetCD3D11()->pImmediateContext->VSSetShader(pSkybox->SKYMAP_VS, 0, 0);
 	Engine_GetCD3D11()->pImmediateContext->PSSetShader(pSkybox->SKYMAP_PS, 0, 0);
-	Engine_GetCD3D11()->pImmediateContext->OMSetDepthStencilState(pSkybox->DSLessEqual, 0);
-	Engine_GetCD3D11()->pImmediateContext->RSSetState(pSkybox->RSCullNone);
+	Engine_GetCD3D11()->pImmediateContext->OMSetDepthStencilState(Engine_GetCD3D11()->DSLessEqual, 0);
+	Engine_GetCD3D11()->pImmediateContext->RSSetState(Engine_GetCD3D11()->RSCullNone);
 	Engine_GetCD3D11()->pImmediateContext->DrawIndexed(pSkybox->NumSphereFaces * 3, 0, 0);
 
 	Engine_GetCD3D11()->pImmediateContext->OMSetDepthStencilState(NULL, 0);
-	return S_OK;
-}
-
-HRESULT Skybox_CreateRasterizerAndDepthStencilState(Skybox* pSkybox) {
-	D3D11_RASTERIZER_DESC cmdesc;
-	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
-	cmdesc.FillMode = D3D11_FILL_SOLID;
-	cmdesc.FrontCounterClockwise = false;
-	cmdesc.CullMode = D3D11_CULL_NONE;
-	CE1_CALL(Engine_GetCD3D11()->pDevice->CreateRasterizerState(&cmdesc, &pSkybox->RSCullNone));
-
-	D3D11_DEPTH_STENCIL_DESC dssDesc;
-	ZeroMemory(&dssDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	dssDesc.DepthEnable = true;
-	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-
-	CE1_CALL(Engine_GetCD3D11()->pDevice->CreateDepthStencilState(&dssDesc, &pSkybox->DSLessEqual));
 	return S_OK;
 }
 
@@ -76,7 +60,6 @@ HRESULT Skybox_Delete(void* p0)
 	pSkybox->alive = false;
 	CE1_DEL(pSkybox->pVertices);
 	CE1_DEL(pSkybox->pIndices);
-	SAFE_RELEASE(pSkybox->cbPerObjectBuffer);
 	SAFE_RELEASE(pSkybox->sphereIndexBuffer);
 	SAFE_RELEASE(pSkybox->sphereVertBuffer);
 	SAFE_RELEASE(pSkybox->SKYMAP_VS);
@@ -84,8 +67,6 @@ HRESULT Skybox_Delete(void* p0)
 	SAFE_RELEASE(pSkybox->SKYMAP_VS_Buffer);
 	SAFE_RELEASE(pSkybox->SKYMAP_PS_Buffer);
 	SAFE_RELEASE(pSkybox->smrv);
-	SAFE_RELEASE(pSkybox->DSLessEqual);
-	SAFE_RELEASE(pSkybox->RSCullNone);
 	CE1_DEL(pSkybox);
 	return S_OK;
 }
@@ -220,7 +201,6 @@ HRESULT Skybox_Startup(void* p0) {
 	CE1_CALL(Skybox_CreateShaders(pSkybox));
 	CE1_CALL(Skybox_CreateTexture(pSkybox));
 	CE1_CALL(Skybox_CreateRasterizerAndDepthStencilState(pSkybox));
-	CE1_CALL(Skybox_CreateConstBuffer(pSkybox));
 	ProcessManager_NewProcess(&Skybox_Run, (1000.0f) / (100.0f));
 	return S_OK;
 }

@@ -1,12 +1,12 @@
 #ifndef SKYBOX_INC
 #define SKYBOX_INC
 
-struct cbPerObject
-{
-	XMMATRIX  WVP;
-	XMMATRIX World;
-};
-typedef struct cbPerObject cbPerObject;
+//struct Skybox_ConstantBuffer
+//{
+//	XMMATRIX  WVP;
+//	XMMATRIX World;
+//};
+//typedef struct Skybox_ConstantBuffer Skybox_ConstantBuffer;
 
 struct Float3 {
 	float x;
@@ -27,9 +27,6 @@ struct Skybox {
 
 	ID3D11ShaderResourceView* smrv;
 
-	ID3D11DepthStencilState* DSLessEqual;
-	ID3D11RasterizerState* RSCullNone;
-
 	int NumSphereVertices;
 	int NumSphereFaces;
 
@@ -44,11 +41,11 @@ struct Skybox {
 	UINT stride;
 	UINT offset;
 
-	ID3D11Buffer* cbPerObjectBuffer;
+	/*ID3D11Buffer* cbPerObjectBuffer;
 
 	cbPerObject cbPerObj;
 
-	XMMATRIX WVP;
+	XMMATRIX WVP;*/
 };
 typedef struct Skybox Skybox;
 

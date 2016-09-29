@@ -26,7 +26,9 @@ typedef struct ResourceManager ResourceManager;
 
 ResourceManager* ResourceManager_NEW();
 HRESULT ResourceManager_DELETE();
-HRESULT ResourceManager_LoadResource(char* name, ID** ppID);
+HRESULT ResourceManager_LoadResource(char* name, ID* pID);
+HRESULT ResourceManager_LoadResource(String* pName, ID* pID);
+HRESULT ResourceManager_LoadResource(WString* pName, ID* pID);
 HRESULT ResourceManager_UnLoadResource(ID id);
 HRESULT ResourceManager_FullUnLoad();
 HRESULT ResourceManager_GetResource(ID id, void** ppRes);

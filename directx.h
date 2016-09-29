@@ -97,11 +97,18 @@ struct cd3d11 {
 	D3D11_VIEWPORT* pViewport;
 	FLOAT pClsColor[4];
 
+	ID3D11DepthStencilState* DSLessEqual;
+	ID3D11RasterizerState* RSCullNone;
+
+	ID3D11BlendState* pBlendStateTransparency;
+
 	XMMATRIX WorldViewProjection;
 	XMMATRIX World;
 	float rot = 0.0f;
 	XMMATRIX camView;
 	XMMATRIX camProjection;
+
+	ID3D11Buffer* cbPerObjectBuffer;
 };
 
 HRESULT cd3d11_SetTexture(ID3D11ShaderResourceView* const *pDiffuseRV, ID3D11SamplerState * const *ppSamplers);
@@ -126,7 +133,6 @@ struct ObjModel {
 	struct Vector* pMeshSubsetIndexStart;
 	struct Vector* pMeshSubsetTexture;
 	struct Vector* pMeshSRV;
-	struct Vector* pTextureNameArray;
 };
 typedef ObjModel ObjModel;
 
@@ -170,6 +176,8 @@ struct D3D11Vertex_UnlitTextured
 	XMFLOAT2 Uv;
 };
 
+typedef D3D11Vertex_UnlitTextured Vertex_UnlitTextured;
+
 struct VertexObject {
 	ID3D11Buffer* pIndexBuffer;
 	ID3D11Buffer* pVertexBuffer;
@@ -179,6 +187,15 @@ struct VertexObject {
 	ID3D11SamplerState* pSamplerState;
 	ID3D11Resource* pTex;
 };
+
+struct cbPerObject
+{
+	XMMATRIX  WVP;
+	XMMATRIX World;
+	XMFLOAT4 difColor;
+	bool hasTexture;
+};
+typedef struct cbPerObject cbPerObject;
 
 struct ConstantBuffer_Lighting {
 	XMFLOAT4 LightDiffuse[MAXIMUM_LIGHTS_SUPPORTED];
