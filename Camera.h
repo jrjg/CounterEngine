@@ -1,7 +1,8 @@
 #ifndef CAMERA_INC
 #define CAMERA_INC
 
-struct Camera {
+class Camera : MemManaged{
+private:
 	XMVECTOR DefaultForward;
 	XMVECTOR DefaultRight;
 	XMVECTOR Forward;
@@ -22,6 +23,8 @@ struct Camera {
 
 	bool mr,ml,mf,mb;
 	POINT CursorLastPos;
+public:
+
 }; 
 typedef struct Camera Camera;
 

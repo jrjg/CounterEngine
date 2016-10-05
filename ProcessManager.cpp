@@ -3,151 +3,70 @@
 #include "Vector.h"
 #include "Timer.h"
 #include "Engine.h"
+#include "Memory.h"
+#include "ListElement.h"
+
 #include "ProcessManager.h"
 
-struct Process
-{
-	PCB _pCallBack;
-	TIME _wait;
-	TIME _waited;
-	bool running;
-	ID _id;
-};
+ProcessManager* gpProcessManager;
 
-struct ProcessManager
+ProcessManager::ProcessManager()
 {
-	List* _pProcessList;
-	Vector* _pIDVector;
-	ID _idcnt;
-};
-
-ProcessManager* ProcessManager_New(void)
-{
-	ProcessManager* pPM;
-	_NEW(ProcessManager, pPM);
-	if (!pPM)
-	{
-		return NULL;
-	}
-	pPM->_pProcessList = List_New(sizeof(Process*));
-	pPM->_pIDVector = Vector_New(sizeof(ID*), 300);
-	pPM->_idcnt = 0;
-	return pPM;
+	mpProcesses = new List<Process>(true);
+	mpIDs = new Vector<SimplyManaged<ID>>(true,300);
+	mIDCounter = 0;
 }
 
-ID ProcessManager_NewProcess(PCB pCallBack, TIME wait)
+ID ProcessManager::newProcess(PCB pCallBack, TIME wait)
 {
-	ProcessManager* pPM = Engine_GetPM();
-	CE1_ASSERT(pPM&&pCallBack);
-	Process* pProcess;
-	_NEW(Process, pProcess);
-	pProcess->_pCallBack = pCallBack;
-	pPM->_idcnt++;
-	pProcess->_id = pPM->_idcnt;
-	pProcess->_wait = wait;
-	pProcess->_waited = 0;
-	pProcess->running = true;
-	ID* pListID;
-	_NEW(ID, pListID);
-	(*pListID) = List_PushBack(pPM->_pProcessList, pProcess);
-	CE1_CALL(Vector_Insert(pPM->_pIDVector, pProcess->_id, (void*)pListID));
-	return pProcess->_id;
+	Process* pNewProcess = new Process(pCallBack, wait, mIDCounter++);
+	mpIDs->insert(new SimplyManaged<ID>(mpProcesses->pushBack(pNewProcess)), pNewProcess->getID());
+	return pNewProcess->getID();
 }
 
-HRESULT ProcessManager_DeleteProcess(ID id)
+HRESULT ProcessManager::deleteProcess(ID id)
 {
-	ProcessManager* pPM = Engine_GetPM();
-	if (!pPM) {
-		return S_OK;
-	}
-	CE1_CALL(List_DeleteElement(pPM->_pProcessList, *(ID*)Vector_Get(pPM->_pIDVector, id),true));
-	CE1_CALL(Vector_DeleteElement(pPM->_pIDVector, id));
+	mpProcesses->deleteByID(((SimplyManaged<ID>*)mpIDs->get(id))->mX);
+	mpIDs->deleteByID(id);
 	return S_OK;
 }
 
-HRESULT ProcessManager_Delete()
+HRESULT Process::run(TIME elapsed)
 {
-	ProcessManager* pPM = Engine_GetPM();
-	if (!pPM) {
-		return S_OK;
-	}
-	CE1_CALL(List_FullDelete(pPM->_pProcessList,true));
-	CE1_CALL(Vector_FullDelete(pPM->_pIDVector));
-	CE1_DEL(pPM);
-	return S_OK;
-}
-
-HRESULT ProcessManager_RunProcess(Process* pProcess, TIME elapsed)
-{
-	CE1_ASSERT(pProcess&&elapsed);
-	pProcess->_waited = pProcess->_waited + elapsed;
-	if (pProcess->_waited >= pProcess->_wait)
+	mWaited = mWaited + elapsed;
+	if (mWaited >= mWait)
 	{
-		if (pProcess->_wait == 0)
+		if (mWait == 0)
 		{
-			(*pProcess->_pCallBack)(pProcess->_wait);
+			(*mpCallBack)(mWait);
 		}
 		else
 		{
-			for (; pProcess->_waited >= pProcess->_wait; pProcess->_waited = pProcess->_waited - pProcess->_wait)
+			for (; mWaited >= mWait; mWaited = mWaited - mWait)
 			{
-				(*pProcess->_pCallBack)(pProcess->_wait);
+				(*mpCallBack)(mWait);
 			}
 		}
 	}
 	return S_OK;
 }
 
-HRESULT ProcessManager_PauseProcess(ID processID) {
-	ProcessManager* pPM = Engine_GetPM();
-	CE1_ASSERT(pPM);
-	Process* pProcess;
-	if (List_Length(pPM->_pProcessList) > 0)
-	{
-		CE1_LISTEXEC(
-			pPM->_pProcessList,
-			pProcess = (Process*)List_Get(itr);
-			if (pProcess->_id == processID) {
-				pProcess->running = false;
-				return S_OK;
-			}
-		);
+ProcessManager* ProcessManager::get() {
+	if (!gpProcessManager) {
+		gpProcessManager = new ProcessManager();
 	}
-	return S_OK;
+	return gpProcessManager;
 }
 
-HRESULT ProcessManager_ContinueProcess(ID processID) {
-	ProcessManager* pPM = Engine_GetPM();
-	CE1_ASSERT(pPM);
-	Process* pProcess;
-	if (List_Length(pPM->_pProcessList) > 0)
-	{
-		CE1_LISTEXEC(
-			pPM->_pProcessList,
-			pProcess = (Process*)List_Get(itr);
-			if (pProcess->_id == processID) {
-				pProcess->running = true;
-				return S_OK;
-			}
-		);
-	}
-	return S_OK;
-}
-
-HRESULT ProcessManager_Run(TIME elapsed)
+HRESULT ProcessManager::run(TIME elapsed)
 {
-	ProcessManager* pPM = Engine_GetPM();
-	CE1_ASSERT(elapsed&&pPM);
+	if (get()->mpProcesses->getLength() == 0) { return S_OK; }
 	Process* pProcess;
-	if (List_Length(pPM->_pProcessList) > 0)
-	{
-		CE1_LISTEXEC(
-			pPM->_pProcessList,
-			pProcess = (Process*)List_Get(itr);
-			if (pProcess->running) {
-				CE1_CALL(ProcessManager_RunProcess(pProcess, elapsed));
-			}
-		);
+	for (ListElement<Process>* pListElement = get()->mpProcesses->getFirst(); pListElement != NULL; pListElement = pListElement->getNext()) {
+		pProcess = pListElement->getObject();
+		if (pProcess->isRunning()) {
+			pProcess->run(elapsed);
+		}
 	}
 	return S_OK;
 }

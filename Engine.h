@@ -1,61 +1,49 @@
 #ifndef INCLUDE_ENGINE
 #define INCLUDE_ENGINE
 
-struct String {
-	char* pBuffer;
-	size_t length;
+class WinParams :public MemManaged {
+public:
+	WinParams(HINSTANCE HInstance, HINSTANCE HPrevInstance, LPSTR pCmdLine, int CmdShow) : mHInstance(HInstance),mHPrevInstance(HPrevInstance),mpCmdLine(pCmdLine), mCmdShow(CmdShow){};
+	HINSTANCE mHInstance;
+	HINSTANCE mHPrevInstance;
+	LPSTR mpCmdLine;
+	int mCmdShow;
 };
-typedef struct String String;
 
-struct WString {
-	wchar_t* pBuffer;
-	size_t length;
+class EngineExtra : public MemManaged {
+public:
+	EngineExtra(LPCWSTR WindowTitle, float BufferWidth, float BufferHeight, bool Fullscreen, TIME TickDelay) : mWindowTitle(WindowTitle), mBufferWidth(BufferWidth), mBufferHeight(BufferHeight), mFullscreen(Fullscreen), mTickDelay(TickDelay) {};
+	LPCWSTR mWindowTitle;
+	float mBufferWidth;
+	float  mBufferHeight;
+	bool mFullscreen;
+	TIME mTickDelay;
 };
-typedef struct WString WString;
 
-struct Engine;
-struct WinParams {
-	HINSTANCE hInstance;
-	HINSTANCE hPrevInstance;
-	LPSTR lpCmdLine;
-	int nCmdShow;
+class Engine : public MemManaged
+{
+private:
+	WinParams* mpWinParams;
+	bool mRunning;
+	EngineExtra* mpExtra;
+	Parser* mpConfigParser;
+	Engine() { EventManager::registerForEvent(EVENT_RESTORE, &Engine::restore); };
+	~Engine() {delete mpConfigParser;delete mpExtra;delete mpWinParams;};
+	ID mProcess_Run;
+	ID mProcess_WaitTimer;
+public:
+	static HRESULT restore(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
+	static HRESULT release() { delete gpEngine; };
+	static Engine* get();
+	static HRESULT run();
+
+	static WinParams* getWinParams() { return get()->mpWinParams; };
+	static HRESULT waitTimer(TIME elapsed) { Timer::wait(get()->mpExtra->mTickDelay - elapsed); };
+	static HRESULT terminate(void* p0) { get()->mRunning = false; };
+	static HRESULT loadExtra(void*);
+	static HRESULT readExtra(void* p0, String<char>* pObjName, void* pObj);
 };
-typedef struct Engine Engine;
-typedef struct WinParams WinParams;
-extern Engine* gpEngine;
 
-struct ProcessManager* Engine_GetPM(void);
-struct EventManager* Engine_GetEM(void);
-struct Timer* Engine_GetTimer(void);
-struct Controller* Engine_GetController(void);
-struct WinParams* Engine_GetWinParams(void);
-struct WindowMgr* Engine_GetWindowMgr(void);
-struct cd3d11* Engine_GetCD3D11(void);
-struct CStrike * Engine_GetCStrike(void);
-struct ComponentMgr* Engine_GetCmpMgr(void);
-struct CameraManager* Engine_GetCameraManager(void);
-struct ResourceManager* Engine_GetResourceManager(void);
-struct ComponentManager* Engine_GetComponentManager(void);
-struct Camera* Engine_GetCamera();
-struct Skybox* Engine_GetSkybox();
-
-HRESULT Engine_ShutDown(void);
-HRESULT Engine_Run(void);
-HRESULT Engine_StartUp(HINSTANCE, HINSTANCE, LPSTR, int);
-HRESULT Engine_WaitTimer(TIME);
-HRESULT Engine_Terminate(void*);
-HRESULT Engine_UpdateUpTime(TIME);
-TIME Engine_GetUpTime(void);
-LPCWSTR Engine_WINDOWTITLE();
-float Engine_BUFFERWIDTH();
-float Engine_BUFFERHEIGHT();
-BOOL Engine_FULLSCREEN();
-HRESULT Engine_LoadConfig(void*);
-HRESULT Engine_ConfigHandler(void* p0, String* pObjName, void* pObj);
-
-BOOL CHAREQ(char * a, char * b);
-BOOL CE1_CMPCHARBYL(char * a, char * b, size_t l);
-BOOL CE1_CompareStrings(String* pS1, String* pS2);
-BOOL CE1_CompareWStrings(WString* pS1, WString* pS2);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
 
 #endif

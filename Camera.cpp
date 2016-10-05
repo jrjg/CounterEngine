@@ -3,6 +3,9 @@
 #include "ProcessManager.h"
 #include "EventManager.h"
 #include "windowmgr.h"
+#include "Memory.h"
+
+
 #include "Camera.h"
 
 

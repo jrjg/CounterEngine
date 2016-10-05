@@ -38,6 +38,9 @@ HRESULT Timer_Delete()
 
 Timer* Timer_New()
 {
+
+	srand(time(NULL));
+
 	Timer* pTimer;
 	_NEW(Timer, pTimer);
 	CE1_ASSERT(pTimer);

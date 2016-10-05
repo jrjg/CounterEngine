@@ -2,180 +2,64 @@
 #include "Vector.h"
 #include "List.h"
 #include "Engine.h"
-#include "EventManager.h"
 #include "ProcessManager.h"
+#include "Memory.h"
+#include "ListElement.h"
 
+#include "EventManager.h"
 
-struct Event
-{
-	void* pData;
-	ID slotid;
-	ID id;
-};
+EventManager* gpEventManager;
 
-struct EventListener
-{
-	ID _id;
-	ECB _pCallBack;
-};
-
-struct EventManager
-{
-	Vector* _pEventVector;
-	Vector* _pListenerToEventSlotVector;
-	List* _pEventList;
-	ID _eventcounter;
-	ID _listenercounter;
-};
-
-EventManager* EventManager_New(void)
-{
-	EventManager* pEM;
-	_NEW(EventManager, pEM);
-	CE1_ASSERT(pEM);
-	pEM->_pEventVector = Vector_New(sizeof(List*),100);
-	pEM->_pListenerToEventSlotVector = Vector_New(sizeof(ID*),400);
-	pEM->_pEventList = List_New(sizeof(Event*));
-	pEM->_eventcounter = 0;
-	pEM->_listenercounter = 0;
-	return pEM;
+EventManager::EventManager() {
+	mpEventVector = new Vector<List<EventListener>>(true, 100);
+	mpListenerToEventSlotVector = new Vector<SimplyManaged<ID>>(true, 100);
+	mpEventList = new List<Event>(true);
+	mEventCounter = 0;
+	mListenerCounter = 0;
+	registerForEvent(EVENT_RESTORE,&restore);
+	registerForEvent(EVENT_RELEASE, &release);
 }
 
-HRESULT EventManager_Delete()
+HRESULT EventManager::registerForEvent(ID id, ECB pCallBack)
 {
-	EventManager* pEM = Engine_GetEM();
-	if (!pEM) {
-		return S_OK;
+	List<EventListener>* pListenerList = (List<EventListener>*)mpEventVector->get(id);
+	if (!pListenerList) {
+		if (FAILED(registerEvent(id))) {
+			CE1_ASSERT(0&&"Could not register for Event");
+		}
+		pListenerList = (List<EventListener>*)mpEventVector->get(id);
 	}
-	List* pListenerList;
-	for (unsigned int i = 0; i < Vector_Last(pEM->_pEventVector); i++)
+	mpListenerToEventSlotVector->insert(pListenerList->pushBack(new EventListener(mListenerCounter++, pCallBack)), new SimplyManaged<ID>(id));
+	return S_OK;
+}
+
+HRESULT EventManager::triggerEvent(ID slotid, void* pData)
+{
+	List<EventListener>* pListenerList = mpEventVector->get(slotid);
+	if (!pListenerList) { return S_OK; }
+	for (ListElement<EventListener>* pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
 	{
-		pListenerList = (List*)Vector_Get(pEM->_pEventVector, i);
-		CE1_CALL(List_FullDelete(pListenerList,true));
-	}
-	CE1_CALL(Vector_Delete(pEM->_pEventVector));
-	CE1_CALL(Vector_FullDelete(pEM->_pListenerToEventSlotVector));
-	CE1_DEL(pEM);
-	return S_OK;
-}
-
-ID EventManager_QueueEvent(ID id, void* pData)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM);
-	Event* pEvent;
-	_NEW(Event, pEvent);
-	if (!pEvent)
-	{
-		return 0;
-	}
-	pEvent->slotid = id;
-	pEM->_eventcounter++;
-	pEvent->id = pEM->_eventcounter;
-	pEvent->pData = pData;
-	ID id2 = List_PushBack(pEM->_pEventList,pEvent);
-	if (id2==0)
-	{
-		CE1_DEL(pEvent);
-		return 0;
-	}
-	return pEvent->id;
-}
-
-HRESULT EventManager_RegisterEvent(ID id)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM);
-	List* pList = List_New(sizeof(EventListener*));
-	CE1_CALL(Vector_Insert(pEM->_pEventVector, id, pList));
-	return S_OK;
-}
-
-
-ID EventManager_RegisterForEvent(ID id, ECB pCallBack)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM && pCallBack);
-	EventListener* pListener;
-	_NEW(EventListener, pListener);
-	pEM->_listenercounter++;
-	pListener->_id = pEM->_listenercounter;
-	pListener->_pCallBack = pCallBack;
-
-	List* pList = (List*)Vector_Get(pEM->_pEventVector, id);
-	if (!pList) {
-		CE1_CALL(EventManager_RegisterEvent(id));
-		pList = (List*)Vector_Get(pEM->_pEventVector, id);
-	}
-
-	ID listenerid = List_PushBack(pList, pListener);
-	if(!listenerid)
-	{
-		CE1_DEL(pListener);
-		return 0;
-	}
-	ID* pEventSlotID;
-	_NEW(ID, pEventSlotID);
-	(*pEventSlotID) = id;
-	CE1_CALL(Vector_Insert(pEM->_pListenerToEventSlotVector,listenerid,pEventSlotID));
-	return listenerid;
-}
-
-HRESULT EventManager_UnRegisterEvent(ID eventslotid)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM );
-	CE1_CALL(List_DeleteAllElements((List*)Vector_Get(pEM->_pEventVector, eventslotid),true));
-	CE1_CALL(Vector_DeleteElement(pEM->_pEventVector, eventslotid));
-	return S_OK;
-}
-
-HRESULT EventManager_UnRegisterForEvent(ID listenerid)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM );
-	ID eventslotid = *(ID*)Vector_Get(pEM->_pListenerToEventSlotVector,listenerid);
-	CE1_CALL(Vector_DeleteElement(pEM->_pListenerToEventSlotVector,listenerid));
-	CE1_CALL(List_DeleteElement((List*)Vector_Get(pEM->_pEventVector, eventslotid), listenerid,true));
-	return S_OK;
-}
-
-HRESULT EventManager_TriggerEvent(ID slotid, void* pData)
-{
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM );
-	List* pList = (List*)Vector_Get(pEM->_pEventVector,slotid);
-	EventListener* pListener;
-	if (!pList) {
-		return S_OK;
-	}
-	for (Iterator itr = List_Iterator(pList); itr != NULL; itr = List_Next(itr))
-	{
-		pListener = (EventListener*)List_Get(itr);
-		(*pListener->_pCallBack)(pData);
+		(*((EventListener*)pListElem->getObject())->mpCallBack)(pData);
 	}
 	return S_OK;
 }
 
-HRESULT EventManager_RemoveEvent(ID eventid)
+EventManager * EventManager::get()
 {
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM);
-	CE1_CALL(List_DeleteElement(pEM->_pEventList, eventid,true));
-	return S_OK;
+	if (!gpEventManager) {
+		gpEventManager = new EventManager();
+	}
+	return gpEventManager;
 }
 
-HRESULT EventManager_Run(TIME elapsed)
+HRESULT EventManager::run(TIME elapsed)
 {
-	EventManager* pEM = Engine_GetEM();
-	CE1_ASSERT(pEM && elapsed);
-	Event* pEvent = (Event*)List_Pop(pEM->_pEventList);
+	Event* pEvent = (Event*)(get()->mpEventList->pop());
 	while (pEvent)
 	{
-		CE1_CALL(EventManager_TriggerEvent(pEvent->slotid, pEvent->pData));
-		CE1_DEL(pEvent->pData);
-		CE1_DEL(pEvent);
-		pEvent = (Event*)List_Pop(pEM->_pEventList);
+		get()->triggerEvent(pEvent->mSlotid, pEvent->mpData);
+		delete pEvent;
+		pEvent = (Event*)(get()->mpEventList->pop());
 	}
 	return S_OK;
 }

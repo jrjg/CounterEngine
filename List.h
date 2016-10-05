@@ -1,35 +1,92 @@
 #ifndef INCLUDE_LIST
 #define INCLUDE_LIST
 
-extern ID List_ID;
-struct ListElement
+template <class ObjectType> class List : public MemManaged {
+private:
+	ListElement<ObjectType>* mpFirstElem;
+	ListElement<ObjectType>* mpLastElem;
+	UINT mLength;
+	ID mElemIDCounter;
+	bool mDeleteContent;
+public:
+	List<ObjectType>::List(bool deleteContent) : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mDeleteContent(deleteContent) {};
+	List<ObjectType>::~List();
+	ID List<ObjectType>::pushBack(void* pObj);
+	ID List<ObjectType>::pushFront(void* pObj);
+	
+	unsigned int List<ObjectType>::getLength() { return mLength; };
+	void List<ObjectType>::setLength(unsigned int length) {mLength = length;};
+	ListElement<ObjectType>* List<ObjectType>::getFirst() { return mpFirstElem; };
+	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) {mpFirstElem = pElem;};
+	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
+	ObjectType* List<ObjectType>::pop();
+	ListElement<ObjectType>* List<ObjectType>::getLast() {return mpLastElem;};
+	void* List<ObjectType>::getByID(ID id);
+	HRESULT List<ObjectType>::deleteByID(ID id);
+};
+
+template<class ObjectType>
+inline HRESULT List<ObjectType>::deleteByID(ID id)
 {
-	struct ListElement* _pNext;
-	void* _pObj;
-	ID _id;
-};
-typedef struct ListElement ListElement;
-struct List {
-	ListElement* _pFirstElem;
-	ListElement* _pLastElem;
-	unsigned long _length;
-	unsigned long _elemsize;
-	ID _idcnt;
-	ID _id;
-};
-typedef struct List List;
-typedef ListElement* Iterator;
-ID List_PushBack(List*, void*);				// adds element to the list's front				
-HRESULT List_FullDelete(List*, BOOL deleteObject);
-HRESULT List_DeleteAllElements(List*, BOOL deleteObject);			//delete all elements contained by the list
-HRESULT List_DeleteElement(List*, ID, BOOL deleteObject);			// deletes element and also object
-ListElement* List_Next(ListElement*);		// returns the ´next element of the element pointed at with the itarator
-unsigned int List_Length(List*);			// returns the length of the list
-Iterator List_Iterator(List*);				// return list iterator
-struct List* List_New(unsigned long);		// returns new list
-void* List_Get(ListElement*);				// returns object contained by given element
-void* List_Pop(List*);						// returns object of the first element, deletes first element, does not delete object
-HRESULT List_GetLast(List* pList, void** ppObject);
-HRESULT List_Copy(List* pFrom, List* pTo);
-HRESULT List_Get(List* pList, ID id, void** ppObject);
-#endif // !INCLUDE_LIST
+	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+		if (pElem->getID() == id) {
+			delete pElem;
+			return S_OK;
+		}
+	}
+	return S_OK;
+}
+
+template <class ObjectType> 
+void* List<ObjectType>::getByID(ID id) {
+	ObjectType* pObj = nullptr;
+	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+		if (pElem->getID() == id) {
+			pObj = pElem->getObject();
+			return pObj;
+		}
+	}
+	return pObj;
+}
+
+template <class ObjectType> 
+ObjectType* List<ObjectType>::pop()
+{
+	(mLength == 0) ? return NULL : 1;
+	ObjectType* pObj = mpFirstElem->getObject();
+	mpFirstElem->setDeleteContent(false); //dont delete what is returned
+	delete mpFirstElem;
+	return pObj;
+}
+
+template <class ObjectType> 
+ID List<ObjectType>::pushBack(void* pObject)
+{
+	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, NULL, mpLastElem, mDeleteContent);
+	(mLength == 0) ? mpFirstElem = pNewElem : mpLastElem->setNext(pNewElem);
+	mpLastElem = pNewElem;
+	mLength++;
+	return pNewElem->getID();
+}
+
+template <class ObjectType>
+ID List<ObjectType>::pushFront(void* pObject)
+{
+	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, mpFirstElem , NULL, mDeleteContent);
+	(mLength == 0) ? mpLastElem = pNewElem : mpFirstElem->setPrevious(pNewElem);
+	mpFirstElem = pNewElem;
+	mLength++;
+	return pNewElem->getID();
+}
+
+template <class ObjectType> 
+List<ObjectType>::~List() {
+	ListElement<ObjectType>* pElem2 = NULL;
+	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+		delete pElem2;
+		pElem2 = pElem;
+	}
+	return;
+}
+
+#endif

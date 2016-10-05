@@ -1,15 +1,16 @@
 #ifndef CStrike
 #define Cstrike
 
-struct CStrike {
-	ID _ctrlsGame;
+class CStrike : public MemManaged {
+private:
+	ID mControlsDefault;
+	CStrike();
+	~CStrike() {};
+public:
+	static CStrike* get();
+	static HRESULT run(TIME elapsed) {};
+	static HRESULT release(void* p0) {};
+	static HRESULT restore(void* p0);
 };
-
-typedef struct CStrike CStrike;
-
-CStrike* CStrike_NEW();
-HRESULT CStrike_Run(TIME);
-HRESULT CStrike_DELETE(void);
-HRESULT CStrike_CreateControls(CStrike*);
 
 #endif

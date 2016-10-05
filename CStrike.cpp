@@ -3,38 +3,33 @@
 #include "Controller.h"
 #include "EventManager.h"
 #include "directx.h"
+#include "Memory.h"
+
 #include "CStrike.h"
 
-CStrike* CStrike_NEW() {
-	CStrike* pCStrike;
-	_NEW(CStrike, pCStrike);
-	srand(time(NULL));
-	CStrike_CreateControls(pCStrike);
-	Controller_SetControls(pCStrike->_ctrlsGame);
-	return pCStrike;
-}
+CStrike* gpCStrike;
 
-HRESULT CStrike_Run(TIME elapsed) {
-	cd3d11* pcd3d11 = Engine_GetCD3D11();
-	CE1_ASSERT(pcd3d11&&elapsed);
-	return S_OK;
-}
+CStrike::CStrike() {
+	mControlsDefault = Controller::get()->newControls(); 
+	EventManager::get()->registerForEvent(EVENT_RESTORE, &restore);  
+	EventManager::get()->registerForEvent(EVENT_RELEASE, &release);
+};
 
-HRESULT CStrike_DELETE(void) {
-	CStrike* pCStrike = Engine_GetCStrike();
-	CE1_ASSERT(pCStrike);
-	CE1_DEL(pCStrike);
-	return S_OK;
-}
-
-HRESULT CStrike_CreateControls(CStrike* pCStrike)
+CStrike* CStrike::get()
 {
-	CE1_ASSERT(pCStrike);
-	pCStrike->_ctrlsGame = Controller_NewControls();
-	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, VK_ESCAPE, EVENT_END));
-	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 'A', EVENT_MOVELEFT));
-	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 'D', EVENT_MOVERIGHT));
-	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 'S', EVENT_MOVEBACK));
-	CE1_CALL(Controller_AddControl(pCStrike->_ctrlsGame, 'W', EVENT_MOVEFORWARD));
-	return S_OK;
+	if (!gpCStrike) {
+		gpCStrike = new CStrike();
+	}
+	return gpCStrike;
+}
+
+HRESULT CStrike::restore(void * p0)
+{
+	Controller::addMapping(get()->mControlsDefault, VK_ESCAPE, EVENT_RELEASE);
+	Controller::addMapping(get()->mControlsDefault, 'A', EVENT_MOVELEFT);
+	Controller::addMapping(get()->mControlsDefault, 'D', EVENT_MOVERIGHT);
+	Controller::addMapping(get()->mControlsDefault, 'S', EVENT_MOVEBACK);
+	Controller::addMapping(get()->mControlsDefault, 'W', EVENT_MOVEFORWARD);
+	Controller::setControls(get()->mControlsDefault);
+	return E_NOTIMPL;
 }
