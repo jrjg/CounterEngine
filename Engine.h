@@ -10,41 +10,47 @@ public:
 	int mCmdShow;
 };
 
-class EngineExtra : public MemManaged {
-public:
-	EngineExtra(LPCWSTR WindowTitle, float BufferWidth, float BufferHeight, bool Fullscreen, TIME TickDelay) : mWindowTitle(WindowTitle), mBufferWidth(BufferWidth), mBufferHeight(BufferHeight), mFullscreen(Fullscreen), mTickDelay(TickDelay) {};
-	LPCWSTR mWindowTitle;
-	float mBufferWidth;
-	float  mBufferHeight;
-	bool mFullscreen;
-	TIME mTickDelay;
-};
+//class EngineExtra : public MemManaged {
+//public:
+//	EngineExtra(LPCWSTR WindowTitle, float BufferWidth, float BufferHeight, bool Fullscreen, TIME TickDelay) : mWindowTitle(WindowTitle), mBufferWidth(BufferWidth), mBufferHeight(BufferHeight), mFullscreen(Fullscreen), mTickDelay(TickDelay) {};
+//	LPCWSTR mWindowTitle;
+//	float mBufferWidth;
+//	float  mBufferHeight;
+//	bool mFullscreen;
+//	TIME mTickDelay;
+//};
 
-class Engine : public MemManaged
+class Engine : public CoreComponent
 {
 private:
+	EventManager* mpEventManager;
+	Controller* mpController;
+	ProcessManager* mpProcessManager;
+	Timer* mpTimer;
+	WindowManager* mpWindowManager;
+
 	WinParams* mpWinParams;
 	bool mRunning;
-	EngineExtra* mpExtra;
-	Parser* mpConfigParser;
-	Engine() { EventManager::registerForEvent(EVENT_RESTORE, &Engine::restore); };
-	~Engine() {delete mpConfigParser;delete mpExtra;delete mpWinParams;};
-	ID mProcess_Run;
-	ID mProcess_WaitTimer;
-	HRESULT loadExtra(void*);
-	HRESULT readExtra(void* p0, String<char>* pObjName, void* pObj);
+	TIME mTickSpeed;
+	//EngineExtra* mpExtra;
+	//HRESULT loadExtra(void*);
+	//HRESULT readExtra(void* p0, String<char>* pObjName, void* pObj);
+	/*~Engine() { delete mpExtra; delete mpWinParams; };*/
 public:
-	static HRESULT restore(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
-	static HRESULT release() { delete gpEngine; };
-	static Engine* get();
-	static HRESULT run();
-
-	static WinParams* getWinParams() { return get()->mpWinParams; };
-	static HRESULT waitTimer(TIME elapsed) { Timer::wait(get()->mpExtra->mTickDelay - elapsed); };
-	static HRESULT terminate(void* p0) { get()->mRunning = false; };
-	
+	HRESULT restore() override;
+	bool isRunning() { return mRunning; };
+	HRESULT handleProcess(TIME elapsed)override;
+	WinParams* getWinParams() { return mpWinParams; };
+	EventManager* getEventManager() { return mpEventManager; };
+	Controller* getController() { return mpController; };
+	ProcessManager* getProcessManager() { return mpProcessManager; }
+	Timer* getTimer() { return mpTimer; };
+	WindowManager* getWindowManager() { return mpWindowManager; };
+	Engine();
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
+
+MemoryManager* getMemoryManager();
 
 #endif

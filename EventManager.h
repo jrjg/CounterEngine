@@ -1,7 +1,12 @@
 #ifndef INCLUDE_EVENTMANAGER
 #define INCLUDE_EVENTMANAGER
 
-typedef HRESULT(*ECB)(void*); 
+typedef HRESULT(*ECB)(ID,void*); 
+
+class EventListener {
+public:
+	virtual HRESULT handleEvent(ID eventID, void* pData) = 0;
+};
 
 class Event : public MemManaged
 {
@@ -14,35 +19,25 @@ public:
 	ID mID;
 };
 
-class EventListener : public MemManaged
-{
-public:
-	EventListener(ID id, ECB pCallBack) :mID(id),mpCallBack(pCallBack) {};
-	ID mID;
-	ECB mpCallBack;
-};
-
-class EventManager : public MemManaged
+class EventManager : public CoreComponent
 {
 private:
-	Vector* mpEventVector;
-	Vector* mpListenerToEventSlotVector;
-	List<Event>* mpEventList;
+	Vector<List<EventListener>>* mpListenersForEvents;
+	List<Event>* mpEvents;
 	ID mEventCounter;
-	ID mListenerCounter;
-	EventManager();
-	~EventManager() {delete mpEventVector;delete mpListenerToEventSlotVector;delete mpEventList;};
 public:
-	ID queueEvent(ID id, void* pData, bool deleteContent) { return mpEventList->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
-	HRESULT registerEvent(ID id) { mpEventVector->insert(id, new List<EventListener>(true)); };
+	ID queueEvent(ID id, void* pData, bool deleteContent) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
+	HRESULT registerEvent(ID id) { return mpListenersForEvents->set(id, new List<EventListener>(true)); };
 	ID registerForEvent(ID, ECB);
 	HRESULT triggerEvent(ID, void*);
-	HRESULT removeEvent(ID id) { mpEventList->deleteByID(id); };
+	HRESULT removeEvent(ID id) { mpEvents->deleteByID(id); };
 
-	static EventManager* get();
-	static HRESULT run(TIME);
-	static HRESULT restore(void* p0) {};
-	static HRESULT release(void* p0) { delete get(); };
+	EventManager(Engine* pEngine) :CoreComponent(pEngine){ };
+	~EventManager() {  };
+
+	HRESULT run(TIME);
+	HRESULT restore() {};
+	HRESULT release() { delete mpListenersForEvents; delete mpEvents; };
 };
 
 #endif

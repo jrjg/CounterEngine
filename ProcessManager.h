@@ -3,6 +3,11 @@
 
 typedef HRESULT(*PCB)(TIME);
 
+class ProcessOwner {
+public:
+	virtual HRESULT handleProcess(TIME);
+};
+
 class Process : public MemManaged
 {
 private:

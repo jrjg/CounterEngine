@@ -1,111 +1,123 @@
 #ifndef INCLUDE_VECTOR
 #define INCLUDE_VECTOR
 
+template<class ObjectType> class VectorMemBlock : public MemManaged {
+private:
+	UINT mIndexLast;
+	MemManaged* mpMem;
+	bool mDeleteContent;
+	UINT mElemSize;
+	UINT mCapacity;
+	size_t mSizeOfMemManaged;
+public:
+	ObjectType* VectorMemBlock<ObjectType>::get(UINT index);
+	UINT getIndexLast() { return mIndexLast; };
+	void setDeleteContent(bool b) { mDeleteContent = b; };
+	HRESULT set(UINT index,ObjectType* pObj);
+	HRESULT pushback(ObjectType* pObj, UINT* pIndex);
+	VectorMemBlock(UINT capacity);
+	~VectorMemBlock();
+};
+
+template<class ObjectType>
+inline ObjectType * VectorMemBlock<ObjectType>::get(UINT index)
+{
+	if (index > mCapacity) { return NULL; };
+	return(*(ObjectType**)((char*)(mpMem) + mSizeOfMemManaged + index * mElemSize));
+}
+
+template<class ObjectType>
+inline HRESULT VectorMemBlock<ObjectType>::set(UINT index, ObjectType * pObj)
+{
+	if (index > mCapacity) { return ERROR_SUCCESS; };
+	*(ObjectType**)((char*)(mpMem) + mSizeOfMemManaged + index * mElemSize) = pObj;
+	if (index > mIndexLast) {
+		mIndexLast = index;
+	}
+	return S_OK;
+}
+
+template<class ObjectType>
+inline HRESULT VectorMemBlock<ObjectType>::pushback(ObjectType * pObj, UINT * pIndex)
+{
+	if (SUCCEEDED(set(mIndexLast + 1, pObj))) {
+		*pIndex = ++mIndexLast;
+		return S_OK;
+	}
+	return ERROR_SUCCESS;
+}
+
+template<class ObjectType>
+VectorMemBlock<ObjectType>::VectorMemBlock(UINT capacity) : mSizeOfMemManaged(sizeof(MemManaged)), mElemSize(sizeof(ObjectType)), mCapacity(capacity), mDeleteContent(true), mIndexLast(-1){
+	MemoryManager::get()->allocateMem(&mpMem,mCapacity * mElemSize + mSizeOfMemManaged,mpMem->mMemID);
+}
+template<class ObjectType>
+inline VectorMemBlock<ObjectType>::~VectorMemBlock()
+{
+	if (mDeleteContent) {
+		for (UINT i = 0; i < mCapacity; i++) {
+			delete get(i);
+		}
+	}
+	delete mpMem;
+};
 
 template<class ObjectType> class Vector : public MemManaged
 {
 private:
-	static ID gmIDCounter;
-	MemManaged* mpMem;
-	UINT mCapacity;
-	UINT mSlotOfLast;
-	UINT mElemSize;
-	UINT mElemCount;
-	ID mID;
-	HRESULT resize(Vector*, UINT);
+	UINT mMemBlockCapacity;
+	UINT mMaxCapacity;
+	VectorMemBlock<ObjectType>* mpMemBlocks[MAX_VECTOR_BLOCKS];
 public:
-	Vector(UINT stepsize) : mElemSize(sizeof(ObjectType)), mCapacity(0), mSlotOfLast(0), mpMem(NULL), mElemCount(0), mID(gmIDCounter++) { resize(mElemCount); };
-	~Vector();
-	HRESULT insert(Vector*, UINT, void*);
-	UINT getElemCount() { return mElemCount; };
-	void* Vector::operator[](UINT index);
-	UINT getCapacity() { return mCapacity; };
-	UINT getSlotOfLast() { return mSlotOfLast; };
-	UINT pushback(void*);
-	HRESULT getMem() { return mpMem; };
-	HRESULT erase(UINT index, bool deletecontent);
+	ObjectType* get(UINT index);
+	HRESULT set(UINT index, ObjectType *pObj);
+	HRESULT pushback(ObjectType * pObj, UINT* pIndex);
+	Vector(UINT memBlockCapacity) : mMemBlockCapacity(memBlockCapacity), mMaxCapacity(MAX_VECTOR_BLOCKS*memBlockCapacity) {};
+	~Vector() { for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) { if (mpMemBlocks[i]) { delete mpMemBlocks[i]; } } };
 };
 
 template<class ObjectType>
-inline void * Vector<ObjectType>::operator[](UINT index)
+inline ObjectType * Vector<ObjectType>::get(UINT index)
 {
-	return NULL;
+	if (index > mMaxCapacity) { return NULL; };
+	return mpMemBlocks[index / mMemBlockCapacity]->get(index % mMemBlockCapacity);
 }
 
-HRESULT Vector_Erase(Vector * pVector, UINT index, bool deletecontent)
+template<class ObjectType>
+inline HRESULT Vector<ObjectType>::set(UINT index, ObjectType *pObj)
 {
-	CE1_ASSERT(pVector&&"Vector_Erase");
-	if (pVector->_elems > 0) {
-		CE1_CALL(Vector_DeleteElement(pVector, index, deletecontent));
-		CE1_CALL(Vector_Insert(pVector, index, Vector_Get(pVector, Vector_Last(pVector))));
-		CE1_CALL(Vector_DeleteElement(pVector, Vector_Last(pVector), false));
+	if (index > mMaxCapacity) { return ERROR_SUCCESS; };
+	VectorMemBlock<ObjectType>* pMemBlock = mpMemBlocks[index / mMemBlockCapacity]);
+	if (!pMemBlock) {
+		pMemBlock = new VectorMemBlock<ObjectType>(mMemBlockCapacity);
+		mpMemBlocks[index / mMemBlockCapacity] = pMemBlock;
 	}
-	return S_OK;
+	return pMemBlock->set(index % mMemBlockCapacity, pObj);
 }
 
-HRESULT Vector_Resize(Vector* pVector, unsigned int elemcnt)
+template<class ObjectType>
+inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
 {
-	CE1_ASSERT(pVector&&elemcnt);
-	void* pMem = malloc(elemcnt * pVector->_elemsize);
-	memset(pMem, 0, elemcnt * pVector->_elemsize);
-	if (pVector->_elems>0)
-	{
-		memcpy(pMem, pVector->_pMem, pVector->_capacity * pVector->_elemsize);
+	VectorMemBlock<ObjectType>* pMemBlock;
+	for (UINT i = 0; i < MAX_VECTOR_BLOCKS; i++) {
+		pMemBlock = mpMemBlocks[i];
+		if (pMemBlock) {
+			if (SUCCEEDED(pMemBlock->pushback(pObj, pIndex))) {
+				return S_OK;
+			}
+		}
 	}
-	CE1_DEL(pVector->_pMem);
-	pVector->_pMem = pMem;
-	pVector->_capacity = elemcnt;
-	return S_OK;
-}
-
-HRESULT Vector_Insert(Vector* pVector, unsigned int index, void* pData)
-{
-	CE1_ASSERT(pVector&&pData);
-	if (index > pVector->_capacity)
-	{
-		CE1_CALL(Vector_Resize(pVector, index * 2));
+	for (UINT i = 0; i < MAX_VECTOR_BLOCKS; i++) {
+		pMemBlock = mpMemBlocks[i];
+		if (!pMemBlock) {
+			pMemBlock = new VectorMemBlock<ObjectType>(mMemBlockCapacity);
+			mpMemBlocks[i] = pMemBlock;
+			if (SUCCEEDED(pMemBlock->pushback(pObj, pIndex))) {
+				return S_OK;
+			}
+		}
 	}
-	memcpy((char*)(pVector->_pMem) + index * pVector->_elemsize, &pData, pVector->_elemsize);
-	if (index > pVector->_last)
-	{
-		pVector->_last = index;
-	}
-	pVector->_elems++;
-	return S_OK;
-}
-
-unsigned int Vector_Pushback(Vector* pVector, void* pData)
-{
-	CE1_ASSERT(pVector&&pData);
-	unsigned int index = Vector_Last(pVector);
-	index++;
-	if (index > pVector->_capacity)
-	{
-		CE1_CALL(Vector_Resize(pVector, index * 2));
-	}
-	memcpy((char*)(pVector->_pMem) + index * pVector->_elemsize, &pData, pVector->_elemsize);
-	if (index > pVector->_last)
-	{
-		pVector->_last = index;
-	}
-	pVector->_elems++;
-	return index;
-}
-
-unsigned int Vector_Elements(Vector* pVector)
-{
-	CE1_ASSERT(pVector);
-	return pVector->_elems;
-}
-
-void* Vector_Get(Vector* pVector, unsigned int index)
-{
-	CE1_ASSERT(pVector);
-	if (index <= pVector->_capacity)
-	{
-		return(*(void**)((char*)(pVector->_pMem) + index * pVector->_elemsize));
-	}
-	return NULL;
+	return ERROR_SUCCESS;
 }
 
 #endif // !INCLUDE_VECTOR
