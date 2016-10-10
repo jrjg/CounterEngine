@@ -5,36 +5,17 @@
 template<class ObjectType> 
 class String : public MemManaged {
 private:
-	ObjectType* mpBuffer;
+	MemManaged* mpBuffer;
 	size_t mLength;
 public:
-	String<ObjectType>::String(ObjectType* pChars, size_t length);
-	String<ObjectType>::String(size_t length);
+	String<ObjectType>::String(ObjectType* pChars, size_t length) : mLength(length) {MemoryManager::get()->allocateMem(&mpBuffer, mLength * sizeof(ObjectType), mpBuffer->mMemID);for (int i = 0; i<mLength; i++) { mpBuffer[i] = pChars[i]; };};
+	String<ObjectType>::String(size_t length) : mLength(length) { MemoryManager::get()->allocateMem(&mpBuffer, mLength * sizeof(ObjectType), mpBuffer->mMemID); };
 	String<ObjectType>::~String() { delete mpBuffer; };
 	bool String<ObjectType>::String::operator==(const String<ObjectType> &s2);
 	bool String<ObjectType>::String::operator==(const ObjectType* pC);
 	inline ObjectType* String<ObjectType>::getBuffer() {return mpBuffer;};
 	inline size_t String<ObjectType>::getLength() { return mLength; };
 };
-
-template<class ObjectType>
-String<ObjectType>::String(ObjectType * pBuffer, size_t length)
-{
-	mLength = length;
-	size_t size = mLength * sizeof(ObjectType);
-	mpBuffer = (ObjectType*)malloc(size);
-	ZeroMemory(mpBuffer, size);
-	for (int i = 0; i<mLength; i++) { mpBuffer[i] = pBuffer[i]; };
-}
-
-template<class ObjectType>
-String<ObjectType>::String(size_t length)
-{
-	mLength = length;
-	size_t size = mLength * sizeof(ObjectType);
-	mpBuffer = (ObjectType*)malloc(size);
-	ZeroMemory(mpBuffer, size);
-}
 
 template<class ObjectType>
 bool String<ObjectType>::operator==(const String<ObjectType> &s2)

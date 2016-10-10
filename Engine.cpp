@@ -13,7 +13,7 @@ Engine* gpEngine;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	WinParams* pWinParams = new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	EventManager::queueEvent(EVENT_RESTORE, pWinParams);
+	EventManager::get()->queueEvent(EVENT_RESTORE, pWinParams,false);
 	Engine::run();
 	return S_OK;
 };

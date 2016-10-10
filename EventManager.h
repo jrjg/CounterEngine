@@ -6,8 +6,9 @@ typedef HRESULT(*ECB)(void*);
 class Event : public MemManaged
 {
 public:
-	Event(void* pData, ID slotID, ID id) : mpData(pData), mSlotid(slotID), mID(id) {};
-	~Event() { delete (MemManaged*)mpData; };
+	Event(void* pData, ID slotID, ID id, bool deleteContent) : mDeleteContent(deleteContent), mpData(pData), mSlotid(slotID), mID(id) {};
+	~Event() { if (mDeleteContent) { delete (MemManaged*)mpData; } };
+	bool mDeleteContent;
 	void* mpData;
 	ID mSlotid;
 	ID mID;
@@ -32,7 +33,7 @@ private:
 	EventManager();
 	~EventManager() {delete mpEventVector;delete mpListenerToEventSlotVector;delete mpEventList;};
 public:
-	ID queueEvent(ID id, void* pData) { return mpEventList->pushBack(new Event(pData, id, mEventCounter++)); };
+	ID queueEvent(ID id, void* pData, bool deleteContent) { return mpEventList->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
 	HRESULT registerEvent(ID id) { mpEventVector->insert(id, new List<EventListener>(true)); };
 	ID registerForEvent(ID, ECB);
 	HRESULT triggerEvent(ID, void*);

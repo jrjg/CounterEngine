@@ -31,6 +31,8 @@ private:
 	~Engine() {delete mpConfigParser;delete mpExtra;delete mpWinParams;};
 	ID mProcess_Run;
 	ID mProcess_WaitTimer;
+	HRESULT loadExtra(void*);
+	HRESULT readExtra(void* p0, String<char>* pObjName, void* pObj);
 public:
 	static HRESULT restore(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
 	static HRESULT release() { delete gpEngine; };
@@ -40,8 +42,7 @@ public:
 	static WinParams* getWinParams() { return get()->mpWinParams; };
 	static HRESULT waitTimer(TIME elapsed) { Timer::wait(get()->mpExtra->mTickDelay - elapsed); };
 	static HRESULT terminate(void* p0) { get()->mRunning = false; };
-	static HRESULT loadExtra(void*);
-	static HRESULT readExtra(void* p0, String<char>* pObjName, void* pObj);
+	
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);

@@ -3,7 +3,7 @@
 
 template<class ObjectType>class FileReader : public MemManaged {
 public:
-	String<ObjectType>* FileReader<ObjectType>::read(char * filename);
+	static String<ObjectType>* FileReader<ObjectType>::read(char * filename);
 };
 
 template<class ObjectType>
@@ -26,7 +26,7 @@ String<ObjectType>* FileReader<ObjectType>::read(char * filename) {
 	}
 
 	fclose(pFile);
-	return S_OK;
+	return pString;
 }
 
 #endif
