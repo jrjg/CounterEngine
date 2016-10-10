@@ -60,3 +60,5 @@ Resource/Configuration/Config.txt
 Resource/Texture/b1dirt005.jpg
 *.jpg
 Resource/Texture/skymap.dds
+Parser.cpp
+Parser.h
