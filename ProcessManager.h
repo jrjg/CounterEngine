@@ -5,7 +5,7 @@ typedef HRESULT(*PCB)(TIME);
 
 class ProcessOwner {
 public:
-	virtual HRESULT handleProcess(TIME);
+	virtual HRESULT handleProcess(TIME elapsed) = 0;
 };
 
 class Process : public MemManaged

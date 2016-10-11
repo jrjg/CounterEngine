@@ -72,7 +72,8 @@ public:
 	ObjectType* get(UINT index);
 	HRESULT set(UINT index, ObjectType *pObj);
 	HRESULT pushback(ObjectType * pObj, UINT* pIndex);
-	Vector(UINT memBlockCapacity) : mMemBlockCapacity(memBlockCapacity), mMaxCapacity(MAX_VECTOR_BLOCKS*memBlockCapacity) {};
+	HRESULT restore();
+	Vector(UINT memBlockCapacity) : mMemBlockCapacity(memBlockCapacity) { restore(); };
 	~Vector() { for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) { if (mpMemBlocks[i]) { delete mpMemBlocks[i]; } } };
 };
 
@@ -118,6 +119,17 @@ inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
 		}
 	}
 	return ERROR_SUCCESS;
+}
+
+template<class ObjectType>
+inline HRESULT Vector<ObjectType>::restore()
+{
+	for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) {
+		delete mpMemBlocks[i]; 
+	}
+	mMaxCapacity(MAX_VECTOR_BLOCKS*memBlockCapacity);
+	mpMemBlocks[0] = new VectorMemBlock<ObjectType>(memBlockCapacity);
+	return S_OK;
 }
 
 #endif // !INCLUDE_VECTOR

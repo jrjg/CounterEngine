@@ -1,22 +1,20 @@
 #ifndef INCLUDE_EVENTMANAGER
 #define INCLUDE_EVENTMANAGER
 
-typedef HRESULT(*ECB)(ID,void*); 
-
-class EventListener {
-public:
-	virtual HRESULT handleEvent(ID eventID, void* pData) = 0;
-};
-
 class Event : public MemManaged
 {
-public:
-	Event(void* pData, ID slotID, ID id, bool deleteContent) : mDeleteContent(deleteContent), mpData(pData), mSlotid(slotID), mID(id) {};
-	~Event() { if (mDeleteContent) { delete (MemManaged*)mpData; } };
-	bool mDeleteContent;
-	void* mpData;
-	ID mSlotid;
+private:
+	bool mManageContent;
+	MemManaged* mpData;
+	ID mSlotID;
 	ID mID;
+public:
+	Event(MemManaged* pData, ID slotID, ID id, bool manageContent) : mManageContent(manageContent), mpData(pData), mSlotID(slotID), mID(id) {};
+	~Event() { if (mManageContent) { delete mpData; } };
+	ID getSlotID() { return mSlotID; };
+	ID getID() { return mID; };
+	void setManageContent(bool m) { mManageContent = m; };
+	MemManaged* getData() { return mpData; };
 };
 
 class EventManager : public CoreComponent
@@ -26,18 +24,16 @@ private:
 	List<Event>* mpEvents;
 	ID mEventCounter;
 public:
-	ID queueEvent(ID id, void* pData, bool deleteContent) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
+	ID queueEvent(ID id, MemManaged* pData, bool deleteContent) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
 	HRESULT registerEvent(ID id) { return mpListenersForEvents->set(id, new List<EventListener>(true)); };
-	ID registerForEvent(ID, ECB);
-	HRESULT triggerEvent(ID, void*);
+	ID registerForEvent(ID id, EventListener* pListener);
 	HRESULT removeEvent(ID id) { mpEvents->deleteByID(id); };
 
-	EventManager(Engine* pEngine) :CoreComponent(pEngine){ };
-	~EventManager() {  };
+	HRESULT handleProcess(TIME elapsed) override;
+	HRESULT restore()override;
 
-	HRESULT run(TIME);
-	HRESULT restore() {};
-	HRESULT release() { delete mpListenersForEvents; delete mpEvents; };
+	EventManager(Engine* pEngine) :CoreComponent(pEngine) { restore(); };
+	~EventManager() { delete mpListenersForEvents; delete mpEvents; };
 };
 
 #endif

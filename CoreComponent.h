@@ -1,17 +1,26 @@
 #ifndef CORECOMPONENT_INC
 #define CORECOMPONENT_INC
 
-class CoreComponent : public MemManaged, public EventListener, public ProcessOwner{
+class CoreListener : public MemManaged, public EventListener {
+private:
+	CoreComponent* mpCoreComponent;
+public:
+	HRESULT handleEvent(ID eventID, MemManaged* pData)override;
+	CoreListener(CoreComponent* pCoreComponent);
+};
+
+class CoreComponent : public MemManaged {
 protected:
 	Engine* mpEngine;
 	String<char>* mpName;
-	ID processHandlerID;
+	ProcessOwner* mpCoreProcessOwner;
+	CoreListener* mpCoreListener;
 public:
-	HRESULT handleEvent(ID eventID, void* pData) override;
 	CoreComponent(Engine* pEngine);
+	Engine* getEngine() { return mpEngine; };
 
-	virtual HRESULT restore() = 0;
-	virtual HRESULT release() { delete this; };
+	virtual HRESULT restore();
+	virtual HRESULT release() { delete mpName; delete mpCoreListener; delete mpCoreProcessOwner;  delete this; };
 };
 
 #endif

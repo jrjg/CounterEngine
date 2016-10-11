@@ -12,54 +12,50 @@
 
 EventManager* gpEventManager;
 
-EventManager::EventManager() {
+EventManager::EventManager(Engine* pEngine) : CoreComponent(pEngine){
 	mpListenersForEvents = new Vector<List<EventListener>>(100);
 	mpEvents = new List<Event>(true);
 	mEventCounter = 0;
-	registerForEvent(EVENT_RESTORE,&restore);
-	registerForEvent(EVENT_RELEASE, &release);
 }
 
-HRESULT EventManager::registerForEvent(ID id, ECB pCallBack)
+ID EventManager::registerForEvent(ID id, EventListener* pListener)
 {
 	List<EventListener>* pListenerList = (List<EventListener>*)mpListenersForEvents->get(id);
 	if (!pListenerList) {
-		if (FAILED(registerEvent(id))) {
-			CE1_ASSERT(0&&"Could not register for Event");
-		}
+		registerEvent(id);
 		pListenerList = (List<EventListener>*)mpListenersForEvents->get(id);
 	}
-	mpListenerToEventSlotVector->insert(pListenerList->pushBack(new EventListener(mListenerCounter++, pCallBack)), new SimplyManaged<ID>(id));
-	return S_OK;
+	return pListenerList->pushBack(pListener);
 }
 
-HRESULT EventManager::triggerEvent(ID slotid, void* pData)
+HRESULT EventManager::handleProcess(TIME elapsed)
 {
-	List<EventListener>* pListenerList = mpListenersForEvents->get(slotid);
-	if (!pListenerList) { return S_OK; }
-	for (ListElement<EventListener>* pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
-	{
-		(*((EventListener*)pListElem->getObject())->mpCallBack)(pData);
-	}
-	return S_OK;
-}
-
-EventManager * EventManager::get()
-{
-	if (!gpEventManager) {
-		gpEventManager = new EventManager();
-	}
-	return gpEventManager;
-}
-
-HRESULT EventManager::run(TIME elapsed)
-{
-	Event* pEvent = (Event*)(get()->mpEvents->pop());
+	List<EventListener>* pListenerList;
+	Event* pEvent = mpEvents->pop();
+	ListElement<EventListener>* pListElem;
 	while (pEvent)
 	{
-		get()->triggerEvent(pEvent->mSlotid, pEvent->mpData);
+		pListenerList = mpListenersForEvents->get(pEvent->getSlotID());
+		if (pListenerList) {
+			if (pListenerList->getLength() > 0) {
+				for (pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
+				{
+					pListElem->getObject()->handleEvent(pEvent->getSlotID(),pEvent->getData());
+				}
+			}
+		}
 		delete pEvent;
-		pEvent = (Event*)(get()->mpEvents->pop());
+		pEvent = mpEvents->pop();
 	}
+	return S_OK;
+}
+
+HRESULT EventManager::restore()
+{
+	if (!mpListenersForEvents) { mpListenersForEvents = new Vector<List<EventListener>>(100); };
+	mpListenersForEvents->restore();
+	if (!mpEvents) { mpEvents = new List<Event>(true); };
+	mpEvents->restore();
+	mEventCounter = 0;
 	return S_OK;
 }
