@@ -5,7 +5,7 @@ class RestoreListener : public EventListener {
 private:
 	CoreComponent* mpCoreComponent;
 public:
-	HRESULT handleEvent(MemManaged* pData) override { mpCoreComponent->restore(); return S_OK; };
+	HRESULT handle(MemManaged* pData) override { mpCoreComponent->restore(); return S_OK; };
 	RestoreListener(CoreComponent* pCoreComponent) : EventListener(EVENT_RESTORE), mpCoreComponent(pCoreComponent) {};
 };
 
@@ -13,32 +13,30 @@ class ReleaseListener : public EventListener {
 private:
 	CoreComponent* mpCoreComponent;
 public:
-	HRESULT handleEvent(MemManaged* pData) override { mpCoreComponent->release(); return S_OK; };
+	HRESULT handle(MemManaged* pData) override { mpCoreComponent->release(); return S_OK; };
 	ReleaseListener(CoreComponent* pCoreComponent) : EventListener(EVENT_RELEASE), mpCoreComponent(pCoreComponent) {};
 };
 
-class RunHandler : public ProcessHandler {
+class RunHandler : public Process {
 private:
 	CoreComponent* mpCoreComponent;
 public:
-	HRESULT handleProcess(TIME elapsed) { mpCoreComponent->run(elapsed); };
-	RunHandler(CoreComponent* pCoreComponent) : ProcessHandler(CORETICKSPEED), mpCoreComponent(pCoreComponent) {};
+	HRESULT handle(TIME elapsed)override { mpCoreComponent->run(elapsed); };
+	RunHandler(CoreComponent* pCoreComponent) : Process(CORETICKSPEED), mpCoreComponent(pCoreComponent) {};
 };
 
 class CoreComponent : public MemManaged {
-private:
-	static void* mpInstance;
+protected:
 	RestoreListener* mpRestoreListener;
 	ReleaseListener* mpReleaseListener;
 	RunHandler* mpRunHandler;
-	CoreComponent() { restore(); };
-	virtual ~CoreComponent(){ delete mpName; delete mpRestoreListener; delete mpReleaseListener; }
-protected:
 	String<char>* mpName;
+	CoreComponent(bool autoRegister) { if (autoRegister) { restore(); } };
+	CoreComponent() { restore(); };
+	virtual ~CoreComponent() { delete mpName; delete mpRunHandler; delete mpRestoreListener; delete mpReleaseListener; }
 public:
-	virtual void* get() = 0;
 	virtual HRESULT run(TIME elapsed) = 0;
-	virtual HRESULT restore();
+	virtual HRESULT restore() = 0;
 	virtual HRESULT release() { delete this; };
 };
 

@@ -1,13 +1,21 @@
 #ifndef INCLUDE_TIMER
 #define INCLUDE_TIMER
 
-struct Timer;
-typedef struct Timer Timer;
+class Timer : public CoreComponent {
+private:
+	TIME mThen;
+	static Timer* mpInstance;
+	Timer() {};
+	~Timer() {};
+public:
+	TIME getElapsed();
+	TIME getTime() { return (clock() * 1000 / CLOCKS_PER_SEC); };
+	HRESULT wait(TIME time) { Sleep(time); };
 
-TIME Timer_Elapsed(void);
-TIME Timer_Time(void);
-Timer* Timer_New(void);
-HRESULT Timer_Wait(TIME);
-HRESULT Timer_Delete(void);
+	HRESULT restore()override { srand(time(NULL)); mThen = getTime(); };
+	HRESULT run(TIME elapsed)override { wait(CORETICKSPEED - elapsed); };
+
+	static Timer* get() { if (!mpInstance) { mpInstance = new Timer(); } };
+};
 
 #endif 

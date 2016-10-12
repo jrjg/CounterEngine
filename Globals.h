@@ -26,7 +26,7 @@ typedef int KEYCODE;
 #define CE1_ASSERT(expr) if(!(expr) && _DBG){MessageBox(NULL, L#expr, L"Assertion failed",MB_ICONEXCLAMATION | MB_OK);}
 #define CE1_VECEXEC(pVector,Exec) for(unsigned int i = 0; i < Vector_Last(pVector); i++){Exec}
 
-typedef enum { EVENT_NULL, EVENT_UPDATE_WINPARAMS, EVENT_KEYDOWN, EVENT_KEYUP, EVENT_MOVEBACK, EVENT_MOVELEFT, EVENT_MOVERIGHT, EVENT_MOVEFORWARD, EVENT_RESTORE, EVENT_RELEASE, EVENT_MOVEUP, EVENT_MOVEDOWN} EVENTTYPE;
+typedef enum { EVENT_NULL, EVENT_WINPARAMS, EVENT_SETCONTROLSET, EVENT_UPDATE_WINPARAMS, EVENT_KEYDOWN, EVENT_KEYUP, EVENT_MOVEBACK, EVENT_MOVELEFT, EVENT_MOVERIGHT, EVENT_MOVEFORWARD, EVENT_RESTORE, EVENT_RELEASE, EVENT_MOVEUP, EVENT_MOVEDOWN} EVENTTYPE;
 typedef enum {RenderPass_0, RenderPass_Static = RenderPass_0, RenderPass_Actor, RenderPass_Sky, RenderPass_NotRendered, RenderPass_Last} RenderPass;
 typedef enum {AlphaOpague,AlphaTexture,AlphaMaterial,AlphaVertex} AlphaType;
 

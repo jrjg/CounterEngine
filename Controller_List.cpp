@@ -5,38 +5,27 @@
 #include "Engine.h"
 #include "Memory.h"
 #include "ListElement.h"
+#include "CoreComponent.h"
+#include "EventListener.h"
+
 #include "Controller.h"
 
-Controller* gpController;
-
-Controller* Controller::get()
-{
-	if (!gpController) {
-		gpController = new Controller();
-	}
-	return gpController;
-}
-
-#define KEY_DOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
-
-HRESULT Controller::run(TIME time)
-{
+HRESULT ControlSet::evalMappings() {
 	Mapping* pMapping;
 	bool isKeyPressed;
-	for (ListElement<Mapping>* pListElem = get()->mpActiveControls->getMappings()->getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
-		pMapping = (Mapping*)pListElem->getObject();
-		isKeyPressed = KEY_DOWN(pMapping->mKeyCode);
+	for (ListElement<Mapping>* pListElem = mpMappings->getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
+		pMapping = pListElem->getObject();
+		isKeyPressed = (GetAsyncKeyState(pMapping->mKeyCode) & 0x8000) ? 1 : 0;
 		if (pMapping->mIsKeyPressed != isKeyPressed) {
-			EventManager_QueueEvent(pMapping->mEventID, new BoolManaged());
+			EventManager::get()->queueEvent(pMapping->mEventID, new SimplyManaged<bool>(isKeyPressed));
 			pMapping->mIsKeyPressed = isKeyPressed;
 		}
 	}
 	return S_OK;
 }
 
-ID Controller::newControls() 
-{
-	Controls* pNewControls = new Controls(get()->mIDCounter++);
-	get()->mpControls->pushBack(pNewControls);
-	return pNewControls->getID();
-}
+HRESULT Controller::restore() { 
+	if (!mpControls) { mpControls = new List<ControlSet>(); }; mpControls->restore();
+	delete mpSetControlSetListener; mpSetControlSetListener = new SetControlSetListener();
+	return S_OK; 
+};

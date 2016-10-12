@@ -1,7 +1,13 @@
 #ifndef INCLUDE_CONTROLLER
 #define INCLUDE_CONTROLLER
 
-class Mapping : public MemManaged{
+class SetControlSetListener : public EventListener{
+public:
+	HRESULT handle(MemManaged* pData) override { Controller::get()->setControls(*(ID*)pData); };
+	SetControlSetListener() : EventListener(EVENT_SETCONTROLSET) {};
+};
+
+class Mapping : public MemManaged {
 public:
 	Mapping(KEYCODE mKeyCode, ID mEventID) : mKeyCode(mKeyCode), mIsKeyPressed(false), mEventID(mEventID) {};
 	KEYCODE mKeyCode;
@@ -9,35 +15,37 @@ public:
 	ID mEventID;
 };
 
-class Controls : public MemManaged {
+class ControlSet : public MemManaged {
 private:
 	List<Mapping>* mpMappings;
 	ID mID;
 public:
-	Controls(ID id) : mID(id) { mpMappings = new List<Mapping>(true); };
-	HRESULT evalKeyDown(void* pData);
-	HRESULT evalKeyUp(void* pData);
 	List<Mapping>* getMappings() { return mpMappings; }
 	ID getID() { return mID; };
+	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID) { mpMappings->pushBack(new Mapping(keyCode, eventID)); return S_OK; };
+	HRESULT evalMappings();
+	ControlSet(ID id) : mID(id) { mpMappings = new List<Mapping>(); };
+	~ControlSet() { delete mpMappings; }
 };
 
-class Controller : public MemManaged
+class Controller : public CoreComponent
 {
+	friend class SetControlSetListener;
 private:
-	List<Controls>* mpControls;
-	Controls* mpActiveControls;
-	ID mIDCounter;
-	Controller() {EventManager::registerForEvent(EVENT_RESTORE, &Controller::restore);EventManager::registerForEvent(EVENT_RELEASE, &Controller::release);};
+	static Controller* mpInstance;
+	List<ControlSet>* mpControls;
+	ControlSet* mpActiveControls;
+	SetControlSetListener* mpSetControlSetListener;
+
+	HRESULT setControls(ID id) { mpActiveControls = mpControls->getByID(id); return S_OK; };
+	Controller() {};
 	~Controller() { delete mpControls; };
 public:
-	static HRESULT release(void* p0) { delete get(); };
-	static HRESULT restore(void* p0) {if (!get()->mpControls) get()->mpControls = new List<Controls>(true);get()->mIDCounter = 0;return S_OK;};
-	static Controller* get();
+	static Controller* get() { if (!mpInstance) { mpInstance = new Controller(); } return mpInstance; };
+	ID addControlSet(ControlSet* pControlSet) { return mpControls->pushBack(pControlSet); };
 
-	static HRESULT run(TIME);
-	static HRESULT setControls(ID id) { get()->mpActiveControls = (Controls*)get()->mpControls->getByID(id); return S_OK; };
-	static HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID) { ((Controls*)get()->mpControls->getByID(controlsID))->getMappings()->pushBack(new Mapping(keyCode, eventID)); return S_OK; };
-	static ID newControls();
+	HRESULT run(TIME elapsed)override { mpActiveControls->evalMappings(); };
+	HRESULT restore();
 };
 
 #endif

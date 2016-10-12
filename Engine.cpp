@@ -1,64 +1,32 @@
 #include "TopInclude.h"
 #include "EventManager.h"
 #include "ProcessManager.h"
-#include "Timer.h"
 #include "Parser.h"
 #include "Memory.h"
 #include "String.h"
 #include "CoreComponent.h"
-#include "windowmgr.h"
+#include "Timer.h"
 #include "Controller.h"
 
 #include "Engine.h"
 
-MemoryManager* gpMemoryManager;
-
-MemoryManager* getMemoryManager() {
-	return gpMemoryManager;
-}
-
-Engine::Engine() : mRunning(true),mTickSpeed(CORETICKSPEED)
+HRESULT Engine::run(TIME elapsed)
 {
-	mpEngine = this;
-	mpEventManager = new EventManager();
-	mpProcessManager = new ProcessManager();
-	mpWindowManager = new WindowManager();
-	mpTimer = new Timer();
-	mpController = new Controller();
-}
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-	gpMemoryManager = new MemoryManager();
-	Engine* pEngine = new Engine();
-	WinParams* pWinParams = new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-
-	pEngine->getEventManager()->queueEvent(EVENT_UPDATE_WINPARAMS, pWinParams,false);
-	pEngine->getEventManager()->queueEvent(EVENT_RESTORE, NULL, false);
-	while (pEngine->isRunning())
+	while (mRunning)
 	{
-		pEngine->getProcessManager()->handleProcess(pEngine->getTimer()->getElapsed());
+		ProcessManager::get()->run(Timer::get()->getElapsed());
 	}
-
-	delete pWinParams;
-	delete pEngine;
-	delete gpMemoryManager;
 	return S_OK;
-};
-
-HRESULT Engine::restore(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-	if (!get()->mpWinParams) get()->mpWinParams = new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	if (!get()->mpExtra) get()->mpExtra = new EngineExtra(L"Counter Engine", 800, 600, false, 10);
-	get()->loadExtra(NULL);
-	if (!get()->mProcess_WaitTimer) get()->mProcess_WaitTimer = ProcessManager::addProcess(&waitTimer, 0);
-	get()->mRunning = true;
 }
 
-HRESULT Engine::handleProcess(TIME elapsed)
+HRESULT Engine::restore()
 {
-	mpTimer->wait(mTickSpeed - elapsed);
-	return S_OK;
+	MemoryManager::get();
+	EventManager::get();
+	ProcessManager::get();
+	Timer::get();
+	Controller::get();
+	mRunning = true;
 }
 
 //#define CASE(Name,Exec)if (*pObjName==Name) {Exec; return S_OK; }

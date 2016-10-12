@@ -1,36 +1,19 @@
 #ifndef INCLUDE_PROCESSMANAGER
 #define INCLUDE_PROCESSMANAGER
 
-class Process : public MemManaged
+class ProcessManager : public CoreComponent
 {
 private:
-	ProcessHandler* mpProcessHandler;
-	TIME mWait;
-	TIME mWaited;
-	bool mRunning;
-	ID mID;
-public:
-	Process(ProcessHandler* pProcessHandler, TIME wait, ID id) : mpProcessHandler(pProcessHandler), mWait(mWait), mWaited(0), mRunning(true), mID(id) {};
-	bool isRunning() { return mRunning; };
-	void pause() { mRunning = false; };
-	void proceed() { mRunning = true; };
-	ID getID() { return mID; };
-	HRESULT run(TIME elapsed);
-};
-
-class ProcessManager : public MemManaged
-{
-private:
+	static ProcessManager* mpInstance;
 	List<Process>* mpProcesses;
-	Vector<SimplyManaged<ID>>* mpIDs;
-	ID mIDCounter;
-	ProcessManager();
-	~ProcessManager() { delete mpProcesses; delete mpIDs; };
+	ProcessManager() : CoreComponent(false) {};
+	~ProcessManager() { delete mpProcesses; };
 public:
-	ID newProcess(ProcessHandler* pProcessHandler, TIME);
-	HRESULT deleteProcess(ID);
-	HRESULT pauseProcess(ID processID) { mpProcesses->getByID(processID)->pause(); return S_OK; };
-	HRESULT continueProcess(ID processID) { mpProcesses->getByID(processID)->proceed(); return S_OK; };;
+	ID addProcess(Process* pProcess) { return mpProcesses->pushBack(pProcess); };
+	HRESULT removeProcess(ID processID) { return mpProcesses->deleteByID(processID); };
+	static ProcessManager* get();
+	HRESULT restore();
+	HRESULT run(TIME elapsed)override;
 };
 
 #endif

@@ -8,23 +8,24 @@ private:
 	UINT mLength;
 	ID mElemIDCounter;
 	bool mManageContent;
+	void List<ObjectType>::setLength(unsigned int length) { mLength = length; };
+	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) { mpFirstElem = pElem; };
+	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
 public:
-	List<ObjectType>::List(bool manageContent) { restore(); mManageContent = manageContent; };
-	List<ObjectType>::List() { restore(); };
-	List<ObjectType>::~List();
 	ID List<ObjectType>::pushBack(void* pObj);
 	ID List<ObjectType>::pushFront(void* pObj);
 	
 	unsigned int List<ObjectType>::getLength() { return mLength; };
-	void List<ObjectType>::setLength(unsigned int length) {mLength = length;};
 	ListElement<ObjectType>* List<ObjectType>::getFirst() { return mpFirstElem; };
-	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) {mpFirstElem = pElem;};
-	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
 	ObjectType* List<ObjectType>::pop();
 	ListElement<ObjectType>* List<ObjectType>::getLast() {return mpLastElem;};
-	void* List<ObjectType>::getByID(ID id);
+	ObjectType* List<ObjectType>::getByID(ID id);
 	HRESULT List<ObjectType>::deleteByID(ID id);
 	HRESULT List<ObjectType>::restore();
+
+	List<ObjectType>::List(bool manageContent) { restore(); mManageContent = manageContent; };
+	List<ObjectType>::List() { restore(); };
+	List<ObjectType>::~List();
 };
 
 template<class ObjectType>

@@ -1,7 +1,8 @@
 #ifndef LISTELEM_INC
 #define LISTELEM_INC
 
-template <class ObjectType> class ListElement : public MemManaged
+template <class ObjectType> 
+class ListElement : public MemManaged
 {
 private:
 	ListElement<ObjectType>* mpPrevious;

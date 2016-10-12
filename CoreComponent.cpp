@@ -5,7 +5,7 @@
 #include "ProcessManager.h"
 #include "String.h"
 #include "EventListener.h"
-#include "ProcessHandler.h"
+#include "Process.h"
 
 #include "CoreComponent.h"
 

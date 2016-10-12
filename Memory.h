@@ -1,7 +1,10 @@
 #ifndef MEMORY_INC
 #define MEMORY_INC
 
-template<class ObjectType> class SimplyManaged : public ObjectType, public MemManaged {};
+template<class ObjectType> class SimplyManaged : public ObjectType, public MemManaged {
+public:
+	SimplyManaged(ObjectType &o) { *this = o; };
+};
 
 template<class ObjectType> class SpecialList : public List<ObjectType>{
 public:
