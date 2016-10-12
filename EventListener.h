@@ -4,11 +4,11 @@
 class EventListener {
 private:
 	ID mEventID;
-	EventManager* mpEventManager;
+	ID mListenerID;
 public:
-	virtual HRESULT handleEvent(ID eventID, MemManaged* pData) = 0;
-	EventListener(ID eventID, EventManager* pEventManager) : mEventID(eventID), mpEventManager(pEventManager) { mpEventManager->registerForEvent(mEventID, this); };
-	virtual ~EventListener() { mpEventManager->unRegisterForEvent(mEventID,this); };
+	virtual HRESULT handleEvent(MemManaged* pData) = 0;
+	EventListener(ID eventID) : mEventID(eventID) { EventManager::get()->registerForEvent(mEventID, this); };
+	virtual ~EventListener() { EventManager::get()->unRegisterForEvent(mEventID, mListenerID); };
 };
 
 #endif

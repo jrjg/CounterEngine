@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Memory.h"
 #include "ListElement.h"
+#include "ProcessHandler.h"
 
 #include "ProcessManager.h"
 

@@ -5,35 +5,14 @@
 #include "ProcessManager.h"
 #include "String.h"
 #include "EventListener.h"
+#include "ProcessHandler.h"
 
 #include "CoreComponent.h"
 
-CoreComponent::CoreComponent(Engine* pEngine) : mpEngine(pEngine) {
-	
-	restore();
-}
-
 HRESULT CoreComponent::restore()
 {
-	if (!mpCoreListener) { mpCoreListener = new CoreListener(this); };
-	if (!processHandlerID) { processHandlerID = mpEngine->getProcessManager()->newProcess((ProcessOwner*)this, CORETICKSPEED); };
+	delete mpRestoreListener; mpRestoreListener = new RestoreListener(this);
+	delete mpReleaseListener; mpReleaseListener = new ReleaseListener(this);
+	delete mpRunHandler; mpRunHandler = new RunHandler(this);
 	return S_OK;
-}
-
-HRESULT CoreListener::handleEvent(ID eventID, MemManaged * pData)
-{
-	switch (eventID) {
-		case EVENT_RESTORE:
-			mpCoreComponent->restore();
-			break;
-		case EVENT_RELEASE:
-			mpCoreComponent->release();
-			break;
-	}
-	return S_OK;
-}
-
-CoreListener::CoreListener(CoreComponent * pCoreComponent) : mpCoreComponent(pCoreComponent) {
-	mpCoreComponent->getEngine()->getEventManager()->registerForEvent(EVENT_RESTORE, (EventListener*)this);
-	mpCoreComponent->getEngine()->getEventManager()->registerForEvent(EVENT_RELEASE, (EventListener*)this);
 };

@@ -21,7 +21,7 @@ EventManager::EventManager(Engine* pEngine) : CoreComponent(pEngine){
 
 ID EventManager::registerForEvent(ID id, EventListener* pListener)
 {
-	List<EventListener>* pListenerList = (List<EventListener>*)mpListenersForEvents->get(id);
+	List<EventListener>* pListenerList = mpListenersForEvents->get(id);
 	if (!pListenerList) {
 		registerEvent(id);
 		pListenerList = (List<EventListener>*)mpListenersForEvents->get(id);

@@ -23,10 +23,11 @@ private:
 	Vector<List<EventListener>>* mpListenersForEvents;
 	List<Event>* mpEvents;
 	ID mEventCounter;
+	HRESULT registerEvent(ID id) { return mpListenersForEvents->set(id, new List<EventListener>(true)); };
 public:
 	ID queueEvent(ID id, MemManaged* pData, bool deleteContent) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++, deleteContent)); };
-	HRESULT registerEvent(ID id) { return mpListenersForEvents->set(id, new List<EventListener>(true)); };
 	ID registerForEvent(ID id, EventListener* pListener);
+	HRESULT unRegisterForEvent(ID eventID, ID listenerID) { return mpListenersForEvents->get(eventID)->deleteByID(listenerID); };
 	HRESULT removeEvent(ID id) { mpEvents->deleteByID(id); };
 
 	HRESULT handleProcess(TIME elapsed) override;

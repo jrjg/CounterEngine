@@ -1,26 +1,45 @@
 #ifndef CORECOMPONENT_INC
 #define CORECOMPONENT_INC
 
-class CoreListener : public MemManaged, public EventListener {
+class RestoreListener : public EventListener {
 private:
 	CoreComponent* mpCoreComponent;
 public:
-	HRESULT handleEvent(ID eventID, MemManaged* pData)override;
-	CoreListener(CoreComponent* pCoreComponent);
+	HRESULT handleEvent(MemManaged* pData) override { mpCoreComponent->restore(); return S_OK; };
+	RestoreListener(CoreComponent* pCoreComponent) : EventListener(EVENT_RESTORE), mpCoreComponent(pCoreComponent) {};
+};
+
+class ReleaseListener : public EventListener {
+private:
+	CoreComponent* mpCoreComponent;
+public:
+	HRESULT handleEvent(MemManaged* pData) override { mpCoreComponent->release(); return S_OK; };
+	ReleaseListener(CoreComponent* pCoreComponent) : EventListener(EVENT_RELEASE), mpCoreComponent(pCoreComponent) {};
+};
+
+class RunHandler : public ProcessHandler {
+private:
+	CoreComponent* mpCoreComponent;
+public:
+	HRESULT handleProcess(TIME elapsed) { mpCoreComponent->run(elapsed); };
+	RunHandler(CoreComponent* pCoreComponent) : ProcessHandler(CORETICKSPEED), mpCoreComponent(pCoreComponent) {};
 };
 
 class CoreComponent : public MemManaged {
+private:
+	static void* mpInstance;
+	RestoreListener* mpRestoreListener;
+	ReleaseListener* mpReleaseListener;
+	RunHandler* mpRunHandler;
+	CoreComponent() { restore(); };
+	virtual ~CoreComponent(){ delete mpName; delete mpRestoreListener; delete mpReleaseListener; }
 protected:
-	Engine* mpEngine;
 	String<char>* mpName;
-	ProcessOwner* mpCoreProcessOwner;
-	CoreListener* mpCoreListener;
 public:
-	CoreComponent(Engine* pEngine);
-	Engine* getEngine() { return mpEngine; };
-
+	virtual void* get() = 0;
+	virtual HRESULT run(TIME elapsed) = 0;
 	virtual HRESULT restore();
-	virtual HRESULT release() { delete mpName; delete mpCoreListener; delete mpCoreProcessOwner;  delete this; };
+	virtual HRESULT release() { delete this; };
 };
 
 #endif
