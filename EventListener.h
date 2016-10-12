@@ -8,7 +8,7 @@ private:
 public:
 	virtual HRESULT handleEvent(ID eventID, MemManaged* pData) = 0;
 	EventListener(ID eventID, EventManager* pEventManager) : mEventID(eventID), mpEventManager(pEventManager) { mpEventManager->registerForEvent(mEventID, this); };
-	~EventListener() { mpEventManager->unRegisterForEvent(mEventID,this); };
+	virtual ~EventListener() { mpEventManager->unRegisterForEvent(mEventID,this); };
 };
 
 #endif
