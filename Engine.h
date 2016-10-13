@@ -1,19 +1,22 @@
 #ifndef INCLUDE_ENGINE
 #define INCLUDE_ENGINE
 
+#include "CoreComponent.h"
+
 class Engine : public CoreComponent
 {
 private:
 	bool mRunning;
-	static Engine* mpInstance;
-	Engine();
-	~Engine() {};
+	Engine() {};
+protected:
+	virtual ~Engine() { };
 public:
 	HRESULT run(TIME elapsed) override;
 	HRESULT restore();
-	HRESULT release() override { mRunning = false; delete this; };
+	void release()override { mRunning = false; };
+	void manualRelease() { delete this; };
 
-	static Engine* get() { if (!mpInstance) { mpInstance = new Engine(); } };
+	static Engine* get();
 };
 
 #endif

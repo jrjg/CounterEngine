@@ -9,17 +9,24 @@
 
 #include "ProcessManager.h"
 
+ProcessManager* gpProcessManager;
+
+ProcessManager::ProcessManager() : CoreComponent(false)
+{
+	mpProcesses = new List<Process>(); 
+}
+
 ProcessManager* ProcessManager::get() {
-	if (!mpInstance) { 
-		mpInstance = new ProcessManager(); 
-		mpInstance->CoreComponent::restore();
+	if (!gpProcessManager) {
+		gpProcessManager = new ProcessManager();
+		gpProcessManager->CoreComponent::restore();
 	}; 
-	return mpInstance; 
+	return gpProcessManager;
 };
 
 HRESULT ProcessManager::restore()
 {
-	delete mpProcesses; mpProcesses = new List<Process>();
+	if (!mpProcesses) { mpProcesses = new List<Process>(); }; mpProcesses->restore();
 	return S_OK;
 };
 

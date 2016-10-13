@@ -12,6 +12,8 @@
 
 #include "Engine.h"
 
+Engine* gpEngine;
+
 HRESULT Engine::run(TIME elapsed)
 {
 	while (mRunning)
@@ -23,12 +25,18 @@ HRESULT Engine::run(TIME elapsed)
 
 HRESULT Engine::restore()
 {
-	MemoryManager::get();
 	EventManager::get();
 	ProcessManager::get();
 	Timer::get();
 	Controller::get();
 	mRunning = true;
+	return S_OK;
+}
+Engine * Engine::get() { 
+	if (!gpEngine) {
+		gpEngine = new Engine();
+	}
+	return gpEngine;
 };
 
 //#define CASE(Name,Exec)if (*pObjName==Name) {Exec; return S_OK; }

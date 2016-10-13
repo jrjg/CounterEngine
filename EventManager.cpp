@@ -10,6 +10,17 @@
 #include "MemManaged.h"
 #include "EventManager.h"
 
+EventManager* gpEventManager;
+
+HRESULT EventManager::registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); }
+EventManager::EventManager() : CoreComponent(false) {
+	mpListeners = new Vector<List<EventListener>>(100); 
+	mpEvents = new List<Event>(); 
+	mEventCounter = 0;
+};
+EventManager::~EventManager() { mpListeners->release(); mpEvents->release(); };
+
+ID EventManager::queueEvent(ID id, MemManaged * pData) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++)); };
 
 ID EventManager::registerForEvent(ID id, EventListener* pListener)
 {
@@ -19,14 +30,16 @@ ID EventManager::registerForEvent(ID id, EventListener* pListener)
 		pListenerList = mpListeners->get(id);
 	}
 	return pListenerList->pushBack(pListener);
-};
+}
+HRESULT EventManager::unRegisterForEvent(ID eventID, ID listenerID) { return mpListeners->get(eventID)->deleteByID(listenerID); }
+HRESULT EventManager::removeEvent(ID id) { mpEvents->deleteByID(id); };
 
 EventManager * EventManager::get() {
-	if (!mpInstance) {
-		mpInstance = new EventManager(); 
-		mpInstance->CoreComponent::restore();
+	if (!gpEventManager) {
+		gpEventManager = new EventManager();
+		gpEventManager->CoreComponent::restore();
 	} 
-	return mpInstance;
+	return gpEventManager;
 };
 
 HRESULT EventManager::run(TIME elapsed)
@@ -45,7 +58,7 @@ HRESULT EventManager::run(TIME elapsed)
 				}
 			}
 		}
-		delete pEvent;
+		pEvent->release();
 		pEvent = mpEvents->pop();
 	}
 	return S_OK;

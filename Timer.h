@@ -1,21 +1,23 @@
 #ifndef INCLUDE_TIMER
 #define INCLUDE_TIMER
 
+#include "CoreComponent.h"
+
 class Timer : public CoreComponent {
 private:
 	TIME mThen;
-	static Timer* mpInstance;
 	Timer() {};
-	~Timer() {};
+protected:
+	virtual ~Timer() {};
 public:
 	TIME getElapsed();
 	TIME getTime() { return (clock() * 1000 / CLOCKS_PER_SEC); };
-	HRESULT wait(TIME time) { Sleep(time); };
+	HRESULT wait(TIME time) { Sleep(time); return S_OK; };
 
-	HRESULT restore()override { srand(time(NULL)); mThen = getTime(); };
-	HRESULT run(TIME elapsed)override { wait(CORETICKSPEED - elapsed); };
+	HRESULT restore() { srand(time(NULL)); mThen = getTime(); return S_OK; };
+	HRESULT run(TIME elapsed)override { wait(CORETICKSPEED - elapsed); return S_OK; };
 
-	static Timer* get() { if (!mpInstance) { mpInstance = new Timer(); } };
+	static Timer* get();
 };
 
 #endif 

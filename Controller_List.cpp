@@ -12,6 +12,22 @@
 
 #include "Controller.h"
 
+Controller* gpController;
+
+HRESULT SetControlSetListener::handle(MemManaged* pData){ 
+	Controller::get()->setControls(*(ID*)pData); 
+	return S_OK;
+};
+
+HRESULT ControlSet::addMapping(ID controlsID, KEYCODE keyCode, ID eventID) {
+	mpMappings->pushBack(new Mapping(keyCode, eventID)); 
+	return S_OK; 
+};
+
+ControlSet::ControlSet(ID id) : mID(id) {
+	mpMappings = new List<Mapping>(); 
+};
+
 HRESULT ControlSet::evalMappings() {
 	Mapping* pMapping;
 	bool isKeyPressed;
@@ -26,8 +42,24 @@ HRESULT ControlSet::evalMappings() {
 	return S_OK;
 };
 
-HRESULT Controller::restore() { 
+HRESULT Controller::setControls(ID id) { 
+	mpActiveControls = mpControls->getByID(id); return S_OK; 
+}
+Controller::~Controller() { mpControls->release(); }
+
+Controller * Controller::get() { 
+	if (!gpController) {
+		gpController = new Controller();
+	} 
+	return gpController;
+};
+
+ID Controller::addControlSet(ControlSet * pControlSet) { return mpControls->pushBack(pControlSet); };
+
+HRESULT Controller::run(TIME elapsed) { mpActiveControls->evalMappings(); return S_OK; };
+
+HRESULT Controller::restore() {
 	if (!mpControls) { mpControls = new List<ControlSet>(); }; mpControls->restore();
-	delete mpSetControlSetListener; mpSetControlSetListener = new SetControlSetListener();
+	if (mpSetControlSetListener) { mpSetControlSetListener->release(); }; mpSetControlSetListener = new SetControlSetListener();
 	return S_OK; 
 };

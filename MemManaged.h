@@ -2,12 +2,15 @@
 #define MEMMANAGED_INC
 
 class MemManaged {
+	friend class MemoryManager;
 private:
 	ID mMemID;
+protected:
+	virtual ~MemManaged() {};
 public:
-	ID getMemID() { return mMemID; };
-	inline void* MemManaged::operator new(size_t size);
-	inline void MemManaged::operator delete(void* pInst);
+	void* operator new(size_t size);
+	void operator delete(void* pInst);
+	virtual void release() { delete this; };
 };
 
 #endif

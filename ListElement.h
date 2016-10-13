@@ -1,10 +1,11 @@
 #ifndef LISTELEM_INC
 #define LISTELEM_INC
 
-template <class ObjectType>
-class List;
+#include "MemManaged.h"
 
-template <class ObjectType> 
+template<class ObjectType>class List;
+
+template <class ObjectType>
 class ListElement : public MemManaged
 {
 private:
@@ -14,27 +15,28 @@ private:
 	ID mID;
 	bool mDeleteContent;
 	List<ObjectType>* mpList;
+protected:
+	virtual ~ListElement();
 public:
-	ListElement<ObjectType>::ListElement(List<ObjectType>* pList, ObjectType* pObj, ID id, ListElement<ObjectType>* pNext, ListElement<ObjectType>* pPrevious, bool memManageContent);
-	ListElement<ObjectType>::~ListElement();
-	ID ListElement<ObjectType>::getID() { return mID; };
-	ListElement<ObjectType>* ListElement<ObjectType>::getNext() { return mpNext; };
-	ListElement<ObjectType>* ListElement<ObjectType>::getPrevious() { return mpPrevious; };
-	void ListElement<ObjectType>::setNext(ListElement<ObjectType>* p) { mpNext = p; };
-	void ListElement<ObjectType>::setPrevious(ListElement<ObjectType>* p) { mpPrevious = p; };
-	ObjectType* ListElement<ObjectType>::getObject() { return mpObject; };
-	void ListElement<ObjectType>::setDeleteContent(bool b) { mDeleteContent = b; };
+	ListElement(List<ObjectType>* pList, ObjectType* pObj, ID id, ListElement<ObjectType>* pNext, ListElement<ObjectType>* pPrevious, bool memManageContent);
+	ID getID() { return mID; };
+	ListElement<ObjectType>* getNext() { return mpNext; };
+	ListElement<ObjectType>* getPrevious() { return mpPrevious; };
+	void setNext(ListElement<ObjectType>* p) { mpNext = p; };
+	void setPrevious(ListElement<ObjectType>* p) { mpPrevious = p; };
+	ObjectType* getObject() { return mpObject; };
+	void setDeleteContent(bool b) { mDeleteContent = b; };
 };
 
 template<class ObjectType>
-inline ListElement<ObjectType>::ListElement(List<ObjectType>* pList, ObjectType * pObj, ID id, ListElement<ObjectType>* pNext, ListElement<ObjectType>* pPrevious, bool memManageContent) : mpList(pList), mpObject(pObj), mID(id), mDeleteContent(deleteContent), mpNext(pNext), mpPrevious(pPrevious)
+inline ListElement<ObjectType>::ListElement(List<ObjectType>* pList, ObjectType * pObj, ID id, ListElement<ObjectType>* pNext, ListElement<ObjectType>* pPrevious, bool memManageContent) : mpList(pList), mpObject(pObj), mID(id), mDeleteContent(memManageContent), mpNext(pNext), mpPrevious(pPrevious)
 {
 	if (!pNext) { //pushback
-		if (pPrevious) { pPrevious->setNext(this) };
+		if (pPrevious) { pPrevious->setNext(this); };
 		mpList->setLast(this);
 	}
-	if(!pPrevious) { //pushfront
-		if (pNext) { pNext->setPrevious(this) };
+	if (!pPrevious) { //pushfront
+		if (pNext) { pNext->setPrevious(this); };
 		mpList->setFirst(this);
 	}
 	mpList->setLength(mpList->getLength() + 1);
@@ -42,17 +44,18 @@ inline ListElement<ObjectType>::ListElement(List<ObjectType>* pList, ObjectType 
 
 template <class ObjectType> ListElement<ObjectType>::~ListElement()
 {
+	if (!mpList) { if (mDeleteContent) { mpObject->release(); }; return; };
 	if (mpList->getLength() == 1) {
 		mpList->setFirst(NULL);
 		mpList->setLast(NULL);
 	}
 	else {
 		if (mpList->getFirst()->mID == mID) {
-			mpNext ? mpNext->setPrevious(NULL) : 1;
+			if (mpNext) { mpNext->setPrevious(NULL); };
 			mpList->setFirst(mpNext);
 		}
 		else if (mpList->getLast()->mID == mID) {
-			mpPrevious ? mpPrevious->setNext(NULL) : 1;
+			if (mpPrevious) { mpPrevious->setNext(NULL); };
 			mpList->setLast(mpPrevious);
 		}
 		else {
@@ -61,7 +64,7 @@ template <class ObjectType> ListElement<ObjectType>::~ListElement()
 		}
 	}
 	mpList->setLength(mpList->getLength() - 1);
-	(mDeleteContent) ? delete mpObject : 1;
+	if (mDeleteContent) { mpObject->release(); };
 	return;
 };
 

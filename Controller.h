@@ -1,13 +1,22 @@
 #ifndef INCLUDE_CONTROLLER
 #define INCLUDE_CONTROLLER
 
+#include "EventListener.h"
+#include "MemManaged.h"
+#include "CoreComponent.h"
+#include "List.h"
+
 class SetControlSetListener : public EventListener{
+protected:
+	virtual ~SetControlSetListener() {};
 public:
-	HRESULT handle(MemManaged* pData) override { Controller::get()->setControls(*(ID*)pData); };
+	HRESULT handle(MemManaged* pData) override;
 	SetControlSetListener() : EventListener(EVENT_SETCONTROLSET) {};
 };
 
 class Mapping : public MemManaged {
+protected:
+	virtual ~Mapping() {};
 public:
 	Mapping(KEYCODE mKeyCode, ID mEventID) : mKeyCode(mKeyCode), mIsKeyPressed(false), mEventID(mEventID) {};
 	KEYCODE mKeyCode;
@@ -19,32 +28,33 @@ class ControlSet : public MemManaged {
 private:
 	List<Mapping>* mpMappings;
 	ID mID;
+protected:
+	virtual ~ControlSet() {};
 public:
 	List<Mapping>* getMappings() { return mpMappings; };
 	ID getID() { return mID; };
-	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID) { mpMappings->pushBack(new Mapping(keyCode, eventID)); return S_OK; };
+	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID);
 	HRESULT evalMappings();
-	ControlSet(ID id) : mID(id) { mpMappings = new List<Mapping>(); };
-	~ControlSet() { delete mpMappings; };
+	ControlSet(ID id);
 };
 
 class Controller : public CoreComponent
 {
 	friend class SetControlSetListener;
 private:
-	static Controller* mpInstance;
 	List<ControlSet>* mpControls;
 	ControlSet* mpActiveControls;
 	SetControlSetListener* mpSetControlSetListener;
 
-	HRESULT setControls(ID id) { mpActiveControls = mpControls->getByID(id); return S_OK; };
+	HRESULT setControls(ID id);
 	Controller() {};
-	~Controller() { delete mpControls; };
+protected:
+	virtual ~Controller();
 public:
-	static Controller* get() { if (!mpInstance) { mpInstance = new Controller(); } return mpInstance; };
-	ID addControlSet(ControlSet* pControlSet) { return mpControls->pushBack(pControlSet); };
+	static Controller* get();
+	ID addControlSet(ControlSet* pControlSet);
 
-	HRESULT run(TIME elapsed)override { mpActiveControls->evalMappings(); };
+	HRESULT run(TIME elapsed)override;
 	HRESULT restore();
 };
 

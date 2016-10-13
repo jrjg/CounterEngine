@@ -17,7 +17,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	Engine::get()->run(0);
 
-	MemoryManager::get()->release();
+	Engine::get()->manualRelease();
+
+	MemoryManager::get()->manualRelease();
 
 	return S_OK;
 };

@@ -1,9 +1,12 @@
 #ifndef SPECIALLIST_INC
 #define SPECIALLIST_INC
 
-template<class ObjectType> class SpecialList : public List<ObjectType> {
+#include "List.h"
+
+template<class ObjectType> 
+class SpecialList : public List<ObjectType> {
 public:
-	inline void* SpecialList<ObjectType>::operator new(size_t size); //reoverride for not registering in own list
+	inline void* SpecialList<ObjectType>::operator new(size_t size) override; //reoverride for not registering in own list
 	SpecialList<ObjectType>::SpecialList(bool deleteContent) : List<ObjectType>(deleteContent) {};
 };
 

@@ -11,10 +11,12 @@
 
 #include "CoreComponent.h"
 
+CoreComponent::~CoreComponent() { mpRunHandler->release(); mpRestoreListener->release(); mpReleaseListener->release(); };
+
 HRESULT CoreComponent::restore()
 {
-	delete mpRestoreListener; mpRestoreListener = new RestoreListener(this);
-	delete mpReleaseListener; mpReleaseListener = new ReleaseListener(this);
-	delete mpRunHandler; mpRunHandler = new RunHandler(this);
+	if (mpRestoreListener) { mpRestoreListener->release(); }; mpRestoreListener = new RestoreListener(this);
+	if (mpReleaseListener) { mpReleaseListener->release(); }; mpReleaseListener = new ReleaseListener(this);
+	if (mpRunHandler) { mpRunHandler->release(); }; mpRunHandler = new RunHandler(this);
 	return S_OK;
 };

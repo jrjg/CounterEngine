@@ -1,6 +1,8 @@
 #ifndef VECTORMEMBLOCK
 #define VECTORMEMBLOCK
 
+#include "MemManaged.h"
+
 template<class ObjectType> 
 class VectorMemBlock : public MemManaged {
 private:
@@ -10,6 +12,8 @@ private:
 	UINT mElemSize;
 	UINT mCapacity;
 	size_t mSizeOfMemManaged;
+protected:
+	virtual ~VectorMemBlock();
 public:
 	ObjectType* VectorMemBlock<ObjectType>::get(UINT index);
 	UINT getIndexLast() { return mIndexLast; };
@@ -17,7 +21,6 @@ public:
 	HRESULT set(UINT index, ObjectType* pObj);
 	HRESULT pushback(ObjectType* pObj, UINT* pIndex);
 	VectorMemBlock(UINT capacity);
-	~VectorMemBlock();
 };
 
 template<class ObjectType>
@@ -50,18 +53,20 @@ inline HRESULT VectorMemBlock<ObjectType>::pushback(ObjectType * pObj, UINT * pI
 
 template<class ObjectType>
 VectorMemBlock<ObjectType>::VectorMemBlock(UINT capacity) : mSizeOfMemManaged(sizeof(MemManaged)), mElemSize(sizeof(ObjectType)), mCapacity(capacity), mDeleteContent(true), mIndexLast(-1) {
-	MemoryManager::get()->allocateMem(&mpMem, mCapacity * mElemSize + mSizeOfMemManaged, mpMem->mMemID);
+	MemoryManager::get()->allocateMem(&mpMem, mCapacity * mElemSize + mSizeOfMemManaged);
 };
 
 template<class ObjectType>
 inline VectorMemBlock<ObjectType>::~VectorMemBlock()
 {
 	if (mDeleteContent) {
+		ObjectType* pObject;
 		for (UINT i = 0; i < mCapacity; i++) {
-			delete get(i);
+			pObject = get(i);
+			if (pObject) { pObject->release(); };
 		}
 	}
-	delete mpMem;
+	mpMem->release();
 };
 
 #endif

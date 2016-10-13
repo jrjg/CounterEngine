@@ -1,9 +1,15 @@
 #ifndef SIMPLYMANAGED
 #define SIMPLYMANAGED
 
-template<class ObjectType> class SimplyManaged : public ObjectType, public MemManaged {
+#include "MemManaged.h"
+
+template<class ObjectType> class SimplyManaged : public MemManaged {
+private:
+	ObjectType* pObject;
+protected:
+	virtual ~SimplyManaged() { delete pObject; };
 public:
-	SimplyManaged(ObjectType &o) { *this = o; };
+	SimplyManaged(ObjectType &o) { *pObject = o; };
 };
 
 #endif

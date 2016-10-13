@@ -6,6 +6,10 @@
 
 #include "Process.h"
 
+Process::Process(TIME shouldWait) : mShouldWait(shouldWait), mWaited(0), mRunning(true) { mID = ProcessManager::get()->addProcess(this); };
+
+Process::~Process() { ProcessManager::get()->removeProcess(mID); };
+
 HRESULT Process::run(TIME elapsed)
 {
 	if (!mRunning) { return S_OK; };

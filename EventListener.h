@@ -1,6 +1,8 @@
 #ifndef EVENTLISTENER_INC
 #define EVENTLISTENER_INC
 
+#include "MemManaged.h"
+
 class EventListener : public MemManaged{
 private:
 	ID mEventID;
@@ -8,10 +10,10 @@ private:
 	bool mEnabled;
 protected:
 	virtual HRESULT handle(MemManaged* pData) = 0;
+	virtual ~EventListener();
 public:
-	EventListener(ID eventID) : mEventID(eventID) { EventManager::get()->registerForEvent(mEventID, this); };
-	virtual ~EventListener() { EventManager::get()->unRegisterForEvent(mEventID, mListenerID); };
-	HRESULT run(MemManaged* pData) { if (mEnabled) { handle(pData); } };
+	EventListener(ID eventID);
+	HRESULT run(MemManaged* pData) { if (mEnabled) { handle(pData); } return S_OK; };
 	void enable() { mEnabled = true; };
 	void disable() { mEnabled = false; };
 };

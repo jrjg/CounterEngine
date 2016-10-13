@@ -1,20 +1,26 @@
 #ifndef INCLUDE_EVENTMANAGER
 #define INCLUDE_EVENTMANAGER
 
+#include "CoreComponent.h"
+#include "EventListener.h"
+#include "Event.h"
+#include "Vector.h"
+#include "List.h"
+
 class EventManager : public CoreComponent{
 private:
-	static EventManager* mpInstance;
 	Vector< List<EventListener> >* mpListeners;
 	List<Event>* mpEvents;
 	ID mEventCounter;
-	HRESULT registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); };
-	EventManager() : CoreComponent(false) {};
-	~EventManager() { delete mpListeners; delete mpEvents; };
+	HRESULT registerEvent(ID id); 
+	EventManager();
+protected:
+	virtual ~EventManager();
 public:
-	ID queueEvent(ID id, MemManaged* pData) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++)); };
+	ID queueEvent(ID id, MemManaged* pData);
 	ID registerForEvent(ID id, EventListener* pListener);
-	HRESULT unRegisterForEvent(ID eventID, ID listenerID) { return mpListeners->get(eventID)->deleteByID(listenerID); };
-	HRESULT removeEvent(ID id) { mpEvents->deleteByID(id); };
+	HRESULT unRegisterForEvent(ID eventID, ID listenerID);
+	HRESULT removeEvent(ID id);
 
 	static EventManager* get();
 

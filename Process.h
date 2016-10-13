@@ -1,6 +1,8 @@
 #ifndef PROCESS_INC
 #define PROCESS_INC
 
+#include "MemManaged.h"
+
 class Process : public MemManaged
 {
 private:
@@ -10,9 +12,9 @@ private:
 	ID mID;
 protected:
 	virtual HRESULT handle(TIME elapsed) = 0;
+	virtual ~Process();
 public:
-	Process(TIME shouldWait) : mShouldWait(shouldWait), mWaited(0), mRunning(true) { mID = ProcessManager::get()->addProcess(this); };
-	~Process() { ProcessManager::get()->removeProcess(mID); };
+	Process(TIME shouldWait);
 	void pause() { mRunning = false; };
 	void unPause() { mRunning = true; };
 	HRESULT run(TIME elapsed);

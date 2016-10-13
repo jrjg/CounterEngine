@@ -1,13 +1,17 @@
 #ifndef INCLUDE_PROCESSMANAGER
 #define INCLUDE_PROCESSMANAGER
 
+#include "CoreComponent.h"
+#include "List.h"
+#include "Process.h"
+
 class ProcessManager : public CoreComponent
 {
 private:
-	static ProcessManager* mpInstance;
 	List<Process>* mpProcesses;
-	ProcessManager() : CoreComponent(false) {};
-	~ProcessManager() { delete mpProcesses; };
+	ProcessManager();
+protected:
+	virtual ~ProcessManager() { mpProcesses->release(); };
 public:
 	ID addProcess(Process* pProcess) { return mpProcesses->pushBack(pProcess); };
 	HRESULT removeProcess(ID processID) { return mpProcesses->deleteByID(processID); };

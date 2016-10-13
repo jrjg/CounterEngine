@@ -1,10 +1,10 @@
 #ifndef INCLUDE_LIST
 #define INCLUDE_LIST
 
-template <class ObjectType>
-class ListElement;
+#include "ListElement.h"
+#include "MemManaged.h"
 
-template <class ObjectType> 
+template <class ObjectType>
 class List : public MemManaged {
 private:
 	ListElement<ObjectType>* mpFirstElem;
@@ -12,31 +12,34 @@ private:
 	UINT mLength;
 	ID mElemIDCounter;
 	bool mManageContent;
+protected:
+	virtual ~List();
 public:
-	ID List<ObjectType>::pushBack(void* pObj);
-	ID List<ObjectType>::pushFront(void* pObj);
-	void List<ObjectType>::setLength(unsigned int length) { mLength = length; };
-	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) { mpFirstElem = pElem; };
-	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
-	unsigned int List<ObjectType>::getLength() { return mLength; };
-	ListElement<ObjectType>* List<ObjectType>::getFirst() { return mpFirstElem; };
-	ObjectType* List<ObjectType>::pop();
-	ListElement<ObjectType>* List<ObjectType>::getLast() {return mpLastElem;};
-	ObjectType* List<ObjectType>::getByID(ID id);
-	HRESULT List<ObjectType>::deleteByID(ID id);
-	HRESULT List<ObjectType>::restore();
+	ID pushBack(ObjectType* pObj);
+	ID pushFront(ObjectType* pObj);
+	void setLength(unsigned int length) { mLength = length; };
+	HRESULT setFirst(ListElement<ObjectType>* pElem) { mpFirstElem = pElem; return S_OK; };
+	HRESULT setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; return S_OK; };
+	UINT getLength() { return mLength; };
+	ListElement<ObjectType>* getFirst() { return mpFirstElem; };
+	ObjectType* pop();
+	ListElement<ObjectType>* getLast() { return mpLastElem; };
+	ObjectType* getByID(ID id);
+	HRESULT deleteByID(ID id);
+	HRESULT restore();
 
-	List<ObjectType>::List() { restore(); };
-	List<ObjectType>::~List();
+	List() : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mManageContent(true) { restore(); };
 };
 
 template<class ObjectType>
 inline HRESULT List<ObjectType>::deleteByID(ID id)
 {
-	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-		if (pElem->getID() == id) {
-			delete pElem;
-			return S_OK;
+	if (mLength > 0) {
+		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+			if (pElem->getID() == id) {
+				pElem->release();
+				return S_OK;
+			}
 		}
 	}
 	return S_OK;
@@ -45,57 +48,63 @@ inline HRESULT List<ObjectType>::deleteByID(ID id)
 template<class ObjectType>
 inline HRESULT List<ObjectType>::restore()
 {
-	for (ListElement<ObjectType>* pListElem = getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
-		delete pListElem;
+	if (mLength > 0) {
+		for (ListElement<ObjectType>* pListElem = getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
+			pListElem->release();
+		}
 	}
-	mpFirstElem(NULL);
-	mpLastElem(NULL);
-	mLength(0);
-	mElemIDCounter(0);
-	mDeleteContent(true);
+	mpFirstElem = NULL;
+	mpLastElem = NULL;
+	mLength = 0;
+	mElemIDCounter = 0;
+	mManageContent = true;
 	return S_OK;
 };
 
-template <class ObjectType> 
+template <class ObjectType>
 ObjectType* List<ObjectType>::getByID(ID id) {
 	ObjectType* pObj = nullptr;
-	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-		if (pElem->getID() == id) {
-			pObj = pElem->getObject();
-			return pObj;
+	if (mLength > 0) {
+		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+			if (pElem->getID() == id) {
+				pObj = pElem->getObject();
+				return pObj;
+			}
 		}
 	}
 	return pObj;
 };
 
-template <class ObjectType> 
+template <class ObjectType>
 ObjectType* List<ObjectType>::pop()
 {
-	(mLength == 0) ? return NULL : 1;
+	if (mLength == 0) { return NULL; };
 	ObjectType* pObj = mpFirstElem->getObject();
 	mpFirstElem->setDeleteContent(false); //dont delete what is returned
-	delete mpFirstElem;
+	mpFirstElem->release();
 	return pObj;
 };
 
-template <class ObjectType> 
-ID List<ObjectType>::pushBack(void* pObject)
+template <class ObjectType>
+ID List<ObjectType>::pushBack(ObjectType* pObject)
 {
-	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, NULL, mpLastElem, mDeleteContent);
+	ListElement<ObjectType>* pNewElem = new ListElement<ObjectType>(this, pObject, mElemIDCounter++, NULL, mpLastElem, mManageContent);
 	return pNewElem->getID();
 };
 
 template <class ObjectType>
-ID List<ObjectType>::pushFront(void* pObject)
+ID List<ObjectType>::pushFront(ObjectType* pObject)
 {
-	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, mpFirstElem , NULL, mDeleteContent);
+	ListElement<ObjectType>* pNewElem = new ListElement<ObjectType>(this, pObject, mElemIDCounter++, mpFirstElem, NULL, mManageContent);
 	return pNewElem->getID();
 };
 
-template <class ObjectType> 
+template <class ObjectType>
 List<ObjectType>::~List() {
-	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-		delete pElem;
+	if (mLength > 0) {
+		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+			pElem->release();
+		}
 	}
 	return;
 };
