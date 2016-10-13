@@ -1,6 +1,8 @@
 #ifndef CORECOMPONENT_INC
 #define CORECOMPONENT_INC
 
+class CoreComponent;
+
 class RestoreListener : public EventListener {
 private:
 	CoreComponent* mpCoreComponent;
@@ -31,7 +33,7 @@ protected:
 	ReleaseListener* mpReleaseListener;
 	RunHandler* mpRunHandler;
 	String<char>* mpName;
-	CoreComponent(bool autoRegister) { if (autoRegister) { restore(); } };
+	CoreComponent(bool autoRegister) { if (autoRegister) { restore(); }; };
 	CoreComponent() { restore(); };
 	virtual ~CoreComponent() { delete mpName; delete mpRunHandler; delete mpRestoreListener; delete mpReleaseListener; };
 public:

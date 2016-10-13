@@ -19,7 +19,7 @@ HRESULT Engine::run(TIME elapsed)
 		ProcessManager::get()->run(Timer::get()->getElapsed());
 	}
 	return S_OK;
-}
+};
 
 HRESULT Engine::restore()
 {
@@ -29,7 +29,7 @@ HRESULT Engine::restore()
 	Timer::get();
 	Controller::get();
 	mRunning = true;
-}
+};
 
 //#define CASE(Name,Exec)if (*pObjName==Name) {Exec; return S_OK; }
 //

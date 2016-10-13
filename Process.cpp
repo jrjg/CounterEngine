@@ -19,4 +19,4 @@ HRESULT Process::run(TIME elapsed)
 
 	}
 	return S_OK;
-}
+};

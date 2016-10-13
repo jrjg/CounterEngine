@@ -14,4 +14,4 @@ HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID* pMemID)
 	ZeroMemory(pMem, size);
 	*pMemID = mpList->pushFront(pMem);
 	return S_OK;
-}
+};

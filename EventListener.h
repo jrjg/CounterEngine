@@ -1,7 +1,7 @@
 #ifndef EVENTLISTENER_INC
 #define EVENTLISTENER_INC
 
-class EventListener {
+class EventListener : public MemManaged{
 private:
 	ID mEventID;
 	ID mListenerID;

@@ -9,11 +9,15 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	MemoryManager::get();
+
 	Engine::get();
 
 	EventManager::get()->queueEvent(EVENT_WINPARAMS, new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
 
 	Engine::get()->run(0);
+
+	MemoryManager::get()->release();
 
 	return S_OK;
 };

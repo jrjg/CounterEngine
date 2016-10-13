@@ -1,11 +1,10 @@
 #ifndef INCLUDE_EVENTMANAGER
 #define INCLUDE_EVENTMANAGER
 
-class EventManager : public CoreComponent
-{
+class EventManager : public CoreComponent{
 private:
 	static EventManager* mpInstance;
-	Vector<List<EventListener>>* mpListeners;
+	Vector< List<EventListener> >* mpListeners;
 	List<Event>* mpEvents;
 	ID mEventCounter;
 	HRESULT registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); };

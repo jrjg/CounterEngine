@@ -2,8 +2,9 @@
 #define MEMMANAGED_INC
 
 class MemManaged {
-public:
+private:
 	ID mMemID;
+public:
 	ID getMemID() { return mMemID; };
 	inline void* MemManaged::operator new(size_t size);
 	inline void MemManaged::operator delete(void* pInst);

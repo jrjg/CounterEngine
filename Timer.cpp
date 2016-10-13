@@ -13,4 +13,4 @@ TIME Timer::getElapsed()
 	TIME elapsed = now - mThen;
 	mThen = now;
 	return elapsed;
-}
+};

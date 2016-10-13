@@ -1,15 +1,15 @@
 #include "TopInclude.h"
+#include "CoreComponent.h"
 #include "Vector.h"
 #include "List.h"
 #include "Memory.h"
 #include "ListElement.h"
-#include "CoreComponent.h"
 #include "EventListener.h"
 #include "Event.h"
 #include "SimplyManaged.h"
 #include "MemManaged.h"
-
 #include "EventManager.h"
+
 
 ID EventManager::registerForEvent(ID id, EventListener* pListener)
 {
@@ -19,7 +19,7 @@ ID EventManager::registerForEvent(ID id, EventListener* pListener)
 		pListenerList = mpListeners->get(id);
 	}
 	return pListenerList->pushBack(pListener);
-}
+};
 
 EventManager * EventManager::get() {
 	if (!mpInstance) {
@@ -49,7 +49,7 @@ HRESULT EventManager::run(TIME elapsed)
 		pEvent = mpEvents->pop();
 	}
 	return S_OK;
-}
+};
 
 HRESULT EventManager::restore()
 {
@@ -57,4 +57,4 @@ HRESULT EventManager::restore()
 	if (!mpEvents) { mpEvents = new List<Event>(); }; mpEvents->restore();
 	mEventCounter = 0;
 	return S_OK;
-}
+};

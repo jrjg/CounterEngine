@@ -15,13 +15,13 @@ ProcessManager* ProcessManager::get() {
 		mpInstance->CoreComponent::restore();
 	}; 
 	return mpInstance; 
-}
+};
 
 HRESULT ProcessManager::restore()
 {
 	delete mpProcesses; mpProcesses = new List<Process>();
 	return S_OK;
-}
+};
 
 HRESULT ProcessManager::run(TIME elapsed)
 {
@@ -30,4 +30,4 @@ HRESULT ProcessManager::run(TIME elapsed)
 		pListElement->getObject()->run(elapsed);
 	}
 	return S_OK;
-}
+};

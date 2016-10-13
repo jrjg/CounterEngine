@@ -1,7 +1,6 @@
 #ifndef STRING_INC
 #define STRING_INC
 
-
 template<class ObjectType> 
 class String : public MemManaged {
 private:
