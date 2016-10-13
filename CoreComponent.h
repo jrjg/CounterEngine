@@ -33,7 +33,7 @@ protected:
 	String<char>* mpName;
 	CoreComponent(bool autoRegister) { if (autoRegister) { restore(); } };
 	CoreComponent() { restore(); };
-	virtual ~CoreComponent() { delete mpName; delete mpRunHandler; delete mpRestoreListener; delete mpReleaseListener; }
+	virtual ~CoreComponent() { delete mpName; delete mpRunHandler; delete mpRestoreListener; delete mpReleaseListener; };
 public:
 	virtual HRESULT run(TIME elapsed) = 0;
 	virtual HRESULT restore() = 0;

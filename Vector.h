@@ -1,6 +1,9 @@
 #ifndef INCLUDE_VECTOR
 #define INCLUDE_VECTOR
 
+template<class ObjectType>
+class VectorMemBlock;
+
 template<class ObjectType> class Vector : public MemManaged
 {
 private:
@@ -21,7 +24,7 @@ inline ObjectType * Vector<ObjectType>::get(UINT index)
 {
 	if (index > mMaxCapacity) { return NULL; };
 	return mpMemBlocks[index / mMemBlockCapacity]->get(index % mMemBlockCapacity);
-}
+};
 
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::set(UINT index, ObjectType *pObj)
@@ -33,7 +36,7 @@ inline HRESULT Vector<ObjectType>::set(UINT index, ObjectType *pObj)
 		mpMemBlocks[index / mMemBlockCapacity] = pMemBlock;
 	}
 	return pMemBlock->set(index % mMemBlockCapacity, pObj);
-}
+};
 
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
@@ -58,7 +61,7 @@ inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
 		}
 	}
 	return ERROR_SUCCESS;
-}
+};
 
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::restore()
@@ -69,6 +72,6 @@ inline HRESULT Vector<ObjectType>::restore()
 	mMaxCapacity(MAX_VECTOR_BLOCKS*memBlockCapacity);
 	mpMemBlocks[0] = new VectorMemBlock<ObjectType>(memBlockCapacity);
 	return S_OK;
-}
+};
 
 #endif // !INCLUDE_VECTOR

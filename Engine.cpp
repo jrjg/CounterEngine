@@ -7,6 +7,8 @@
 #include "CoreComponent.h"
 #include "Timer.h"
 #include "Controller.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "Engine.h"
 

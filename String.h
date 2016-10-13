@@ -31,7 +31,7 @@ bool String<ObjectType>::operator==(const String<ObjectType> &s2)
 		}
 	}
 	return true;
-}
+};
 
 template<class ObjectType>
 bool String<ObjectType>::operator==(const ObjectType* pC)
@@ -49,6 +49,6 @@ bool String<ObjectType>::operator==(const ObjectType* pC)
 		}
 	}
 	return true;
-}
+};
 
 #endif 

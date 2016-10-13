@@ -2,6 +2,8 @@
 #include "Memory.h"
 #include "Engine.h"
 #include "EventManager.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "Main.h"
 

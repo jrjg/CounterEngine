@@ -20,12 +20,12 @@ private:
 	List<Mapping>* mpMappings;
 	ID mID;
 public:
-	List<Mapping>* getMappings() { return mpMappings; }
+	List<Mapping>* getMappings() { return mpMappings; };
 	ID getID() { return mID; };
 	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID) { mpMappings->pushBack(new Mapping(keyCode, eventID)); return S_OK; };
 	HRESULT evalMappings();
 	ControlSet(ID id) : mID(id) { mpMappings = new List<Mapping>(); };
-	~ControlSet() { delete mpMappings; }
+	~ControlSet() { delete mpMappings; };
 };
 
 class Controller : public CoreComponent

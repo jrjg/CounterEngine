@@ -7,6 +7,8 @@
 #include "ListElement.h"
 #include "CoreComponent.h"
 #include "EventListener.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "Controller.h"
 
@@ -22,7 +24,7 @@ HRESULT ControlSet::evalMappings() {
 		}
 	}
 	return S_OK;
-}
+};
 
 HRESULT Controller::restore() { 
 	if (!mpControls) { mpControls = new List<ControlSet>(); }; mpControls->restore();

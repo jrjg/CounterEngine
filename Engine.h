@@ -10,7 +10,7 @@ private:
 	~Engine() {};
 public:
 	HRESULT run(TIME elapsed) override;
-	HRESULT restore() override;
+	HRESULT restore();
 	HRESULT release() override { mRunning = false; delete this; };
 
 	static Engine* get() { if (!mpInstance) { mpInstance = new Engine(); } };

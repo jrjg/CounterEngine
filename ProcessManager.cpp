@@ -4,6 +4,8 @@
 #include "ListElement.h"
 #include "CoreComponent.h"
 #include "Process.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "ProcessManager.h"
 

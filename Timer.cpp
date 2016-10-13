@@ -2,6 +2,8 @@
 #include "TopInclude.h"
 #include "Engine.h"
 #include "CoreComponent.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "Timer.h"
 

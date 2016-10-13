@@ -8,7 +8,7 @@ private:
 	Vector<List<EventListener>>* mpListeners;
 	List<Event>* mpEvents;
 	ID mEventCounter;
-	HRESULT registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>(true)); };
+	HRESULT registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); };
 	EventManager() : CoreComponent(false) {};
 	~EventManager() { delete mpListeners; delete mpEvents; };
 public:

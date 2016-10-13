@@ -1,20 +1,23 @@
 #ifndef INCLUDE_LIST
 #define INCLUDE_LIST
 
-template <class ObjectType> class List : public MemManaged {
+template <class ObjectType>
+class ListElement;
+
+template <class ObjectType> 
+class List : public MemManaged {
 private:
 	ListElement<ObjectType>* mpFirstElem;
 	ListElement<ObjectType>* mpLastElem;
 	UINT mLength;
 	ID mElemIDCounter;
 	bool mManageContent;
-	void List<ObjectType>::setLength(unsigned int length) { mLength = length; };
-	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) { mpFirstElem = pElem; };
-	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
 public:
 	ID List<ObjectType>::pushBack(void* pObj);
 	ID List<ObjectType>::pushFront(void* pObj);
-	
+	void List<ObjectType>::setLength(unsigned int length) { mLength = length; };
+	HRESULT List<ObjectType>::setFirst(ListElement<ObjectType>* pElem) { mpFirstElem = pElem; };
+	HRESULT List<ObjectType>::setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; };
 	unsigned int List<ObjectType>::getLength() { return mLength; };
 	ListElement<ObjectType>* List<ObjectType>::getFirst() { return mpFirstElem; };
 	ObjectType* List<ObjectType>::pop();
@@ -23,7 +26,6 @@ public:
 	HRESULT List<ObjectType>::deleteByID(ID id);
 	HRESULT List<ObjectType>::restore();
 
-	List<ObjectType>::List(bool manageContent) { restore(); mManageContent = manageContent; };
 	List<ObjectType>::List() { restore(); };
 	List<ObjectType>::~List();
 };
@@ -38,7 +40,7 @@ inline HRESULT List<ObjectType>::deleteByID(ID id)
 		}
 	}
 	return S_OK;
-}
+};
 
 template<class ObjectType>
 inline HRESULT List<ObjectType>::restore()
@@ -52,10 +54,10 @@ inline HRESULT List<ObjectType>::restore()
 	mElemIDCounter(0);
 	mDeleteContent(true);
 	return S_OK;
-}
+};
 
 template <class ObjectType> 
-void* List<ObjectType>::getByID(ID id) {
+ObjectType* List<ObjectType>::getByID(ID id) {
 	ObjectType* pObj = nullptr;
 	for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
 		if (pElem->getID() == id) {
@@ -64,7 +66,7 @@ void* List<ObjectType>::getByID(ID id) {
 		}
 	}
 	return pObj;
-}
+};
 
 template <class ObjectType> 
 ObjectType* List<ObjectType>::pop()
@@ -74,27 +76,21 @@ ObjectType* List<ObjectType>::pop()
 	mpFirstElem->setDeleteContent(false); //dont delete what is returned
 	delete mpFirstElem;
 	return pObj;
-}
+};
 
 template <class ObjectType> 
 ID List<ObjectType>::pushBack(void* pObject)
 {
 	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, NULL, mpLastElem, mDeleteContent);
-	(mLength == 0) ? mpFirstElem = pNewElem : mpLastElem->setNext(pNewElem);
-	mpLastElem = pNewElem;
-	mLength++;
 	return pNewElem->getID();
-}
+};
 
 template <class ObjectType>
 ID List<ObjectType>::pushFront(void* pObject)
 {
 	ListElement<ObjectType>* pNewElem = new ListElement(this, pObject, mElemIDCounter++, mpFirstElem , NULL, mDeleteContent);
-	(mLength == 0) ? mpLastElem = pNewElem : mpFirstElem->setPrevious(pNewElem);
-	mpFirstElem = pNewElem;
-	mLength++;
 	return pNewElem->getID();
-}
+};
 
 template <class ObjectType> 
 List<ObjectType>::~List() {
@@ -102,6 +98,6 @@ List<ObjectType>::~List() {
 		delete pElem;
 	}
 	return;
-}
+};
 
 #endif

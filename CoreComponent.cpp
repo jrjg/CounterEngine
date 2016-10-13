@@ -6,6 +6,8 @@
 #include "String.h"
 #include "EventListener.h"
 #include "Process.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "CoreComponent.h"
 

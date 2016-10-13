@@ -1,14 +1,13 @@
 #include "TopInclude.h"
 #include "Vector.h"
 #include "List.h"
-#include "Engine.h"
-#include "ProcessManager.h"
 #include "Memory.h"
 #include "ListElement.h"
 #include "CoreComponent.h"
-#include "String.h"
 #include "EventListener.h"
 #include "Event.h"
+#include "SimplyManaged.h"
+#include "MemManaged.h"
 
 #include "EventManager.h"
 
