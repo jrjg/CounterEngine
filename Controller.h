@@ -5,6 +5,7 @@
 #include "MemManaged.h"
 #include "CoreComponent.h"
 #include "List.h"
+#include "ControlSet.h"
 
 class SetControlSetListener : public EventListener{
 protected:
@@ -12,30 +13,6 @@ protected:
 public:
 	HRESULT handle(MemManaged* pData) override;
 	SetControlSetListener() : EventListener(EVENT_SETCONTROLSET) {};
-};
-
-class Mapping : public MemManaged {
-protected:
-	virtual ~Mapping() {};
-public:
-	Mapping(KEYCODE mKeyCode, ID mEventID) : mKeyCode(mKeyCode), mIsKeyPressed(false), mEventID(mEventID) {};
-	KEYCODE mKeyCode;
-	bool mIsKeyPressed;
-	ID mEventID;
-};
-
-class ControlSet : public MemManaged {
-private:
-	List<Mapping>* mpMappings;
-	ID mID;
-protected:
-	virtual ~ControlSet() {};
-public:
-	List<Mapping>* getMappings() { return mpMappings; };
-	ID getID() { return mID; };
-	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID);
-	HRESULT evalMappings();
-	ControlSet(ID id);
 };
 
 class Controller : public CoreComponent
@@ -47,12 +24,13 @@ private:
 	SetControlSetListener* mpSetControlSetListener;
 
 	HRESULT setControls(ID id);
-	Controller() {};
+	Controller() { restore(); };
 protected:
 	virtual ~Controller();
 public:
 	static Controller* get();
-	ID addControlSet(ControlSet* pControlSet);
+	ID newControlSet();
+	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID);
 
 	HRESULT run(TIME elapsed)override;
 	HRESULT restore();

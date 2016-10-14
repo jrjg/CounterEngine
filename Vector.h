@@ -25,7 +25,7 @@ template<class ObjectType>
 inline Vector<ObjectType>::~Vector() { 
 	for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) {
 		if (mpMemBlocks[i]) {
-			mpMemBlocks[i]->release(); 
+			SAFE_RELEASE(mpMemBlocks[i]);
 		} 
 	} 
 };
@@ -75,7 +75,7 @@ inline HRESULT Vector<ObjectType>::restore()
 {
 	for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) {
 		if (mpMemBlocks[i]) {
-			mpMemBlocks[i]->release();
+			SAFE_RELEASE(mpMemBlocks[i]);
 		}
 	}
 	mMaxCapacity = MAX_VECTOR_BLOCKS*mMemBlockCapacity;

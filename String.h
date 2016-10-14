@@ -60,6 +60,6 @@ inline String<ObjectType>::String(size_t length) : mLength(length) {
 	MemoryManager::get()->allocateMem(&mpBuffer, mLength * sizeof(ObjectType), mpBuffer->mMemID);
 }
 template<class ObjectType>
-inline String<ObjectType>::~String() { mpBuffer->release(); };
+inline String<ObjectType>::~String() { SAFE_RELEASE(mpBuffer); };
 
 #endif 

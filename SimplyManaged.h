@@ -9,7 +9,7 @@ private:
 protected:
 	virtual ~SimplyManaged() { delete pObject; };
 public:
-	SimplyManaged(ObjectType &o) { *pObject = o; };
+	SimplyManaged(ObjectType &o) { pObject = new ObjectType(o); };
 };
 
 #endif

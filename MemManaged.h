@@ -10,7 +10,7 @@ protected:
 public:
 	void* operator new(size_t size);
 	void operator delete(void* pInst);
-	virtual void release() { delete this; };
+	virtual void Release() { delete this; };
 };
 
 #endif

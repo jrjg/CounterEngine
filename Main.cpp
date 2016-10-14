@@ -4,6 +4,8 @@
 #include "EventManager.h"
 #include "SimplyManaged.h"
 #include "MemManaged.h"
+#include "ProcessManager.h"
+#include "Timer.h"
 
 #include "Main.h"
 
@@ -15,7 +17,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	EventManager::get()->queueEvent(EVENT_WINPARAMS, new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
 
-	Engine::get()->run(0);
+	while (Engine::get()->isRunning())
+	{
+		ProcessManager::get()->run(Timer::get()->getElapsed());
+	}
 
 	Engine::get()->manualRelease();
 

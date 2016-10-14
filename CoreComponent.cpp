@@ -11,12 +11,19 @@
 
 #include "CoreComponent.h"
 
-CoreComponent::~CoreComponent() { mpRunHandler->release(); mpRestoreListener->release(); mpReleaseListener->release(); };
-
-HRESULT CoreComponent::restore()
+CoreComponent::~CoreComponent() { 
+	SAFE_RELEASE(mpRunHandler);
+	SAFE_RELEASE(mpRestoreListener);
+	SAFE_RELEASE(mpReleaseListener);
+}
+HRESULT CoreComponent::restoreCoreListeners()
 {
-	if (mpRestoreListener) { mpRestoreListener->release(); }; mpRestoreListener = new RestoreListener(this);
-	if (mpReleaseListener) { mpReleaseListener->release(); }; mpReleaseListener = new ReleaseListener(this);
-	if (mpRunHandler) { mpRunHandler->release(); }; mpRunHandler = new RunHandler(this);
+	SAFE_RELEASE(mpRestoreListener); mpRestoreListener = new RestoreListener(this);
+	SAFE_RELEASE(mpReleaseListener); mpReleaseListener = new ReleaseListener(this);
+	return S_OK;
+}
+HRESULT CoreComponent::restoreCoreProcesses()
+{
+	SAFE_RELEASE(mpRunHandler); mpRunHandler = new RunHandler(this);
 	return S_OK;
 };

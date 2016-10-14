@@ -11,7 +11,7 @@ MemoryManager* gpMemoryManager;
 MemoryManager::MemoryManager() { 
 	mpList = new UnManagedList<MemManaged>();
 }
-MemoryManager::~MemoryManager() { mpList->release(); }
+MemoryManager::~MemoryManager() { SAFE_RELEASE(mpList); }
 MemoryManager * MemoryManager::get()
 {
 	if (!gpMemoryManager) {

@@ -18,7 +18,7 @@ EventManager::EventManager() : CoreComponent(false) {
 	mpEvents = new List<Event>(); 
 	mEventCounter = 0;
 };
-EventManager::~EventManager() { mpListeners->release(); mpEvents->release(); };
+EventManager::~EventManager() { SAFE_RELEASE(mpListeners); SAFE_RELEASE(mpEvents); };
 
 ID EventManager::queueEvent(ID id, MemManaged * pData) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++)); };
 
@@ -37,7 +37,7 @@ HRESULT EventManager::removeEvent(ID id) { mpEvents->deleteByID(id); };
 EventManager * EventManager::get() {
 	if (!gpEventManager) {
 		gpEventManager = new EventManager();
-		gpEventManager->CoreComponent::restore();
+		gpEventManager->restoreCore();
 	} 
 	return gpEventManager;
 };
@@ -45,22 +45,22 @@ EventManager * EventManager::get() {
 HRESULT EventManager::run(TIME elapsed)
 {
 	List<EventListener>* pListenerList;
-	Event* pEvent = mpEvents->pop();
+	
 	ListElement<EventListener>* pListElem;
-	while (pEvent)
-	{
-		pListenerList = mpListeners->get(pEvent->getSlotID());
-		if (pListenerList) {
-			if (pListenerList->getLength() > 0) {
-				for (pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
-				{
-					pListElem->getObject()->run(pEvent->getData());
+		Event* pEvent = mpEvents->popFirst();
+		while (pEvent) {
+			pListenerList = mpListeners->get(pEvent->getSlotID());
+			if (pListenerList) {
+				if (pListenerList->getLength() > 0) {
+					for (pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
+					{
+						pListElem->getObject()->run(pEvent->getData());
+					}
 				}
 			}
+			SAFE_RELEASE(pEvent);
+			pEvent = mpEvents->popFirst();
 		}
-		pEvent->release();
-		pEvent = mpEvents->pop();
-	}
 	return S_OK;
 };
 

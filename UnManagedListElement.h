@@ -26,7 +26,7 @@ public:
 	void setPrevious(UnManagedListElement<ObjectType>* p) { mpPrevious = p; };
 	ObjectType* getObject() { return mpObject; };
 	void setDeleteContent(bool b) { mDeleteContent = b; };
-	void release() { delete this; };
+	void Release() { delete this; };
 };
 
 template<class ObjectType>
@@ -45,23 +45,27 @@ inline UnManagedListElement<ObjectType>::UnManagedListElement(UnManagedList<Obje
 
 template <class ObjectType> UnManagedListElement<ObjectType>::~UnManagedListElement()
 {
-	if (!mpList) { if (mDeleteContent) { mpObject->release(); }; return; };
+	if (!mpList) { if (mDeleteContent) { SAFE_RELEASE(mpObject); }; return; };
 	if (mpList->getLength() == 1) {
 		mpList->setFirst(NULL);
 		mpList->setLast(NULL);
 	}
 	else {
-		if (mpList->getFirst()->mID == mID) {
-			mpList->setFirst(mpNext);
+		if (mpNext) { 
+			mpNext->setPrevious(NULL); 
 		}
-		else if (mpList->getLast()->mID == mID) {
+		else {
 			mpList->setLast(mpPrevious);
+		};
+		if (mpPrevious) { 
+			mpPrevious->setNext(NULL); 
 		}
-		if (mpNext) { mpNext->setPrevious(NULL); };
-		if (mpPrevious) { mpPrevious->setNext(NULL); };
+		else {
+			mpList->setFirst(mpNext);
+		};
 	}
 	mpList->setLength(mpList->getLength() - 1);
-	if (mDeleteContent) { mpObject->release(); };
+	if (mDeleteContent) { SAFE_RELEASE(mpObject); };
 	return;
 };
 

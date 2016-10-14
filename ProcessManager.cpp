@@ -19,7 +19,7 @@ ProcessManager::ProcessManager() : CoreComponent(false)
 ProcessManager* ProcessManager::get() {
 	if (!gpProcessManager) {
 		gpProcessManager = new ProcessManager();
-		gpProcessManager->CoreComponent::restore();
+		gpProcessManager->restoreCoreListeners();
 	}; 
 	return gpProcessManager;
 };

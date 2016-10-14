@@ -11,7 +11,7 @@ private:
 	ID mSlotID;
 	ID mID;
 protected:
-	virtual ~Event() { if (mManageContent) { mpData->release(); } };
+	virtual ~Event() { if (mManageContent) { SAFE_RELEASE(mpData); } };
 public:
 	Event(MemManaged* pData, ID slotID, ID id) : mManageContent(true), mpData(pData), mSlotID(slotID), mID(id) {};
 	ID getSlotID() { return mSlotID; };

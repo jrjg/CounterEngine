@@ -22,7 +22,8 @@ public:
 	HRESULT setLast(ListElement<ObjectType>* pElem) { mpLastElem = pElem; return S_OK; };
 	UINT getLength() { return mLength; };
 	ListElement<ObjectType>* getFirst() { return mpFirstElem; };
-	ObjectType* pop();
+	ObjectType* popFirst();
+	ObjectType* popLast();
 	ListElement<ObjectType>* getLast() { return mpLastElem; };
 	ObjectType* getByID(ID id);
 	HRESULT deleteByID(ID id);
@@ -37,7 +38,7 @@ inline HRESULT List<ObjectType>::deleteByID(ID id)
 	if (mLength > 0) {
 		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
 			if (pElem->getID() == id) {
-				pElem->release();
+				SAFE_RELEASE(pElem);
 				return S_OK;
 			}
 		}
@@ -50,7 +51,7 @@ inline HRESULT List<ObjectType>::restore()
 {
 	if (mLength > 0) {
 		for (ListElement<ObjectType>* pListElem = getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
-			pListElem->release();
+			SAFE_RELEASE(pListElem);
 		}
 	}
 	mpFirstElem = NULL;
@@ -76,12 +77,26 @@ ObjectType* List<ObjectType>::getByID(ID id) {
 };
 
 template <class ObjectType>
-ObjectType* List<ObjectType>::pop()
+ObjectType* List<ObjectType>::popFirst()
 {
-	if (mLength == 0) { return NULL; };
-	ObjectType* pObj = mpFirstElem->getObject();
-	mpFirstElem->setDeleteContent(false); //dont delete what is returned
-	mpFirstElem->release();
+	ObjectType* pObj;
+	if (mpFirstElem) {
+		pObj = mpFirstElem->getObject();
+		mpFirstElem->setDeleteContent(false); //dont delete what is returned
+		SAFE_RELEASE(mpFirstElem);
+	}
+	return pObj;
+};
+
+template <class ObjectType>
+ObjectType* List<ObjectType>::popLast()
+{
+	ObjectType* pObj;
+	if (mpLastElem) {
+		pObj = mpLastElem->getObject();
+		mpLastElem->setDeleteContent(false); //dont delete what is returned
+		SAFE_RELEASE(mpLastElem);
+	}
 	return pObj;
 };
 
@@ -103,7 +118,7 @@ template <class ObjectType>
 List<ObjectType>::~List() {
 	if (mLength > 0) {
 		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-			pElem->release();
+			SAFE_RELEASE(pElem);
 		}
 	}
 	return;

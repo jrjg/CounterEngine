@@ -6,7 +6,7 @@
 class Timer : public CoreComponent {
 private:
 	TIME mThen;
-	Timer() {};
+	Timer() { restore(); };
 protected:
 	virtual ~Timer() {};
 public:

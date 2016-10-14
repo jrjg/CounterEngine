@@ -63,10 +63,10 @@ inline VectorMemBlock<ObjectType>::~VectorMemBlock()
 		ObjectType* pObject;
 		for (UINT i = 0; i < mCapacity; i++) {
 			pObject = get(i);
-			if (pObject) { pObject->release(); };
+			if (pObject) { SAFE_RELEASE(pObject); };
 		}
 	}
-	mpMem->release();
+	SAFE_RELEASE(mpMem);
 };
 
 #endif

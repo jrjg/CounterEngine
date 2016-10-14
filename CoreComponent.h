@@ -14,12 +14,15 @@ protected:
 	RestoreListener* mpRestoreListener;
 	ReleaseListener* mpReleaseListener;
 	RunHandler* mpRunHandler;
-	CoreComponent(bool autoRegister) { if (autoRegister) { restore(); }; };
-	CoreComponent() { restore(); };
+	CoreComponent(bool restCore){if (restCore) { restoreCore(); };}; 
+	CoreComponent() { restoreCore(); };
 	virtual ~CoreComponent();
+	HRESULT restoreCoreListeners();
+	HRESULT restoreCoreProcesses();
+	HRESULT restoreCore() { restoreCoreListeners(); restoreCoreProcesses(); return S_OK; };
 public:
 	virtual HRESULT run(TIME elapsed) = 0;
-	virtual HRESULT restore();
+	virtual HRESULT restore() = 0;
 };
 
 class RestoreListener : public EventListener {
@@ -38,7 +41,7 @@ private:
 protected:
 	virtual ~ReleaseListener() {};
 public:
-	HRESULT handle(MemManaged* pData) override { mpCoreComponent->release(); return S_OK; };
+	HRESULT handle(MemManaged* pData) override { SAFE_RELEASE(mpCoreComponent); return S_OK; };
 	ReleaseListener(CoreComponent* pCoreComponent) : EventListener(EVENT_RELEASE), mpCoreComponent(pCoreComponent) {};
 };
 

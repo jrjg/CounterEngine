@@ -44,7 +44,7 @@ inline ListElement<ObjectType>::ListElement(List<ObjectType>* pList, ObjectType 
 
 template <class ObjectType> ListElement<ObjectType>::~ListElement()
 {
-	if (!mpList) { if (mDeleteContent) { mpObject->release(); }; return; };
+	if (!mpList) { if (mDeleteContent) { SAFE_RELEASE(mpObject); }; return; };
 	if (mpList->getLength() == 1) {
 		mpList->setFirst(NULL);
 		mpList->setLast(NULL);
@@ -64,7 +64,7 @@ template <class ObjectType> ListElement<ObjectType>::~ListElement()
 		}
 	}
 	mpList->setLength(mpList->getLength() - 1);
-	if (mDeleteContent) { mpObject->release(); };
+	if (mDeleteContent) { SAFE_RELEASE(mpObject); };
 	return;
 };
 

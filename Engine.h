@@ -7,13 +7,14 @@ class Engine : public CoreComponent
 {
 private:
 	bool mRunning;
-	Engine() {};
+	Engine() { restore(); };
 protected:
 	virtual ~Engine() { };
 public:
-	HRESULT run(TIME elapsed) override;
+	HRESULT run(TIME elapsed) override { return S_OK; };
 	HRESULT restore();
-	void release()override { mRunning = false; };
+	void Release()override { mRunning = false; };
+	bool isRunning() { return mRunning; };
 	void manualRelease() { delete this; };
 
 	static Engine* get();

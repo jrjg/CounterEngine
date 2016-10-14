@@ -9,27 +9,20 @@
 #include "Controller.h"
 #include "SimplyManaged.h"
 #include "MemManaged.h"
+#include "CStrike.h"
 
 #include "Engine.h"
 
 Engine* gpEngine;
 
-HRESULT Engine::run(TIME elapsed)
-{
-	while (mRunning)
-	{
-		ProcessManager::get()->run(Timer::get()->getElapsed());
-	}
-	return S_OK;
-};
-
 HRESULT Engine::restore()
 {
+	mRunning = true;
 	EventManager::get();
 	ProcessManager::get();
 	Timer::get();
 	Controller::get();
-	mRunning = true;
+	CStrike::get();
 	return S_OK;
 }
 Engine * Engine::get() { 

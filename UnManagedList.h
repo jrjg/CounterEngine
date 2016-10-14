@@ -21,12 +21,13 @@ public:
 	HRESULT setLast(UnManagedListElement<ObjectType>* pElem) { mpLastElem = pElem; return S_OK; };
 	UINT getLength() { return mLength; };
 	UnManagedListElement<ObjectType>* getFirst() { return mpFirstElem; };
-	ObjectType* pop();
+	ObjectType* popFirst();
+	ObjectType* popLast();
 	UnManagedListElement<ObjectType>* getLast() { return mpLastElem; };
 	ObjectType* getByID(ID id);
 	HRESULT deleteByID(ID id);
 	HRESULT restore();
-	void release() { delete this; };
+	void Release() { delete this; };
 	UnManagedList() : mpFirstElem(NULL),mpLastElem(NULL),mLength(0),mElemIDCounter(0),mManageContent(true) { restore(); };
 };
 
@@ -36,7 +37,7 @@ inline HRESULT UnManagedList<ObjectType>::deleteByID(ID id)
 	if (mLength > 0) {
 		for (UnManagedListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
 			if (pElem->getID() == id) {
-				pElem->release();
+				SAFE_RELEASE(pElem);
 				return S_OK;
 			}
 		}
@@ -49,7 +50,7 @@ inline HRESULT UnManagedList<ObjectType>::restore()
 {
 	if (mLength > 0) {
 		for (UnManagedListElement<ObjectType>* pListElem = getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
-			pListElem->release();
+			SAFE_RELEASE(pListElem);
 		}
 	}
 	mpFirstElem = NULL;
@@ -75,12 +76,26 @@ ObjectType* UnManagedList<ObjectType>::getByID(ID id) {
 };
 
 template <class ObjectType>
-ObjectType* UnManagedList<ObjectType>::pop()
+ObjectType* UnManagedList<ObjectType>::popFirst()
 {
-	if (mLength == 0) { return NULL; };
-	ObjectType* pObj = mpFirstElem->getObject();
-	mpFirstElem->setDeleteContent(false); //dont delete what is returned
-	mpFirstElem->release();
+	ObjectType* pObj;
+	if (mpFirstElem) {
+		pObj = mpFirstElem->getObject();
+		mpFirstElem->setDeleteContent(false); //dont delete what is returned
+		SAFE_RELEASE(mpFirstElem);
+	}
+	return pObj;
+};
+
+template <class ObjectType>
+ObjectType* UnManagedList<ObjectType>::popLast()
+{
+	ObjectType* pObj;
+	if (mpLastElem) {
+		pObj = mpLastElem->getObject();
+		mpLastElem->setDeleteContent(false); //dont delete what is returned
+		SAFE_RELEASE(mpLastElem);
+	}
 	return pObj;
 };
 
@@ -102,7 +117,7 @@ template <class ObjectType>
 UnManagedList<ObjectType>::~UnManagedList() {
 	if (mLength > 0) {
 		for (UnManagedListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-			pElem->release();
+			SAFE_RELEASE(pElem);
 		}
 	}
 	return;

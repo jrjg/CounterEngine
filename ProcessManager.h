@@ -11,7 +11,7 @@ private:
 	List<Process>* mpProcesses;
 	ProcessManager();
 protected:
-	virtual ~ProcessManager() { mpProcesses->release(); };
+	virtual ~ProcessManager() { SAFE_RELEASE(mpProcesses); };
 public:
 	ID addProcess(Process* pProcess) { return mpProcesses->pushBack(pProcess); };
 	HRESULT removeProcess(ID processID) { return mpProcesses->deleteByID(processID); };
