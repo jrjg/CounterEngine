@@ -47,6 +47,7 @@ HRESULT EventManager::run(TIME elapsed)
 	List<EventListener>* pListenerList;
 	
 	ListElement<EventListener>* pListElem;
+	if (mpEvents->getLength() > 0) {
 		Event* pEvent = mpEvents->popFirst();
 		while (pEvent) {
 			pListenerList = mpListeners->get(pEvent->getSlotID());
@@ -61,6 +62,7 @@ HRESULT EventManager::run(TIME elapsed)
 			SAFE_RELEASE(pEvent);
 			pEvent = mpEvents->popFirst();
 		}
+	}
 	return S_OK;
 };
 

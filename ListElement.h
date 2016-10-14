@@ -26,6 +26,7 @@ public:
 	void setPrevious(ListElement<ObjectType>* p) { mpPrevious = p; };
 	ObjectType* getObject() { return mpObject; };
 	void setDeleteContent(bool b) { mDeleteContent = b; };
+	void Release() { delete this; };
 };
 
 template<class ObjectType>
