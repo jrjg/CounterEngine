@@ -29,7 +29,6 @@ HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 	return S_OK;
 }
 HRESULT MemoryManager::freeMem(MemManaged * pMem) { 
-	CE1_ASSERT(0&&"awd");
 	if (pMem) {
 		for (UnManagedListElement<MemManaged>* pElem = mpList->getFirst(); pElem != NULL; pElem = pElem->getNext()) {
 			if (pElem->getID() == pMem->getMemID()) {

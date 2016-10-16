@@ -22,7 +22,11 @@ HRESULT SetControlSetListener::handle(MemManaged* pData){
 HRESULT Controller::setControls(ID id) { 
 	mpActiveControls = mpControls->getByID(id); return S_OK; 
 }
-Controller::~Controller() { SAFE_RELEASE(mpControls); }
+
+Controller::~Controller() {
+	SAFE_RELEASE(mpControls);
+	SAFE_RELEASE(mpSetControlSetListener);
+}
 
 ID Controller::newControlSet() { 
 	return mpControls->pushBack(new ControlSet()); 
