@@ -6,23 +6,14 @@
 #include "Process.h"
 #include "SimplyManaged.h"
 #include "MemManaged.h"
+#include "Singleton.h"
 
 #include "ProcessManager.h"
-
-ProcessManager* gpProcessManager;
 
 ProcessManager::ProcessManager() : CoreComponent(false)
 {
 	mpProcesses = new List<Process>(); 
 }
-
-ProcessManager* ProcessManager::get() {
-	if (!gpProcessManager) {
-		gpProcessManager = new ProcessManager();
-		gpProcessManager->restoreCoreListeners();
-	}; 
-	return gpProcessManager;
-};
 
 HRESULT ProcessManager::restore()
 {
@@ -37,4 +28,17 @@ HRESULT ProcessManager::run(TIME elapsed)
 		pListElement->getObject()->run(elapsed);
 	}
 	return S_OK;
-};
+}
+ProcessManager * ProcessManager::get()
+{
+	if (!mpInstance) {
+		if (mAllowInstancing) {
+			mpInstance = new ProcessManager();
+			mpInstance->restoreCoreListeners();
+		}
+		else {
+			CE1_ASSERT(0 && "Not allowed to instance Singleton");
+		}
+	}
+	return mpInstance;
+}

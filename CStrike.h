@@ -3,14 +3,15 @@
 
 #include "CoreComponent.h"
 
-class CStrike : public CoreComponent {
+class CStrike : public CoreComponent,public Singleton<CStrike>{
+	friend class Singleton<CStrike>;
 private:
+	static CStrike* mpCStrike;
 	ID mDefaultControls;
 protected:
 	CStrike() { restore(); };
 	~CStrike() {};
 public:
-	static CStrike* get();
 	HRESULT restore();
 	HRESULT run(TIME elapsed) { return S_OK; };
 };

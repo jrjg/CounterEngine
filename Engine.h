@@ -2,9 +2,11 @@
 #define INCLUDE_ENGINE
 
 #include "CoreComponent.h"
+#include "Singleton.h"
 
-class Engine : public CoreComponent
+class Engine : public CoreComponent,public Singleton<Engine>
 {
+	friend class Singleton<Engine>;
 private:
 	bool mRunning;
 	Engine() { restore(); };
@@ -16,8 +18,6 @@ public:
 	void Release()override { mRunning = false; };
 	bool isRunning() { return mRunning; };
 	void manualRelease() { delete this; };
-
-	static Engine* get();
 };
 
 #endif

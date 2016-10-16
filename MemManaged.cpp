@@ -4,13 +4,16 @@
 
 #include "MemManaged.h"
 
-void* MemManaged::operator new(size_t size) {
-	MemManaged* pInst;
-	MemoryManager::get()->allocateMem(&pInst, size);
+void * MemManaged::operator new(size_t size)
+{
+	void * pInst;
+	MemoryManager::get()->allocateMem((MemManaged**)&pInst, size);
 	return pInst;
-};
-void MemManaged::operator delete(void* pInst) {
-	if (!pInst) { return; }
-	MemoryManager::get()->freeMem((MemManaged*)pInst);
-	return;
-};
+}
+
+void MemManaged::operator delete(void * pInst)
+{
+	if (pInst) { 
+		MemoryManager::get()->freeMem((MemManaged*)pInst);
+	};
+}

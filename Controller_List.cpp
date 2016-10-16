@@ -10,13 +10,12 @@
 #include "SimplyManaged.h"
 #include "MemManaged.h"
 #include "ControlSet.h"
+#include "Singleton.h"
 
 #include "Controller.h"
 
-Controller* gpController;
-
 HRESULT SetControlSetListener::handle(MemManaged* pData){ 
-	Controller::get()->setControls(*(ID*)pData); 
+	Controller::get()->setControls( *((SimplyManaged<ID>*)pData)->getObject() ); 
 	return S_OK;
 };
 
@@ -24,13 +23,6 @@ HRESULT Controller::setControls(ID id) {
 	mpActiveControls = mpControls->getByID(id); return S_OK; 
 }
 Controller::~Controller() { SAFE_RELEASE(mpControls); }
-
-Controller * Controller::get() { 
-	if (!gpController) {
-		gpController = new Controller();
-	} 
-	return gpController;
-};
 
 ID Controller::newControlSet() { 
 	return mpControls->pushBack(new ControlSet()); 
@@ -51,5 +43,6 @@ HRESULT Controller::run(TIME elapsed) {
 HRESULT Controller::restore() {
 	if (!mpControls) { mpControls = new List<ControlSet>(); }; mpControls->restore();
 	if (mpSetControlSetListener) { SAFE_RELEASE(mpSetControlSetListener); }; mpSetControlSetListener = new SetControlSetListener();
+	mpActiveControls = NULL;
 	return S_OK;
 };

@@ -24,6 +24,7 @@
 #include <fstream>
 #include <istream>
 #include <sstream>
+#include <new>
 
 
 #include <d3d12.h>

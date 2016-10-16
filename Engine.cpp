@@ -13,8 +13,6 @@
 
 #include "Engine.h"
 
-Engine* gpEngine;
-
 HRESULT Engine::restore()
 {
 	mRunning = true;
@@ -25,12 +23,6 @@ HRESULT Engine::restore()
 	CStrike::get();
 	return S_OK;
 }
-Engine * Engine::get() { 
-	if (!gpEngine) {
-		gpEngine = new Engine();
-	}
-	return gpEngine;
-};
 
 //#define CASE(Name,Exec)if (*pObjName==Name) {Exec; return S_OK; }
 //

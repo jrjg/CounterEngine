@@ -6,19 +6,19 @@
 
 #include "Memory.h"
 
-MemoryManager* gpMemoryManager;
-
-MemoryManager::MemoryManager() { 
+MemoryManager::MemoryManager() : Singleton<MemoryManager>(false){
 	mpList = new UnManagedList<MemManaged>();
 }
-MemoryManager::~MemoryManager() { SAFE_RELEASE(mpList); }
-MemoryManager * MemoryManager::get()
-{
-	if (!gpMemoryManager) {
-		gpMemoryManager = new MemoryManager();
-	}; 
-	return gpMemoryManager;
-};
+MemoryManager::~MemoryManager() { 
+	if (mpList->getLength() > 0) {
+		for (UnManagedListElement<MemManaged>* pElem = mpList->getFirst(); pElem != NULL; pElem = pElem->getNext()) {
+			if (!pElem->getDeleteContent()) {
+				free((void*)pElem->getObject());
+			}
+		}
+	}
+	SAFE_RELEASE(mpList);
+}
 
 HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 {
@@ -28,4 +28,33 @@ HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 	pMem->mMemID = mpList->pushFront(pMem);
 	return S_OK;
 }
-HRESULT MemoryManager::freeMem(MemManaged * pMem) { mpList->deleteByID(pMem->mMemID); return S_OK; };
+HRESULT MemoryManager::freeMem(MemManaged * pMem) { 
+	CE1_ASSERT(0&&"awd");
+	if (pMem) {
+		for (UnManagedListElement<MemManaged>* pElem = mpList->getFirst(); pElem != NULL; pElem = pElem->getNext()) {
+			if (pElem->getID() == pMem->getMemID()) {
+				pElem->setDeleteContent(false);
+				mpList->deleteListElement(pElem);
+				break;
+			}
+		}
+		free(pMem);
+	};
+	return S_OK; 
+}
+
+HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID * pID)
+{
+	*ppMem = malloc(size);
+	void* pMem = *ppMem;
+	ZeroMemory(pMem, size);
+	*pID = mpList->pushFront((MemManaged*)pMem);
+	mpList->getFirst()->setDeleteContent(false);
+	return S_OK;
+}
+
+HRESULT MemoryManager::freeMem(ID id)
+{
+	free((void*)mpList->pop(id));
+	return S_OK;
+};

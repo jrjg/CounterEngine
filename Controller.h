@@ -6,6 +6,7 @@
 #include "CoreComponent.h"
 #include "List.h"
 #include "ControlSet.h"
+#include "Singleton.h"
 
 class SetControlSetListener : public EventListener{
 protected:
@@ -15,9 +16,10 @@ public:
 	SetControlSetListener() : EventListener(EVENT_SETCONTROLSET) {};
 };
 
-class Controller : public CoreComponent
+class Controller : public CoreComponent, public Singleton<Controller>
 {
 	friend class SetControlSetListener;
+	friend class Singleton<Controller>;
 private:
 	List<ControlSet>* mpControls;
 	ControlSet* mpActiveControls;
@@ -28,7 +30,6 @@ private:
 protected:
 	virtual ~Controller();
 public:
-	static Controller* get();
 	ID newControlSet();
 	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID);
 

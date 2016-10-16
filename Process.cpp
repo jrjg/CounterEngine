@@ -13,7 +13,7 @@ Process::~Process() { ProcessManager::get()->removeProcess(mID); };
 HRESULT Process::run(TIME elapsed)
 {
 	if (!mRunning) { return S_OK; };
-	mWaited += elapsed;
+	mWaited += elapsed; 
 	if (mWaited >= mShouldWait)
 	{
 		for (; mWaited >= mShouldWait; mWaited -= mShouldWait)

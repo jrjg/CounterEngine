@@ -14,7 +14,7 @@ protected:
 	RestoreListener* mpRestoreListener;
 	ReleaseListener* mpReleaseListener;
 	RunHandler* mpRunHandler;
-	CoreComponent(bool restCore){if (restCore) { restoreCore(); };}; 
+	CoreComponent(bool restCore) {if (restCore) { restoreCore(); }; };
 	CoreComponent() { restoreCore(); };
 	virtual ~CoreComponent();
 	HRESULT restoreCoreListeners();

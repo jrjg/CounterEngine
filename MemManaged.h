@@ -5,12 +5,13 @@ class MemManaged {
 	friend class MemoryManager;
 private:
 	ID mMemID;
-protected:
-	virtual ~MemManaged() {};
 public:
-	void* operator new(size_t size);
-	void operator delete(void* pInst);
+	void* MemManaged::operator new(size_t size);
+	void MemManaged::operator delete(void* pInst);
+	virtual ~MemManaged() {};
 	virtual void Release() { delete this; };
+	void setMemID(ID id) { mMemID = id; };
+	ID getMemID() { return mMemID; };
 };
 
 #endif

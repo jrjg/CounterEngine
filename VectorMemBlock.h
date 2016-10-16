@@ -7,11 +7,12 @@ template<class ObjectType>
 class VectorMemBlock : public MemManaged {
 private:
 	UINT mIndexLast;
-	MemManaged* mpMem;
+	void* mpMem;
 	bool mDeleteContent;
 	UINT mElemSize;
 	UINT mCapacity;
-	size_t mSizeOfMemManaged;
+	ID mBlockMemID;
+	UINT mLength;
 protected:
 	virtual ~VectorMemBlock();
 public:
@@ -20,40 +21,77 @@ public:
 	void setDeleteContent(bool b) { mDeleteContent = b; };
 	HRESULT set(UINT index, ObjectType* pObj);
 	HRESULT pushback(ObjectType* pObj, UINT* pIndex);
-	VectorMemBlock(UINT capacity);
+	VectorMemBlock(UINT capacity) : mCapacity(capacity), mpMem(NULL) { restore(); };
+	HRESULT deleteVectorMemBlockElement(UINT index);
+	HRESULT restore();
 };
 
 template<class ObjectType>
 inline ObjectType * VectorMemBlock<ObjectType>::get(UINT index)
 {
 	if (index > mCapacity) { return NULL; };
-	return(*(ObjectType**)((char*)(mpMem)+mSizeOfMemManaged + index * mElemSize));
+	return(*(ObjectType**)(((char*)mpMem) + index * mElemSize));
 };
 
 template<class ObjectType>
 inline HRESULT VectorMemBlock<ObjectType>::set(UINT index, ObjectType * pObj)
 {
 	if (index > mCapacity) { return ERROR_SUCCESS; };
-	*(ObjectType**)((char*)(mpMem)+mSizeOfMemManaged + index * mElemSize) = pObj;
+	deleteVectorMemBlockElement(index);
+	*(ObjectType**)(((char*)mpMem) + index * mElemSize) = pObj;
 	if (index > mIndexLast) {
 		mIndexLast = index;
 	}
+	mLength++;
 	return S_OK;
 };
 
 template<class ObjectType>
 inline HRESULT VectorMemBlock<ObjectType>::pushback(ObjectType * pObj, UINT * pIndex)
 {
-	if (SUCCEEDED(set(mIndexLast + 1, pObj))) {
-		*pIndex = ++mIndexLast;
+	UINT index;
+	if (mLength == 0) {
+		index = mIndexLast;
+	}
+	else {
+		index = mIndexLast + 1;
+	}
+	if (SUCCEEDED(set(index, pObj))) {
+		*pIndex = index;
 		return S_OK;
 	}
 	return ERROR_SUCCESS;
 };
 
 template<class ObjectType>
-VectorMemBlock<ObjectType>::VectorMemBlock(UINT capacity) : mSizeOfMemManaged(sizeof(MemManaged)), mElemSize(sizeof(ObjectType)), mCapacity(capacity), mDeleteContent(true), mIndexLast(-1) {
-	MemoryManager::get()->allocateMem(&mpMem, mCapacity * mElemSize + mSizeOfMemManaged);
+inline HRESULT VectorMemBlock<ObjectType>::deleteVectorMemBlockElement(UINT index)
+{
+	ObjectType* pVectorMemBlockElement = get(index);
+	if (pVectorMemBlockElement) {
+		if (mIndexLast == index && mIndexLast != 0) {
+			while(!get(--mIndexLast)){
+				if (mIndexLast == 0) { 
+					break; 
+				}
+			}
+		}
+		SAFE_RELEASE(pVectorMemBlockElement);
+		mLength--;
+	}
+	return S_OK;
+}
+
+template<class ObjectType>
+inline HRESULT VectorMemBlock<ObjectType>::restore()
+{
+	mLength = 0;
+	mElemSize = sizeof(ObjectType*);
+	mDeleteContent = true; 
+	mIndexLast = 0;
+
+	if (mpMem) { MemoryManager::get()->freeMem(mBlockMemID); };
+	MemoryManager::get()->allocateMem(&mpMem, mCapacity * mElemSize, &mBlockMemID);
+	return S_OK;
 };
 
 template<class ObjectType>
@@ -66,7 +104,7 @@ inline VectorMemBlock<ObjectType>::~VectorMemBlock()
 			if (pObject) { SAFE_RELEASE(pObject); };
 		}
 	}
-	SAFE_RELEASE(mpMem);
+	if (mpMem) { MemoryManager::get()->freeMem(mBlockMemID); };
 };
 
 #endif

@@ -7,8 +7,6 @@
 
 #include "Timer.h"
 
-Timer* gpTimer;
-
 TIME Timer::getElapsed()
 {
 	TIME now = getTime();
@@ -16,10 +14,3 @@ TIME Timer::getElapsed()
 	mThen = now;
 	return elapsed;
 }
-Timer * Timer::get()
-{
-	if (!gpTimer) {
-		gpTimer = new Timer();
-	}
-	return gpTimer;
-};

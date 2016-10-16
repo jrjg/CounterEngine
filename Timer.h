@@ -2,8 +2,10 @@
 #define INCLUDE_TIMER
 
 #include "CoreComponent.h"
+#include "Singleton.h"
 
-class Timer : public CoreComponent {
+class Timer : public CoreComponent, public Singleton<Timer>{
+	friend class Singleton<Timer>;
 private:
 	TIME mThen;
 	Timer() { restore(); };
@@ -12,12 +14,12 @@ protected:
 public:
 	TIME getElapsed();
 	TIME getTime() { return (clock() * 1000 / CLOCKS_PER_SEC); };
-	HRESULT wait(TIME time) { Sleep(time); return S_OK; };
+	HRESULT wait(TIME time) { if (time > 0) { Sleep(time); }; return S_OK; };
 
 	HRESULT restore() { srand(time(NULL)); mThen = getTime(); return S_OK; };
-	HRESULT run(TIME elapsed)override { wait(CORETICKSPEED - elapsed); return S_OK; };
-
-	static Timer* get();
+	HRESULT run(TIME elapsed)override { 
+		wait(CORETICKSPEED - elapsed); return S_OK; 
+	};
 };
 
 #endif 

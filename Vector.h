@@ -75,11 +75,11 @@ inline HRESULT Vector<ObjectType>::restore()
 {
 	for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) {
 		if (mpMemBlocks[i]) {
-			SAFE_RELEASE(mpMemBlocks[i]);
+			mpMemBlocks[i]->restore();
 		}
 	}
 	mMaxCapacity = MAX_VECTOR_BLOCKS*mMemBlockCapacity;
-	mpMemBlocks[0] = new VectorMemBlock<ObjectType>(mMemBlockCapacity);
+	if (!mpMemBlocks[0]) { mpMemBlocks[0] = new VectorMemBlock<ObjectType>(mMemBlockCapacity); };
 	return S_OK;
 };
 

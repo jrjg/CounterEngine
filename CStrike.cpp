@@ -4,18 +4,9 @@
 #include "EventManager.h"
 #include "Memory.h"
 #include "SimplyManaged.h"
+#include "Singleton.h"
 
 #include "CStrike.h"
-
-CStrike* gpCStrike;
-
-CStrike* CStrike::get()
-{
-	if (!gpCStrike) {
-		gpCStrike = new CStrike();
-	}
-	return gpCStrike;
-}
 
 HRESULT CStrike::restore()
 {
