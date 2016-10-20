@@ -20,7 +20,7 @@ protected:
 	Singleton() { mpAllowInstancingListener = new AllowInstancingListener<T>(this); };
 	Singleton(bool autoRegister);
 	virtual ~Singleton() { 
-		if (mpAllowInstancingListener) { delete mpAllowInstancingListener; };
+		if (mpAllowInstancingListener) { SAFE_RELEASE(mpAllowInstancingListener); };
 	};
 public:
 	static T* get();

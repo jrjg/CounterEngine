@@ -11,7 +11,7 @@ class ProcessManager : public CoreComponent, public Singleton<ProcessManager>
 	friend class Singleton<ProcessManager>;
 private:
 	List<Process>* mpProcesses;
-	ProcessManager();
+	ProcessManager() : CoreComponent(false) { restore(); };
 protected:
 	virtual ~ProcessManager() { SAFE_RELEASE(mpProcesses); };
 public:

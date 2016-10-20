@@ -8,6 +8,8 @@
 #include "EventListener.h"
 #include "CStrike.h"
 #include "Controller.h"
+#include "WinParams.h"
+#include "WindowManager.h"
 
 #include "Main.h"
 
@@ -16,8 +18,6 @@ bool gIsRunning;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	MemoryManager::get();
-	
-	EventManager::get()->queueEvent(EVENT_WINPARAMS, new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
 
 	bool isRunning = true;
 	RunningListener* pRunningListener = new RunningListener(&isRunning);
@@ -26,19 +26,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	Timer::get();
 
+	WindowManager::get();
+
 	CStrike::get();
 
 	bool allowInstancing = false;
 	EventManager::get()->queueEvent(EVENT_ALLOWINSTANCING, new SimplyManaged<bool>(allowInstancing));
 
-	//EventManager::get()->queueEvent(EVENT_RELEASE, NULL);
+	EventManager::get()->queueEvent(EVENT_WINPARAMS, new WinParams(hInstance, hPrevInstance, lpCmdLine, nCmdShow));
+
+	EventManager::get()->queueEvent(EVENT_GAMEINIT, NULL);
 
 	while (isRunning)
 	{
 		ProcessManager::get()->run(Timer::get()->getElapsed());
 	}
 
-	delete pRunningListener;
+	SAFE_RELEASE(pRunningListener);
 
 	EventManager::get()->ManualRelease();
 

@@ -13,7 +13,8 @@ void * MemManaged::operator new(size_t size)
 
 void MemManaged::operator delete(void * pInst)
 {
-	if (pInst) { 
-		MemoryManager::get()->freeMem((MemManaged*)pInst);
-	};
+	MemoryManager* pMM = MemoryManager::get();
+	if (pMM) {
+		pMM->freeMem((MemManaged*)pInst);
+	}
 }

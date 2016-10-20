@@ -157,9 +157,10 @@ inline HRESULT List<ObjectType>::deleteAllListElements()
 {
 	ObjectType* pObject;
 	while (mLength > 0) {
+		bool manageContent = mpFirstElem->
 		pObject = popFirst();
 		if (mManageContent) {
-			delete pObject;
+			SAFE_RELEASE(pObject);
 		}
 	}
 	return S_OK;

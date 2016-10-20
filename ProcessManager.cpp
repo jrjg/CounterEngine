@@ -10,11 +10,6 @@
 
 #include "ProcessManager.h"
 
-ProcessManager::ProcessManager() : CoreComponent(false)
-{
-	mpProcesses = new List<Process>(); 
-}
-
 HRESULT ProcessManager::removeProcess(ID processID)
 {
 	if (mpProcesses) {
@@ -25,7 +20,12 @@ HRESULT ProcessManager::removeProcess(ID processID)
 
 HRESULT ProcessManager::restore()
 {
-	if (!mpProcesses) { mpProcesses = new List<Process>(); }; mpProcesses->restore();
+	if (!mpProcesses) { 
+		mpProcesses = new List<Process>(); 
+	}
+	else {
+		mpProcesses->restore();
+	}
 	return S_OK;
 };
 

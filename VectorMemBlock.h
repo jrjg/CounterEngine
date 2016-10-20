@@ -2,6 +2,7 @@
 #define VECTORMEMBLOCK
 
 #include "MemManaged.h"
+#include "Memory.h"
 
 template<class ObjectType> 
 class VectorMemBlock : public MemManaged {
@@ -104,7 +105,12 @@ inline VectorMemBlock<ObjectType>::~VectorMemBlock()
 			if (pObject) { SAFE_RELEASE(pObject); };
 		}
 	}
-	if (mpMem) { MemoryManager::get()->freeMem(mBlockMemID); };
+	if (mpMem) { 
+		MemoryManager* pMM = MemoryManager::get();
+		if (pMM) {
+			pMM->freeMem(mBlockMemID);
+		}
+	};
 };
 
 #endif

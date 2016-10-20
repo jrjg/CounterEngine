@@ -8,7 +8,10 @@
 
 Process::Process(TIME shouldWait) : mShouldWait(shouldWait), mWaited(0), mRunning(true) { mID = ProcessManager::get()->addProcess(this); };
 
-Process::~Process() { ProcessManager::get()->removeProcess(mID); };
+Process::~Process() { 
+	ProcessManager* pPM = ProcessManager::get();
+	if (pPM) { pPM->removeProcess(mID); };
+};
 
 HRESULT Process::run(TIME elapsed)
 {

@@ -55,6 +55,7 @@ MemoryManager * MemoryManager::get()
 		}
 		else {
 			CE1_ASSERT(0 && "Not allowed to instance Singleton");
+			mpInstance->mpAllowInstancingListener = new AllowInstancingListener<MemoryManager>(mpInstance);
 		}
 	}
 	return mpInstance;

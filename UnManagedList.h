@@ -160,7 +160,7 @@ inline HRESULT UnManagedList<ObjectType>::deleteAllListElements()
 	while (mLength > 0) {
 		pObject = popFirst();
 		if (mManageContent) {
-			delete pObject;
+			SAFE_RELEASE(pObject);
 		}
 	}
 	return S_OK;

@@ -53,6 +53,9 @@ HRESULT EventManager::run(TIME elapsed)
 	List<EventListener>* pListenerList = 0;
 	ListElement<EventListener>* pListElem = 0;
 	Event* pEvent = 0; 
+	if (!mpEvents) {
+		return S_OK;
+	}
 	while (mpEvents->getLength() > 0) {
 		pEvent = mpEvents->popFirst(); 
 		pListenerList = mpListeners->get(pEvent->getSlotID());
@@ -74,8 +77,18 @@ HRESULT EventManager::run(TIME elapsed)
 
 HRESULT EventManager::restore()
 {
-	if (!mpListeners) { mpListeners = new Vector<List<EventListener>>(100); }; mpListeners->restore();
-	if (!mpEvents) { mpEvents = new List<Event>(); }; mpEvents->restore();
+	if (!mpListeners) { 
+		mpListeners = new Vector<List<EventListener>>(100); 
+	}
+	else {
+		mpListeners->restore();
+	}
+	if (!mpEvents) { 
+		mpEvents = new List<Event>(); 
+	}
+	else {
+		mpEvents->restore();
+	}
 	mEventCounter = 0;
 	return S_OK;
 }
