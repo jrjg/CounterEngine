@@ -116,9 +116,10 @@ inline ObjectType * List<ObjectType>::pop(ID id)
 	if (mLength > 0) {
 		for (ListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
 			if (pElem->getID() == id) {
-				pObj = mpLastElem->getObject();
-				mpLastElem->setDeleteContent(false); //dont delete what is returned
-				deleteListElement(mpLastElem);
+				pObj = pElem->getObject();
+				pElem->setDeleteContent(false); //dont delete what is returned
+				deleteListElement(pElem);
+				break;
 			}
 		}
 	}

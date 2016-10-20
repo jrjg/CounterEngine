@@ -10,6 +10,7 @@ class ReleaseListener;
 class RunHandler;
 
 class CoreComponent : public MemManaged {
+	friend class MemoryManager;
 protected:
 	RestoreListener* mpRestoreListener;
 	ReleaseListener* mpReleaseListener;

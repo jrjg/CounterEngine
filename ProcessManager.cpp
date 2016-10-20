@@ -15,6 +15,14 @@ ProcessManager::ProcessManager() : CoreComponent(false)
 	mpProcesses = new List<Process>(); 
 }
 
+HRESULT ProcessManager::removeProcess(ID processID)
+{
+	if (mpProcesses) {
+		return mpProcesses->deleteByID(processID);
+	}
+	return S_OK;
+};
+
 HRESULT ProcessManager::restore()
 {
 	if (!mpProcesses) { mpProcesses = new List<Process>(); }; mpProcesses->restore();

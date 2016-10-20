@@ -16,11 +16,11 @@ protected:
 	virtual ~ProcessManager() { SAFE_RELEASE(mpProcesses); };
 public:
 	ID addProcess(Process* pProcess) { return mpProcesses->pushBack(pProcess); };
-	HRESULT removeProcess(ID processID) { return mpProcesses->deleteByID(processID); };
+	HRESULT removeProcess(ID processID);
 	HRESULT restore();
 	HRESULT run(TIME elapsed)override;
 
-	void Release()override { mpProcesses->restore(); /*remove all Processes*/ };
+	void Release()override { /*mpProcesses->restore(); remove all Processes*/ };
 	void ManualRelease(){ delete this; };
 
 	static ProcessManager* get();

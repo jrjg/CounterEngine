@@ -16,7 +16,6 @@ private:
 	ID mEventCounter;
 	HRESULT registerEvent(ID id); 
 	EventManager();
-protected:
 	virtual ~EventManager();
 public:
 	ID queueEvent(ID id, MemManaged* pData);

@@ -18,6 +18,7 @@ public:
 	HRESULT allocateMem(void** ppMem, size_t size, ID* pID);
 	HRESULT freeMem(ID id);
 	void manualRelease() { delete this; }
+	static MemoryManager* get();
 };
 
 #endif

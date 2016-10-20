@@ -12,14 +12,16 @@ class AllowInstancingListener;
 template<class T>
 class Singleton{
 	friend class AllowInstancingListener<T>;
-private:
-	AllowInstancingListener<T>* mpAllowInstancingListener;
+	friend class MemoryManager;
 protected:
+	AllowInstancingListener<T>* mpAllowInstancingListener;
 	static bool mAllowInstancing;
 	static T* mpInstance;
 	Singleton() { mpAllowInstancingListener = new AllowInstancingListener<T>(this); };
 	Singleton(bool autoRegister) { if (autoRegister) { mpAllowInstancingListener = new AllowInstancingListener<T>(this); }; };
-	virtual ~Singleton() { delete mpAllowInstancingListener; };
+	virtual ~Singleton() { 
+		delete mpAllowInstancingListener; 
+	};
 public:
 	static T* get();
 };

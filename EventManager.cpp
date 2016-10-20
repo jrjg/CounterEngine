@@ -11,12 +11,16 @@
 #include "EventManager.h"
 
 HRESULT EventManager::registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); }
+
 EventManager::EventManager() : CoreComponent(false),Singleton<EventManager>(false){
 	mpListeners = new Vector<List<EventListener>>(100); 
 	mpEvents = new List<Event>(); 
 	mEventCounter = 0;
 };
-EventManager::~EventManager() { SAFE_RELEASE(mpListeners); SAFE_RELEASE(mpEvents); };
+EventManager::~EventManager() { 
+	SAFE_RELEASE(mpListeners); 
+	SAFE_RELEASE(mpEvents); 
+};
 
 ID EventManager::queueEvent(ID id, MemManaged * pData) { return mpEvents->pushBack(new Event(pData, id, mEventCounter++)); };
 
@@ -29,14 +33,26 @@ ID EventManager::registerForEvent(ID id, EventListener* pListener)
 	}
 	return pListenerList->pushBack(pListener);
 }
-HRESULT EventManager::unRegisterForEvent(ID eventID, ID listenerID) { return mpListeners->get(eventID)->deleteByID(listenerID); }
-HRESULT EventManager::removeEvent(ID id) { mpEvents->deleteByID(id); };
+
+HRESULT EventManager::unRegisterForEvent(ID eventID, ID listenerID) { 
+	if (mpListeners) {
+		return mpListeners->get(eventID)->deleteByID(listenerID);
+	}
+	return S_OK;
+}
+	
+HRESULT EventManager::removeEvent(ID id) { 
+	if (mpEvents) {
+		return mpEvents->deleteByID(id);
+	};
+	return S_OK;
+}
 
 HRESULT EventManager::run(TIME elapsed)
 {
-	List<EventListener>* pListenerList;
-	ListElement<EventListener>* pListElem;
-	Event* pEvent; 
+	List<EventListener>* pListenerList = 0;
+	ListElement<EventListener>* pListElem = 0;
+	Event* pEvent = 0; 
 	while (mpEvents->getLength() > 0) {
 		pEvent = mpEvents->popFirst(); 
 		pListenerList = mpListeners->get(pEvent->getSlotID());
@@ -49,6 +65,9 @@ HRESULT EventManager::run(TIME elapsed)
 			}
 		}
 		SAFE_RELEASE(pEvent);
+		if (!mpEvents) {
+			return S_OK;
+		}
 	}
 	return S_OK;
 };
@@ -62,7 +81,8 @@ HRESULT EventManager::restore()
 }
 void EventManager::Release()
 {
-	mpEvents->restore(); //delete all remaining Events
+	//mpEvents->restore(); //delete all remaining Events
+	SAFE_RELEASE(mpEvents);
 }
 
 EventManager * EventManager::get()
@@ -71,6 +91,7 @@ EventManager * EventManager::get()
 		if (mAllowInstancing) {
 			mpInstance = new EventManager();
 			mpInstance->restoreCore();
+			mpInstance->mpAllowInstancingListener = new AllowInstancingListener<EventManager>(mpInstance);
 		}
 		else {
 			CE1_ASSERT(0 && "Not allowed to instance Singleton");
@@ -78,3 +99,4 @@ EventManager * EventManager::get()
 	}
 	return mpInstance;
 }
+
