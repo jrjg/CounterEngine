@@ -11,6 +11,8 @@ private:
 	UINT mLength;
 	ID mElemIDCounter;
 	bool mManageContent;
+	HRESULT deleteAllListElements();
+	HRESULT deleteListElement(UnManagedListElement<ObjectType>* pListElem);
 protected:
 	virtual ~UnManagedList();
 public:
@@ -28,7 +30,6 @@ public:
 	ObjectType* getByID(ID id);
 	HRESULT deleteByID(ID id);
 	HRESULT restore();
-	HRESULT deleteListElement(UnManagedListElement<ObjectType>* pListElem);
 	UnManagedList() : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mManageContent(true) { restore(); };
 	UnManagedList(bool manageContent) : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mManageContent(manageContent) { restore(); };
 	HRESULT Release() { delete this; return S_OK; };
@@ -66,11 +67,7 @@ inline HRESULT UnManagedList<ObjectType>::deleteByID(ID id)
 template<class ObjectType>
 inline HRESULT UnManagedList<ObjectType>::restore()
 {
-	if (mLength > 0) {
-		for (UnManagedListElement<ObjectType>* pListElem = getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
-			deleteListElement(pListElem);
-		}
-	}
+	deleteAllListElements();
 	mpFirstElem = NULL;
 	mpLastElem = NULL;
 	mLength = 0;
@@ -155,14 +152,23 @@ ID UnManagedList<ObjectType>::pushFront(ObjectType* pObject)
 	return pNewElem->getID();
 };
 
-template <class ObjectType>
-UnManagedList<ObjectType>::~UnManagedList() {
-	if (mLength > 0) {
-		for (UnManagedListElement<ObjectType>* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
-			deleteListElement(pElem);
+template<class ObjectType>
+inline HRESULT UnManagedList<ObjectType>::deleteAllListElements()
+{
+	ObjectType* pObject;
+	while (mLength > 0) {
+		pObject = popFirst();
+		if (mManageContent) {
+			delete pObject;
 		}
 	}
-	return;
+	return S_OK;
+}
+
+template <class ObjectType>
+UnManagedList<ObjectType>::~UnManagedList() {
+	deleteAllListElements();
+	return; 
 };
 
 #endif

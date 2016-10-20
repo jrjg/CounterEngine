@@ -10,10 +10,9 @@ private:
 	MemManaged* mpData;
 	ID mSlotID;
 	ID mID;
-protected:
-	virtual ~Event() { if (mManageContent) { SAFE_RELEASE(mpData); } };
 public:
 	Event(MemManaged* pData, ID slotID, ID id) : mManageContent(true), mpData(pData), mSlotID(slotID), mID(id) {};
+	virtual ~Event() { if (mManageContent) { SAFE_RELEASE(mpData); } };
 	ID getSlotID() { return mSlotID; };
 	ID getID() { return mID; };
 	void setManageContent(bool m) { mManageContent = m; };

@@ -29,17 +29,7 @@ HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 	return S_OK;
 }
 HRESULT MemoryManager::freeMem(MemManaged * pMem) { 
-	if (pMem) {
-		for (UnManagedListElement<MemManaged>* pElem = mpList->getFirst(); pElem != NULL; pElem = pElem->getNext()) {
-			if (pElem->getID() == pMem->getMemID()) {
-				pElem->setDeleteContent(false);
-				mpList->deleteListElement(pElem);
-				break;
-			}
-		}
-		free(pMem);
-	};
-	return S_OK; 
+	return freeMem(pMem->getMemID());
 }
 
 HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID * pID)

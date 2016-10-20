@@ -24,8 +24,8 @@ HRESULT Controller::setControls(ID id) {
 }
 
 Controller::~Controller() {
-	SAFE_RELEASE(mpControls);
 	SAFE_RELEASE(mpSetControlSetListener);
+	SAFE_RELEASE(mpControls);
 }
 
 ID Controller::newControlSet() { 

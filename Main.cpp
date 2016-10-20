@@ -31,7 +31,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool allowInstancing = false;
 	EventManager::get()->queueEvent(EVENT_ALLOWINSTANCING, new SimplyManaged<bool>(allowInstancing));
 
-	EventManager::get()->queueEvent(EVENT_RELEASE, NULL);
+	//EventManager::get()->queueEvent(EVENT_RELEASE, NULL);
 
 	while (isRunning)
 	{

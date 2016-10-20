@@ -12,12 +12,12 @@ private:
 	ID mID;
 protected:
 	virtual HRESULT handle(TIME elapsed) = 0;
-	virtual ~Process();
 public:
 	Process(TIME shouldWait);
 	void pause() { mRunning = false; };
 	void unPause() { mRunning = true; };
 	HRESULT run(TIME elapsed);
+	virtual ~Process();
 };
 
 #endif

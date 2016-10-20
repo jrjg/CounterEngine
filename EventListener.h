@@ -10,12 +10,12 @@ private:
 	bool mEnabled;
 protected:
 	virtual HRESULT handle(MemManaged* pData) = 0;
-	virtual ~EventListener();
 public:
 	EventListener(ID eventID);
 	HRESULT run(MemManaged* pData) { if (mEnabled) { handle(pData); } return S_OK; };
 	void enable() { mEnabled = true; };
 	void disable() { mEnabled = false; };
+	virtual ~EventListener();
 };
 
 #endif
