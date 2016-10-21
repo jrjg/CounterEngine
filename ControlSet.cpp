@@ -19,7 +19,7 @@ HRESULT ControlSet::restore()
 HRESULT ControlSet::evalMappings() {
 	Mapping* pMapping;
 	bool isKeyPressed;
-	for (ListElement<Mapping>* pListElem = mpMappings->getFirst(); pListElem != NULL; pListElem = pListElem->getNext()) {
+	for (ListElement<Mapping>* pListElem = (ListElement<Mapping>*)mpMappings->iterator(); pListElem != NULL; pListElem = (ListElement<Mapping>*)pListElem->getNext()) {
 		pMapping = pListElem->getObject();
 		isKeyPressed = (GetAsyncKeyState(pMapping->mKeyCode) & 0x8000) ? 1 : 0;
 		if (pMapping->mIsKeyPressed != isKeyPressed) {

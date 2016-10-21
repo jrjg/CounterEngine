@@ -1,8 +1,7 @@
 #include "TopInclude.h"
-#include "ListElement.h"
 #include "SimplyManaged.h"
 #include "MemManaged.h"
-#include "UnManagedList.h"
+#include "List.h"
 
 #include "Memory.h"
 
@@ -10,14 +9,16 @@ MemoryManager::MemoryManager() : Singleton<MemoryManager>(false){
 	mpList = new UnManagedList<MemManaged>();
 }
 MemoryManager::~MemoryManager() { 
-	if (mpList->getLength() > 0) {
-		for (UnManagedListElement<MemManaged>* pElem = mpList->getFirst(); pElem != NULL; pElem = pElem->getNext()) {
-			if (!pElem->getDeleteContent()) {
-				free((void*)pElem->getObject());
+	if (mpList) {
+		if (mpList->getLength() > 0) {
+			for (UnManagedListElement<MemManaged>* pElem = mpList->iterator(); pElem != NULL; pElem = pElem->getNext()) {
+				if (!pElem->getDeleteContent()) {
+					free((void*)pElem->getObject());
+				}
 			}
 		}
+		delete mpList;
 	}
-	SAFE_RELEASE(mpList);
 }
 
 HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
@@ -38,7 +39,7 @@ HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID * pID)
 	void* pMem = *ppMem;
 	ZeroMemory(pMem, size);
 	*pID = mpList->pushFront((MemManaged*)pMem);
-	mpList->getFirst()->setDeleteContent(false);
+	mpList->iterator()->setDeleteContent(false);
 	return S_OK;
 }
 

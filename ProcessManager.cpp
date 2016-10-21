@@ -1,7 +1,6 @@
 #include "TopInclude.h"
 #include "List.h"
 #include "Memory.h"
-#include "ListElement.h"
 #include "CoreComponent.h"
 #include "Process.h"
 #include "SimplyManaged.h"
@@ -32,7 +31,7 @@ HRESULT ProcessManager::restore()
 HRESULT ProcessManager::run(TIME elapsed)
 {
 	if (mpProcesses->getLength() == 0) { return S_OK; }
-	for (ListElement<Process>* pListElement = mpProcesses->getFirst(); pListElement != NULL; pListElement = pListElement->getNext()) {
+	for (ListElement<Process>* pListElement = (ListElement<Process>*)mpProcesses->iterator(); pListElement != NULL; pListElement = (ListElement<Process>*)pListElement->getNext()) {
 		pListElement->getObject()->run(elapsed);
 	}
 	return S_OK;

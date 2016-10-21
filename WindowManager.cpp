@@ -15,14 +15,15 @@ WindowManager::~WindowManager()
 {
 	SAFE_RELEASE(mpWindows);
 	SAFE_RELEASE(mpWinParamsListener);
+	SAFE_RELEASE(mpCreateWindowListener);
 }
 
 HRESULT WindowManager::run(TIME elapsed)
 {
 	MSG msg;
-	Window* pWindow = mpWindows->get(0);
-	UINT last = mpWindows->getIndexLast();
-	for(UINT i = 0; i<last; pWindow = mpWindows->get(++i)){
+	Window* pWindow;
+	for(UINT i = 0; i<mpWindows->getIndexLast();){
+		pWindow = mpWindows->get(i++);
 		if (pWindow) {
 			while (PeekMessage(&msg, pWindow->getHWND(), 0, 0, PM_REMOVE))
 			{

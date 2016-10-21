@@ -3,7 +3,6 @@
 #include "Vector.h"
 #include "List.h"
 #include "Memory.h"
-#include "ListElement.h"
 #include "EventListener.h"
 #include "Event.h"
 #include "SimplyManaged.h"
@@ -53,17 +52,18 @@ HRESULT EventManager::run(TIME elapsed)
 	List<EventListener>* pListenerList = 0;
 	ListElement<EventListener>* pListElem = 0;
 	Event* pEvent = 0; 
-	if (!mpEvents) {
-		return S_OK;
-	}
+
 	while (mpEvents->getLength() > 0) {
 		pEvent = mpEvents->popFirst(); 
 		pListenerList = mpListeners->get(pEvent->getSlotID());
 		if (pListenerList) {
 			if (pListenerList->getLength() > 0) {
-				for (pListElem = pListenerList->getFirst(); pListElem != NULL; pListElem = pListElem->getNext())
+				for (pListElem = (ListElement<EventListener>*)pListenerList->iterator(); pListElem != NULL; pListElem = (ListElement<EventListener>*)pListElem->getNext())
 				{
 					pListElem->getObject()->run(pEvent->getData());
+					if (!pListElem) {
+						return S_OK;
+					}
 				}
 			}
 		}

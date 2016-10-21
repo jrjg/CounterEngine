@@ -36,7 +36,7 @@ inline Vector<ObjectType>::~Vector() {
 template<class ObjectType>
 inline UINT Vector<ObjectType>::getIndexLast()
 {
-	return (mpMemBlocks[mIndexLastMemBlock]->getIndexLast() + mIndexLastMemBlock*mMemBlockCapacity);
+	return (mpMemBlocks[mIndexLastMemBlock]->getIndexLast() + mIndexLastMemBlock*mMemBlockCapacity-1);
 }
 
 template<class ObjectType>
