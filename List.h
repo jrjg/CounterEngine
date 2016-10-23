@@ -3,40 +3,44 @@
 
 #include "TopInclude.h"
 #include "MemManaged.h"
+#include "Lockable.h"
 
 template <class ObjectType>
 class UnManagedListElement
 {
+	friend class ListElement<ObjectType>;
+	friend class List<ObjectType>;
+	friend class UnManagedList<ObjectType>;
 protected:
-	UnManagedListElement<ObjectType>* mpPrevious;
-	UnManagedListElement<ObjectType>* mpNext;
+	void* mpPrevious;
+	void* mpNext;
 	ObjectType* mpObject;
 	ID mID;
 	bool mDeleteContent;
-public:
+	HRESULT setNext(void* p) { V_RETURN(access()); mpNext = p; return S_OK; };
+	HRESULT setPrevious(void* p) { V_RETURN(access()); mpPrevious = p; return S_OK; };
+	HRESULT setDeleteContent(bool b) { V_RETURN(access()); mDeleteContent = b; return S_OK; };
+	UnManagedListElement(ObjectType* pObj, ID id, void* pNext, void* pPrevious, bool memManageContent) : mpObject(pObj), mID(id), mDeleteContent(memManageContent), mpNext(pNext), mpPrevious(pPrevious) {};
 	virtual ~UnManagedListElement() { if (mDeleteContent) { SAFE_RELEASE(mpObject); }; };
-	UnManagedListElement(ObjectType* pObj, ID id, UnManagedListElement<ObjectType>* pNext, UnManagedListElement<ObjectType>* pPrevious, bool memManageContent) : mpObject(pObj), mID(id), mDeleteContent(memManageContent), mpNext(pNext), mpPrevious(pPrevious) {};
-	ID getID() { return mID; };
-	UnManagedListElement<ObjectType>* getNext() { return mpNext; };
-	UnManagedListElement<ObjectType>* getPrevious() { return mpPrevious; };
-	void setNext(UnManagedListElement<ObjectType>* p) { mpNext = p; };
-	void setPrevious(UnManagedListElement<ObjectType>* p) { mpPrevious = p; };
-	ObjectType* getObject() { return mpObject; };
-	void setDeleteContent(bool b) { mDeleteContent = b; };
-	bool getDeleteContent() { return mDeleteContent; };
-	void Release() { delete this; };
+public:
+	HRESULT getID(ID* pID) { *pID = mID; return S_OK; };
+	HRESULT getNext(void** ppNext) { *ppNext = mpNext; return S_OK; };
+	HRESULT getPrevious(void** ppPrevious) { *ppPrevious = mpPrevious; return S_OK; };
+	HRESULT getDeleteContent(bool* pB) { *pB = mDeleteContent; return S_OK; };
+	HRESULT getObject(ObjectType** ppObject) { *ppObject = mpObject; return S_OK; };
+	HRESULT Release() { V_RETURN(access()); delete this; return S_OK; };
 };
 
 template <class ObjectType>
 class ListElement : public UnManagedListElement<ObjectType>, public MemManaged {
-public:
-	void Release() override{ delete this; };
+protected:
 	virtual ~ListElement() {};
 	ListElement(ObjectType* pObj, ID id, UnManagedListElement<ObjectType>* pNext, UnManagedListElement<ObjectType>* pPrevious, bool memManageContent) : UnManagedListElement<ObjectType>(pObj, id, pNext, pPrevious, memManageContent) {};
+	HRESULT Release()override { V_RETURN(access()); delete this; return S_OK; };
 };
 
 template <class ObjectType, class ListElemType>
-class List_Template{
+class List_Template : public Lockable {
 protected:
 	ListElemType* getLast() { return mpLastElem; };
 	ListElemType* mpFirstElem;
@@ -44,31 +48,33 @@ protected:
 	UINT mLength;
 	ID mElemIDCounter;
 	bool mManageContent;
+	virtual ~List_Template() { deleteAllListElements(); };
 	HRESULT deleteAllListElements();
-	HRESULT deleteListElement(ListElemType* pListElem);
-	ObjectType* pop(ListElemType* pElem);
 public:
-	ID pushBack(ObjectType* pObj);
-	ID pushFront(ObjectType* pObj);
-	void setLength(unsigned int length) { mLength = length; };
-	HRESULT setFirst(ListElemType* pElem) { mpFirstElem = pElem; return S_OK; };
-	HRESULT setLast(ListElemType* pElem) { mpLastElem = pElem; return S_OK; };
-	UINT getLength() { return mLength; };
-	ListElemType* iterator() { return mpFirstElem; };
-	ObjectType* popFirst() { return pop(mpFirstElem); };
-	ObjectType* popLast() { return pop(mpLastElem); };
-	ObjectType* pop(ID id);
-	
-	ObjectType* getByID(ID id);
+	HRESULT deleteListElement(ListElemType* pListElem);
+	HRESULT pushBack(ObjectType* pObj, ID* pID);
+	HRESULT pushFront(ObjectType* pObj, ID* pID);
+	HRESULT setLength(unsigned int length) { V_RETURN(access()); mLength = length; return S_OK; };
+	HRESULT setFirst(ListElemType* pElem) { V_RETURN(access()); mpFirstElem = pElem; return S_OK; };
+	HRESULT setLast(ListElemType* pElem) { V_RETURN(access()); mpLastElem = pElem; return S_OK; };
+	HRESULT popFirst(ObjectType** ppObject) { V_RETURN(access()); pop(mpFirstElem, ppObject); return S_OK; };
+	HRESULT popLast(ObjectType** ppObject) { V_RETURN(access()); pop(mpLastElem, ppObject); return S_OK; };
+	HRESULT pop(ID id, ObjectType** ppObject);
+	HRESULT pop(ListElemType* pElem, ObjectType** ppObject);
 	HRESULT deleteByID(ID id);
 	HRESULT restore();
-	virtual ~List_Template();
-	List_Template() : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mManageContent(true) { restore(); };
+	HRESULT Release() { V_RETURN(access()); delete this; return S_OK; };
+	
+	UINT getLength( {return mLength; };
+	ListElemType* iterator() { return mpFirstElem; };
+	ObjectType* getByID(ID id);
+	List_Template() : mpFirstElem(NULL), mpLastElem(NULL), mLength(0), mElemIDCounter(0), mManageContent(true), mLocked(false) { restore(); };
 };
 
 template<class ObjectType,class ListElemType>
 inline HRESULT List_Template<ObjectType, ListElemType>::restore()
 {
+	V_RETURN(access());
 	deleteAllListElements();
 	mpFirstElem = NULL;
 	mpLastElem = NULL;
@@ -81,33 +87,33 @@ inline HRESULT List_Template<ObjectType, ListElemType>::restore()
 template<class ObjectType,class ListElemType>
 inline HRESULT List_Template<ObjectType, ListElemType>::deleteListElement(ListElemType* pListElem)
 {
+	V_RETURN(access());
 	if (pListElem) {
 		if (mpFirstElem->getID() == pListElem->getID()) { mpFirstElem = (ListElemType*)pListElem->getNext(); };
 		if (mpLastElem->getID() == pListElem->getID()) { mpLastElem = (ListElemType*)pListElem->getPrevious(); };
-		if (pListElem->getNext()) { pListElem->getNext()->setPrevious((ListElemType*)pListElem->getPrevious()); };
-		if (pListElem->getPrevious()) { pListElem->getPrevious()->setNext((ListElemType*)pListElem->getNext()); };
+		if (pListElem->getNext()) { ((ListElemType*)pListElem->getNext())->setPrevious((ListElemType*)pListElem->getPrevious()); };
+		if (pListElem->getPrevious()) { ((ListElemType*)pListElem->getPrevious())->setNext((ListElemType*)pListElem->getNext()); };
 		mLength--;
-		SAFE_RELEASE(pListElem);
+		delete pListElem;
 	}
 	return S_OK;
 };
 
 template <class ObjectType,class ListElemType>
 ObjectType* List_Template<ObjectType, ListElemType>::getByID(ID id) {
-	ObjectType* pObj = nullptr;
 	if (mLength > 0) {
 		for (ListElemType* pElem = (ListElemType*)mpFirstElem; pElem != NULL; pElem = (ListElemType*)pElem->getNext()) {
 			if (pElem->getID() == id) {
-				pObj = pElem->getObject();
-				return pObj;
+				return pElem->getObject();
 			}
 		}
 	}
-	return pObj;
+	return NULL;
 }
 template<class ObjectType, class ListElemType>
 inline HRESULT List_Template<ObjectType, ListElemType>::deleteByID(ID id)
 {
+	V_RETURN(access());
 	if (mLength > 0) {
 		for (ListElemType* pElem = mpFirstElem; pElem != NULL; pElem = (ListElemType*)pElem->getNext()) {
 			if (pElem->getID() == id) {
@@ -119,33 +125,37 @@ inline HRESULT List_Template<ObjectType, ListElemType>::deleteByID(ID id)
 };
 
 template<class ObjectType,class ListElemType>
-inline ObjectType * List_Template<ObjectType, ListElemType>::pop(ID id)
+inline HRESULT List_Template<ObjectType, ListElemType>::pop(ID id, ObjectType ** ppObject)
 {
+	V_RETURN(access());
 	if (mLength > 0) {
-		for (ListElemType* pElem = mpFirstElem; pElem != NULL; pElem = pElem->getNext()) {
+		for (ListElemType* pElem = mpFirstElem; pElem != NULL; pElem = (ListElemType*)pElem->getNext()) {
 			if (pElem->getID() == id) {
-				return pop(pElem);
+				return pop(pElem, ppObject);
 			}
 		}
 	}
-	return NULL;
+	return ERROR_SUCCESS;
 }
+
 template<class ObjectType,class ListElemType>
-inline ObjectType * List_Template<ObjectType, ListElemType>::pop(ListElemType* pElem)
+inline HRESULT List_Template<ObjectType, ListElemType>::pop(ListElemType* pElem, ObjectType ** ppObject)
 {
+	V_RETURN(access());
 	ObjectType* pObj;
 	if (pElem) {
-		pObj = pElem->getObject();
+		*ppObject = pElem->getObject();
 		pElem->setDeleteContent(false); //dont delete what is returned
 		deleteListElement(pElem);
+		return S_OK;
 	}
-	
-	return pObj;
+	return ERROR_SUCCESS;
 };
 
 template <class ObjectType,class ListElemType>
-ID List_Template<ObjectType, ListElemType>::pushBack(ObjectType* pObject)
+HRESULT List_Template<ObjectType, ListElemType>::pushBack(ObjectType* pObject, ID* pID)
 {
+	V_RETURN(access());
 	ListElemType* pNewElem = new ListElemType(pObject, mElemIDCounter++, NULL, mpLastElem, mManageContent);
 	if (mpLastElem) {
 		mpLastElem->setNext(pNewElem);
@@ -153,12 +163,14 @@ ID List_Template<ObjectType, ListElemType>::pushBack(ObjectType* pObject)
 	mpLastElem = pNewElem;
 	if (!mpFirstElem) { mpFirstElem = pNewElem; };
 	mLength++;
-	return pNewElem->getID();
+	*pID = pNewElem->getID();
+	return S_OK;
 };
 
 template <class ObjectType,class ListElemType>
-ID List_Template<ObjectType, ListElemType>::pushFront(ObjectType* pObject)
+HRESULT List_Template<ObjectType, ListElemType>::pushFront(ObjectType* pObject, ID* pID)
 {
+	V_RETURN(access());
 	ListElemType* pNewElem = new ListElemType(pObject, mElemIDCounter++, mpFirstElem, NULL, mManageContent);
 	if (mpFirstElem) {
 		mpFirstElem->setPrevious(pNewElem);
@@ -166,38 +178,36 @@ ID List_Template<ObjectType, ListElemType>::pushFront(ObjectType* pObject)
 	mpFirstElem = pNewElem;
 	if (!mpLastElem) { mpLastElem = pNewElem; };
 	mLength++;
-	return pNewElem->getID();
+	*pID = pNewElem->getID();
+	return S_OK;
 };
 
 template<class ObjectType,class ListElemType>
 inline HRESULT List_Template<ObjectType, ListElemType>::deleteAllListElements()
 {
+	V_RETURN(access());
 	while (mLength > 0) {
-		//V_RETURN(deleteListElement(mpFirstElem));
 		deleteListElement(mpFirstElem);
 	}
 	return S_OK;
 }
 
-template <class ObjectType,class ListElemType>
-List_Template<ObjectType, ListElemType>::~List_Template() {
-	deleteAllListElements();
-	return;
-};
-
 template<class ObjectType>
-class List : public MemManaged, public List_Template<ObjectType, ListElement<ObjectType> >{
-public:
+class List : public List_Template<ObjectType, ListElement<ObjectType> >, public MemManaged{
+protected:
 	virtual ~List() {};
-	List() : List_Template<ObjectType, ListElement<ObjectType>>() {};
+public:
+	HRESULT Release()override { V_RETURN(access()); delete this; return S_OK; };
+	List() : List_Template< ObjectType, ListElement<ObjectType> >() {};
 };
 
 template<class ObjectType>
 class UnManagedList : public List_Template<ObjectType, UnManagedListElement<ObjectType> > {
-public:
-	void Release() { delete this; };
+protected:
 	virtual ~UnManagedList() {};
-	UnManagedList() : List_Template<ObjectType, UnManagedListElement<ObjectType>>() {};
+public:
+	HRESULT Release() { V_RETURN(access()); delete this; return S_OK; };
+	UnManagedList() : List_Template< ObjectType, UnManagedListElement<ObjectType> >() {};
 };
 
 #endif

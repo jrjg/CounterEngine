@@ -3,9 +3,10 @@
 
 #include "MemManaged.h"
 #include "VectorMemBlock.h"
+#include "Lockable.h"
 template<class ObjectType>class VectorMemBlock;
 
-template<class ObjectType> class Vector : public MemManaged
+template<class ObjectType> class Vector : public MemManaged, public Lockable
 {
 private:
 	UINT mMemBlockCapacity;
@@ -49,6 +50,7 @@ inline ObjectType * Vector<ObjectType>::get(UINT index)
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::set(UINT index, ObjectType *pObj)
 {
+	V_RETURN(access());
 	if (index > mMaxCapacity) { return ERROR_SUCCESS; };
 	UINT indexMemBlock = index / mMemBlockCapacity;
 	VectorMemBlock<ObjectType>* pMemBlock = mpMemBlocks[indexMemBlock];
@@ -68,6 +70,7 @@ inline HRESULT Vector<ObjectType>::set(UINT index, ObjectType *pObj)
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
 {
+	V_RETURN(access());
 	HRESULT hr = ERROR_SUCCESS;
 	UINT indexMemBlock;
 	for (UINT i = 0; i < MAX_VECTOR_BLOCKS; i++) {
@@ -100,6 +103,7 @@ inline HRESULT Vector<ObjectType>::pushback(ObjectType * pObj,UINT* pIndex)
 template<class ObjectType>
 inline HRESULT Vector<ObjectType>::restore()
 {
+	V_RETURN(access());
 	for (int i = 0; i < MAX_VECTOR_BLOCKS; i++) {
 		if (mpMemBlocks[i]) {
 			mpMemBlocks[i]->restore();

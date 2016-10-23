@@ -11,7 +11,7 @@ MemoryManager::MemoryManager() : Singleton<MemoryManager>(false){
 MemoryManager::~MemoryManager() { 
 	if (mpList) {
 		if (mpList->getLength() > 0) {
-			for (UnManagedListElement<MemManaged>* pElem = mpList->iterator(); pElem != NULL; pElem = pElem->getNext()) {
+			for (UnManagedListElement<MemManaged>* pElem = mpList->iterator(); pElem != NULL; pElem = (UnManagedListElement<MemManaged>*)pElem->getNext()) {
 				if (!pElem->getDeleteContent()) {
 					free((void*)pElem->getObject());
 				}
@@ -39,13 +39,20 @@ HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID * pID)
 	void* pMem = *ppMem;
 	ZeroMemory(pMem, size);
 	*pID = mpList->pushFront((MemManaged*)pMem);
-	mpList->iterator()->setDeleteContent(false);
-	return S_OK;
+	UnManagedListElement<MemManaged>* pListElem;
+	if (SUCCEEDED(mpList->iterator(&pListElem))) {
+		pListElem->setDeleteContent(false);
+		return S_OK;
+	}
+	return ERROR_SUCCESS;
 }
 
 HRESULT MemoryManager::freeMem(ID id)
 {
-	free((void*)mpList->pop(id));
+	void* pObject;
+	if (SUCCEEDED(mpList->pop(id, (MemManaged**)&pObject))) {
+		free(pObject);
+	}
 	return S_OK;
 }
 MemoryManager * MemoryManager::get()

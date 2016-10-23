@@ -6,6 +6,7 @@
 
 template<class ObjectType> 
 class VectorMemBlock : public MemManaged {
+	friend class Vector<ObjectType>;
 private:
 	UINT mIndexLast;
 	void* mpMem;
@@ -16,7 +17,6 @@ private:
 	UINT mLength;
 protected:
 	virtual ~VectorMemBlock();
-public:
 	ObjectType* VectorMemBlock<ObjectType>::get(UINT index);
 	UINT getIndexLast() { return mIndexLast; };
 	void setDeleteContent(bool b) { mDeleteContent = b; };

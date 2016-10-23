@@ -23,7 +23,6 @@ HRESULT Process::run(TIME elapsed)
 		{
 			handle(mShouldWait);
 		}
-
 	}
 	return S_OK;
 };

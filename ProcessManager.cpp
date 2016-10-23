@@ -6,8 +6,17 @@
 #include "SimplyManaged.h"
 #include "MemManaged.h"
 #include "Singleton.h"
+#include "EventManager.h"
 
 #include "ProcessManager.h"
+
+ID ProcessManager::addProcess(Process * pProcess) { 
+	ID id;
+	if (FAILED(mpProcesses->pushBack(pProcess, &id))) {
+		EventManager::get()->queueEventND(EVENT_ADDPROCESS, pProcess);
+	}
+	return ; 
+};
 
 HRESULT ProcessManager::removeProcess(ID processID)
 {
@@ -31,8 +40,20 @@ HRESULT ProcessManager::restore()
 HRESULT ProcessManager::run(TIME elapsed)
 {
 	if (mpProcesses->getLength() == 0) { return S_OK; }
-	for (ListElement<Process>* pListElement = (ListElement<Process>*)mpProcesses->iterator(); pListElement != NULL; pListElement = (ListElement<Process>*)pListElement->getNext()) {
-		pListElement->getObject()->run(elapsed);
+
+
+
+	ListElement<Process>* pListElem = mpProcesses->iterator();
+	Process* pProcess;
+	while (pListElem) {
+		pProcess = pListElem->getObject();
+		if (pProcess) {
+			pProcess->run(elapsed);
+		}
+		if (pListElem) {
+			pListElem = (ListElement<Process>*)pListElem->getNext();
+		}
+		if (mpProcesses->getLength() == 0) { return S_OK; }
 	}
 	return S_OK;
 }

@@ -4,6 +4,7 @@
 #include "MemManaged.h"
 #include "EventListener.h"
 #include "Process.h"
+#include "TopInclude.h"
 
 class RestoreListener;
 class ReleaseListener;
