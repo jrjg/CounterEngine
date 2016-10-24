@@ -52,7 +52,7 @@ HRESULT ProcessManager::run(TIME elapsed)
 	ID processesKey = 0;
 	V_RETURN(mpProcesses->lock(&processesKey));
 	ListElement<Process>* pListElem = mpProcesses->iterator();
-	Process* pProcess;
+	Process* pProcess = 0;
 	while (pListElem) {
 		pProcess = pListElem->getObject();
 		if (pProcess) {

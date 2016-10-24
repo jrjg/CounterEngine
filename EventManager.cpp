@@ -103,7 +103,6 @@ HRESULT EventManager::run(TIME elapsed)
 	ListElement<EventListener>* pListElem = 0;
 	Event* pEvent = 0;
 	UINT length = 0;
-	MemManaged* pMemManaged;
 	EventListener* pListener;
 	ID listenersKey;
 	ID eventsKey;
