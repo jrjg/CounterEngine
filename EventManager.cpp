@@ -9,89 +9,127 @@
 #include "MemManaged.h"
 #include "EventManager.h"
 
-HRESULT EventManager::registerEvent(ID id) { return mpListeners->set(id, new List<EventListener>()); }
+HRESULT EventManager::registerEvent(ID id) { 
+	return mpListeners->set(id, new List<EventListener>()); 
+}
 
-EventManager::EventManager() : CoreComponent(false),Singleton<EventManager>(false), mEventListKey(0){
+EventManager::EventManager() : CoreComponent(false),Singleton<EventManager>(false){
 	mpListeners = new Vector<List<EventListener>>(100); 
 	mpEvents = new List<Event>(); 
+	mpEventsTemp = new List<Event>();
 	mEventCounter = 0;
 };
 EventManager::~EventManager() { 
 	SAFE_RELEASE(mpListeners); 
 	SAFE_RELEASE(mpEvents); 
-};
-
-ID EventManager::queueEvent(ID id, MemManaged * pData) { 
-	mpEvents->pushBack(new Event(pData, id, mEventCounter++))
-	return ; 
+	SAFE_RELEASE(mpEventsTemp);
 }
-ID EventManager::queueEventND(ID id, MemManaged * pData)
-{
-	return ID();
-};
 
-ID EventManager::registerForEvent(ID id, EventListener* pListener)
+HRESULT EventManager::queueEvent(Event * pEvent)
 {
-	List<EventListener>* pListenerList = mpListeners->get(id);
-	if (!pListenerList) {
-		registerEvent(id);
-		pListenerList = mpListeners->get(id);
+	ID id;
+	if (SUCCEEDED(mpEvents->unlock(0))) {
+		return mpEvents->pushBack(pEvent, &id);
 	}
-	return pListenerList->pushBack(pListener);
+	else {
+		if (SUCCEEDED(mpEventsTemp->unlock(0))) {
+			return mpEventsTemp->pushBack(pEvent, &id);
+		}
+	}
+	return ERROR_SUCCESS;
 }
+HRESULT EventManager::transferTempEvents()
+{
+	V_RETURN(mpEventsTemp->unlock(0));
+	V_RETURN(mpEvents->unlock(0));
+	Event* pEvent;
+	ID id;
+	while (mpEventsTemp->getLength() > 0) {
+		pEvent = 0;
+		if (SUCCEEDED(mpEventsTemp->popFirst(&pEvent))) {
+			if (FAILED(mpEvents->pushBack(pEvent, &id))) {
+				delete pEvent;
+			}
+		}
+	}
+	return S_OK;
+};
 
-HRESULT EventManager::unRegisterForEvent(ID eventID, ID listenerID) { 
-	if (mpListeners) {
-		return mpListeners->get(eventID)->deleteByID(listenerID);
+HRESULT EventManager::queueEvent(ID id, MemManaged * pData) { 
+	Event* pEvent = new Event(pData, id, mEventCounter++);
+	if (FAILED(queueEvent(pEvent))) {
+		delete pEvent;
+		return ERROR_SUCCESS;
 	}
 	return S_OK;
 }
-	
-HRESULT EventManager::removeEvent(ID id) { 
-	if (mpEvents) {
-		return mpEvents->deleteByID(id);
-	};
+
+HRESULT EventManager::queueEventND(ID id, MemManaged * pData)
+{
+	Event* pEvent = new Event(pData, id, mEventCounter++);
+	pEvent->setManageContent(false);
+	if (FAILED(queueEvent(pEvent))) {
+		delete pEvent;
+		return ERROR_SUCCESS;
+	}
+	return S_OK;
+};
+
+HRESULT EventManager::registerForEvent(ID id, EventListener* pListener)
+{
+	List<EventListener>* pListenerList = mpListeners->get(id);
+	if (!pListenerList) {
+		V_RETURN(registerEvent(id));
+		pListenerList = mpListeners->get(id);
+	}
+	V_RETURN(pListenerList->unlock(0));
+	return pListenerList->pushBack(pListener,&pListener->mListenerID);
+}
+
+HRESULT EventManager::unRegisterForEvent(ID eventID, ID listenerID) { 
+	List<EventListener>* pList = mpListeners->get(eventID);
+	if (pList) {
+		V_RETURN(pList->unlock(0));
+		return pList->deleteByID(listenerID);
+	}
 	return S_OK;
 }
 
 HRESULT EventManager::run(TIME elapsed)
 {
+	V_RETURN(mpEvents->unlock(0));
+	V_RETURN(mpListeners->unlock(0));
 	List<EventListener>* pListenerList = 0;
 	ListElement<EventListener>* pListElem = 0;
 	Event* pEvent = 0;
 	UINT length = 0;
 	MemManaged* pMemManaged;
 	EventListener* pListener;
-	ID listenerVectorKey;
-	while (true) {
-		V_RETURN(mpEvents->unlock(0));
-		length = 0;
-		V_RETURN(mpEvents->getLength(&length));
-		if (length == 0) { return S_OK; }
+	ID listenersKey;
+	ID eventsKey;
+	while (mpEvents->getLength()>0) {
 		pEvent = 0;
 		V_RETURN(mpEvents->popFirst(&pEvent));
-		mEventListKey = 0;
-		V_RETURN(mpEvents->lock(&mEventListKey));
-
-		V_RETURN(mpListeners->unlock(0));
-		pListenerList = 0;
-		mpListeners->get(pEvent->getSlotID(),&pListenerList);
-		listenerVectorKey = 0;
-		V_RETURN(mpListeners->lock(&listenerVectorKey));
-		::operator->()->unlock(0);
+		pListenerList = mpListeners->get(pEvent->getSlotID());
 		if (pListenerList) {
-			if (SUCCEEDED(pListenerList->unlock(0))) {
-				pListenerList->iterator(&pListElem);
-				while (pListElem){
-					pListElem->getObject(&pListener);
-					pListener->run(pEvent->getData());
-					pListElem->getNext((void**)&pListElem);
+			eventsKey = 0;
+			if (SUCCEEDED(mpEvents->lock(&eventsKey))) {
+				listenersKey = 0;
+				if (SUCCEEDED(mpListeners->lock(&listenersKey))) {
+					pListElem = pListenerList->iterator();
+					while (pListElem) {
+						pListener = pListElem->getObject();
+						pListener->run(pEvent->getData());
+						pListElem = (ListElement<EventListener>*)pListElem->getNext();
+					}
+					mpListeners->unlock(listenersKey);
 				}
+				mpEvents->unlock(eventsKey);
 			}
-			
 		}
 		SAFE_RELEASE(pEvent);
 	}
+	transferTempEvents();
 	return S_OK;
 };
 
@@ -109,13 +147,21 @@ HRESULT EventManager::restore()
 	else {
 		mpEvents->restore();
 	}
+	if (!mpEventsTemp) {
+		mpEventsTemp = new List<Event>();
+	}
+	else {
+		mpEventsTemp->restore();
+	}
 	mEventCounter = 0;
-	mEventListKey = 0;
 	return S_OK;
 }
-void EventManager::Release()
+
+HRESULT EventManager::Release()
 {
 	mpEvents->restore();
+	mpEventsTemp->restore();
+	return S_OK;
 }
 
 EventManager * EventManager::get()

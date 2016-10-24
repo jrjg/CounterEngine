@@ -13,17 +13,18 @@ class EventManager : public CoreComponent,public Singleton<EventManager>{
 private:
 	Vector< List<EventListener> >* mpListeners;
 	List<Event>* mpEvents;
+	List<Event>* mpEventsTemp;
 	ID mEventCounter;
 	HRESULT registerEvent(ID id); 
 	EventManager();
 	virtual ~EventManager();
-	ID mEventListKey;
+	HRESULT queueEvent(Event* pEvent);
+	HRESULT transferTempEvents();
 public:
-	ID queueEvent(ID id, MemManaged* pData);
-	ID queueEventND(ID id, MemManaged* pData);
-	ID registerForEvent(ID id, EventListener* pListener);
+	HRESULT queueEvent(ID id, MemManaged* pData);
+	HRESULT queueEventND(ID id, MemManaged* pData);
+	HRESULT registerForEvent(ID id, EventListener* pListener);
 	HRESULT unRegisterForEvent(ID eventID, ID listenerID);
-	HRESULT removeEvent(ID id);
 
 	HRESULT run(TIME elapsed) override;
 	HRESULT restore();

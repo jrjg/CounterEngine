@@ -10,18 +10,28 @@
 
 #include "ProcessManager.h"
 
-ID ProcessManager::addProcess(Process * pProcess) { 
-	ID id;
-	if (FAILED(mpProcesses->pushBack(pProcess, &id))) {
-		EventManager::get()->queueEventND(EVENT_ADDPROCESS, pProcess);
+HRESULT ProcessManager::addProcess(Process * pProcess,ID* pID) {
+	HRESULT hr = mpProcesses->pushBack(pProcess, pID);
+	if (FAILED(hr)) {
+		EventManager* pEventManager = EventManager::get();
+		if (pEventManager) {
+			hr = pEventManager->queueEventND(EVENT_ADDPROCESS, pProcess);
+		}
 	}
-	return ; 
+	return hr; 
 };
 
 HRESULT ProcessManager::removeProcess(ID processID)
 {
-	if (mpProcesses) {
-		return mpProcesses->deleteByID(processID);
+	if(FAILED(mpProcesses->deleteByID(processID))){
+		EventManager* pEventManager = EventManager::get();
+		if (pEventManager) {
+			SimplyManaged<ID>* pID = new SimplyManaged<ID>(processID);
+			if (FAILED(pEventManager->queueEventND(EVENT_REMOVEPROCESS, pID))) {
+				delete pID;
+				return ERROR_SUCCESS;
+			}
+		}
 	}
 	return S_OK;
 };
@@ -39,10 +49,8 @@ HRESULT ProcessManager::restore()
 
 HRESULT ProcessManager::run(TIME elapsed)
 {
-	if (mpProcesses->getLength() == 0) { return S_OK; }
-
-
-
+	ID processesKey = 0;
+	V_RETURN(mpProcesses->lock(&processesKey));
 	ListElement<Process>* pListElem = mpProcesses->iterator();
 	Process* pProcess;
 	while (pListElem) {
@@ -50,11 +58,9 @@ HRESULT ProcessManager::run(TIME elapsed)
 		if (pProcess) {
 			pProcess->run(elapsed);
 		}
-		if (pListElem) {
-			pListElem = (ListElement<Process>*)pListElem->getNext();
-		}
-		if (mpProcesses->getLength() == 0) { return S_OK; }
+		pListElem = (ListElement<Process>*)pListElem->getNext();
 	}
+	V_RETURN(mpProcesses->unlock(processesKey));
 	return S_OK;
 }
 ProcessManager * ProcessManager::get()

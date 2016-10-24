@@ -17,11 +17,9 @@ protected:
 	AllowInstancingListener<T>* mpAllowInstancingListener;
 	static bool mAllowInstancing;
 	static T* mpInstance;
-	Singleton() { mpAllowInstancingListener = new AllowInstancingListener<T>(this); };
+	Singleton();
 	Singleton(bool autoRegister);
-	virtual ~Singleton() { 
-		if (mpAllowInstancingListener) { SAFE_RELEASE(mpAllowInstancingListener); };
-	};
+	virtual ~Singleton();
 public:
 	static T* get();
 };
@@ -33,6 +31,11 @@ template<class T>
 bool Singleton<T>::mAllowInstancing = true;
 
 template<class T>
+inline Singleton<T>::Singleton() { 
+	mpAllowInstancingListener = new AllowInstancingListener<T>(this); 
+};
+
+template<class T>
 inline Singleton<T>::Singleton(bool autoRegister) { 
 	if (autoRegister) { 
 		mpAllowInstancingListener = new AllowInstancingListener<T>(this); 
@@ -40,6 +43,10 @@ inline Singleton<T>::Singleton(bool autoRegister) {
 	else {
 		mpAllowInstancingListener = 0;
 	}
+}
+template<class T>
+inline Singleton<T>::~Singleton() {
+	if (mpAllowInstancingListener) { SAFE_RELEASE(mpAllowInstancingListener); };
 };
 
 template<class T>

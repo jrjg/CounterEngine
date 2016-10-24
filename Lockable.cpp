@@ -15,7 +15,7 @@ HRESULT Lockable::lock(ID * pID) {
 		return ERROR_SUCCESS;
 	}
 	mLocked = true;
-	mCurrentKey = rand() % ID_MAX;
+	mCurrentKey = (rand()%(ULLONG_MAX-1)) +1;
 	*pID = mCurrentKey;
 	return S_OK;
 }

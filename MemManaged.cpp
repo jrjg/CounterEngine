@@ -6,8 +6,11 @@
 
 void * MemManaged::operator new(size_t size)
 {
-	void * pInst;
-	MemoryManager::get()->allocateMem((MemManaged**)&pInst, size);
+	void * pInst = 0;
+	MemoryManager* pMemoryManager = MemoryManager::get();
+	if (pMemoryManager) {
+		pMemoryManager->allocateMem((MemManaged**)&pInst, size);
+	}
 	return pInst;
 }
 

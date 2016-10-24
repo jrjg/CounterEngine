@@ -11,15 +11,23 @@
 
 HRESULT CStrike::gameInit()
 {
-	mDefaultControls = Controller::get()->newControlSet();
-	Controller::get()->addMapping(mDefaultControls, VK_ESCAPE, EVENT_RELEASE);
-	Controller::get()->addMapping(mDefaultControls, 'A', EVENT_MOVELEFT);
-	Controller::get()->addMapping(mDefaultControls, 'D', EVENT_MOVERIGHT);
-	Controller::get()->addMapping(mDefaultControls, 'S', EVENT_MOVEBACK);
-	Controller::get()->addMapping(mDefaultControls, 'W', EVENT_MOVEFORWARD);
-	EventManager::get()->queueEvent(EVENT_SETCONTROLSET, new SimplyManaged<ID>(mDefaultControls));
-
-	EventManager::get()->queueEvent(EVENT_CREATEWINDOW, new WindowCreator(800, 600, L"Counter Engine"));
+	Controller* pController = Controller::get();
+	EventManager* pEventManager = EventManager::get();
+	if (pController) {
+		if (SUCCEEDED(pController->newControlSet(&mDefaultControls))) {
+			pController->addMapping(mDefaultControls, VK_ESCAPE, EVENT_RELEASE);
+			pController->addMapping(mDefaultControls, 'A', EVENT_MOVELEFT);
+			pController->addMapping(mDefaultControls, 'D', EVENT_MOVERIGHT);
+			pController->addMapping(mDefaultControls, 'S', EVENT_MOVEBACK);
+			pController->addMapping(mDefaultControls, 'W', EVENT_MOVEFORWARD);
+			if (pEventManager) {
+				pEventManager->queueEvent(EVENT_SETCONTROLSET, new SimplyManaged<ID>(mDefaultControls));
+			}
+		}
+	}
+	if (pEventManager) {
+		pEventManager->queueEvent(EVENT_CREATEWINDOW, new WindowCreator(800, 600, L"Counter Engine"));
+	}
 	SAFE_RELEASE(mpWindowCreatedListener); mpWindowCreatedListener = new WindowCreatedListener(&mDefaultWindow, L"Counter Engine");
 	return S_OK;
 }

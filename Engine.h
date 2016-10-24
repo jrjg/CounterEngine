@@ -15,7 +15,7 @@ protected:
 public:
 	HRESULT run(TIME elapsed) override { return S_OK; };
 	HRESULT restore();
-	void Release()override { mRunning = false; };
+	HRESULT Release()override { mRunning = false; };
 	bool isRunning() { return mRunning; };
 	void manualRelease() { delete this; };
 };

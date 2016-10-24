@@ -6,11 +6,18 @@
 
 #include "Process.h"
 
-Process::Process(TIME shouldWait) : mShouldWait(shouldWait), mWaited(0), mRunning(true) { mID = ProcessManager::get()->addProcess(this); };
+Process::Process(TIME shouldWait) : mShouldWait(shouldWait), mWaited(0), mRunning(true) { 
+	ProcessManager* pProcessManager = ProcessManager::get();
+	if (pProcessManager) {
+		pProcessManager->addProcess(this,&mID);
+	}
+};
 
 Process::~Process() { 
 	ProcessManager* pPM = ProcessManager::get();
-	if (pPM) { pPM->removeProcess(mID); };
+	if (pPM) { 
+		pPM->removeProcess(mID); 
+	};
 };
 
 HRESULT Process::run(TIME elapsed)
@@ -21,7 +28,7 @@ HRESULT Process::run(TIME elapsed)
 	{
 		for (; mWaited >= mShouldWait; mWaited -= mShouldWait)
 		{
-			handle(mShouldWait);
+			V_RETURN(handle(mShouldWait));
 		}
 	}
 	return S_OK;

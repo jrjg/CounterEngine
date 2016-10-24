@@ -7,12 +7,15 @@
 #include "EventListener.h"
 
 EventListener::EventListener(ID eventID) : mEventID(eventID),mEnabled(true) { 
-	EventManager::get()->registerForEvent(mEventID, this); 
+	EventManager* pEventManager = EventManager::get();
+	if (pEventManager) {
+		pEventManager->registerForEvent(mEventID, this);
+	}
 }
 
 EventListener::~EventListener() { 
-	EventManager* pEM = EventManager::get();
-	if (pEM) { 
-		pEM->unRegisterForEvent(mEventID, mListenerID); 
+	EventManager* pEventManager = EventManager::get();
+	if (pEventManager) {
+		pEventManager->unRegisterForEvent(mEventID, mListenerID);
 	}
 };

@@ -44,9 +44,9 @@ public:
 	LPCWSTR getWNDTitle() { return mWNDTitle; };
 	void setWNDTitle(LPCWSTR WNDTitle) { mWNDTitle = WNDTitle; };
 	HWND getHWND() { return mHWND; };
-	HRESULT setHWND(HWND hwnd) { if (hwnd) { mHWND = hwnd; return S_OK; }; return ERROR_SUCCESS; };
+	HRESULT setHWND(HWND hwnd);
 	Window() {};
-	virtual ~Window() { if (mHWND) { DestroyWindow(mHWND); }; };
+	virtual ~Window();
 	static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 };
 

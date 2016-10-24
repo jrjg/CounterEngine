@@ -4,6 +4,7 @@
 #include "MemManaged.h"
 
 class EventListener : public MemManaged{
+	friend class EventManager;
 private:
 	ID mEventID;
 	ID mListenerID;

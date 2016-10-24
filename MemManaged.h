@@ -9,7 +9,7 @@ public:
 	void* MemManaged::operator new(size_t size);
 	void MemManaged::operator delete(void* pInst);
 	virtual ~MemManaged() {};
-	virtual HRESULT Release() { delete this; };
+	virtual HRESULT Release() { delete this; return S_OK; };
 	void setMemID(ID id) { mMemID = id; };
 	ID getMemID() { return mMemID; };
 };

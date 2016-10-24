@@ -13,13 +13,10 @@ protected:
 	virtual ~Timer() {};
 public:
 	TIME getElapsed();
-	TIME getTime() { return (clock() * 1000 / CLOCKS_PER_SEC); };
-	HRESULT wait(TIME time) { if (time > 0) { Sleep((DWORD)time); }; return S_OK; };
-
-	HRESULT restore() { srand(time((time_t)NULL)); mThen = getTime(); return S_OK; };
-	HRESULT run(TIME elapsed)override { 
-		wait(CORETICKSPEED - elapsed); return S_OK; 
-	};
+	TIME getTime();
+	HRESULT wait(TIME time);
+	HRESULT restore();
+	HRESULT run(TIME elapsed)override;
 };
 
 #endif 

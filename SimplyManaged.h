@@ -5,12 +5,11 @@
 
 template<class ObjectType> class SimplyManaged : public MemManaged {
 private:
-	ObjectType* mpObject;
-protected:
-	virtual ~SimplyManaged() { delete mpObject; };
+	ObjectType mObject;
 public:
-	SimplyManaged(ObjectType &o) { mpObject = new ObjectType(o); };
-	ObjectType* getObject() { return mpObject; };
+	virtual ~SimplyManaged() {};
+	SimplyManaged(ObjectType &o) { mObject = o; };
+	ObjectType* getObject() { return &mObject; };
 };
 
 #endif

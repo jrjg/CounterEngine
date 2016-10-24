@@ -20,6 +20,8 @@ WindowManager::~WindowManager()
 
 HRESULT WindowManager::run(TIME elapsed)
 {
+	ID windowsKey;
+	V_RETURN(mpWindows->lock(&windowsKey));
 	MSG msg;
 	Window* pWindow;
 	for(UINT i = 0; i<mpWindows->getIndexLast();){
@@ -27,12 +29,12 @@ HRESULT WindowManager::run(TIME elapsed)
 		if (pWindow) {
 			while (PeekMessage(&msg, pWindow->getHWND(), 0, 0, PM_REMOVE))
 			{
-
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
 		}
 	}
+	V_RETURN(mpWindows->unlock(windowsKey));
 	return S_OK;
 }
 
@@ -48,12 +50,29 @@ HRESULT WindowManager::restore()
 	return S_OK;
 }
 
+HRESULT Window::setHWND(HWND hwnd) { 
+	if (hwnd) { 
+		mHWND = hwnd; 
+		return S_OK; 
+	}; 
+	return ERROR_SUCCESS; 
+};
+
+Window::~Window() { 
+	if (mHWND) { 
+		DestroyWindow(mHWND); 
+	}; 
+};
+
 LRESULT Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	EventManager* pEventManager = EventManager::get();
 	switch (msg)
 	{
 	case WM_CLOSE:
-		EventManager::get()->queueEvent(EVENT_RELEASE, NULL);
+		if (pEventManager) {
+			pEventManager->queueEvent(EVENT_RELEASE, NULL);
+		}
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -65,8 +84,7 @@ LRESULT Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 HRESULT WindowManager::createWindow(WindowCreator* pWindowCreator, UINT* pID) {
-	Window* pWindow = new Window();
-	pWindow->setWNDTitle(pWindowCreator->mWNDTitle);
+	V_RETURN(mpWindows->unlock(0));
 	
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -83,6 +101,8 @@ HRESULT WindowManager::createWindow(WindowCreator* pWindowCreator, UINT* pID) {
 	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 	RegisterClassEx(&wc); 
 
+	Window* pWindow = new Window();
+	pWindow->setWNDTitle(pWindowCreator->mWNDTitle);
 	HRESULT hr = pWindow->setHWND(CreateWindowEx(WS_EX_CLIENTEDGE, wc.lpszClassName, pWindow->getWNDTitle(), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, pWindowCreator->mWNDWidth, pWindowCreator->mWNDHeight, NULL, NULL, mHInstance, NULL));
 	if (SUCCEEDED(hr)) {
 		ShowWindow(pWindow->getHWND(), mCmdShow);
@@ -97,14 +117,29 @@ HRESULT WindowManager::createWindow(WindowCreator* pWindowCreator, UINT* pID) {
 
 HRESULT CreateWindowListener::handle(MemManaged * pData) {
 	UINT id;
+	HRESULT hr = ERROR_SUCCESS;
 	WindowCreator* pWindowCreator = (WindowCreator*)pData;
-	HRESULT hr = WindowManager::get()->createWindow(pWindowCreator, &id);
+	WindowManager* pWindowManager = WindowManager::get();
+	if (pWindowManager) {
+		hr = pWindowManager->createWindow(pWindowCreator, &id);
+	}
 	if (SUCCEEDED(hr)) {
-		EventManager::get()->queueEvent(EVENT_WINDOWCREATED, new WindowCreated(pWindowCreator->mWNDTitle, id));
+		EventManager* pEventManager = EventManager::get();
+		if (pEventManager) {
+			WindowCreated* pWindowCreated = new WindowCreated(pWindowCreator->mWNDTitle, id);
+			hr = pEventManager->queueEvent(EVENT_WINDOWCREATED, pWindowCreated);
+			if (FAILED(hr)) {
+				delete pWindowCreated;
+			}
+		}
 	}
 	return hr;
 };
 
 HRESULT WM_WinParamsListener::handle(MemManaged * pData) { 
-	return WindowManager::get()->evalWinParams((WinParams*)pData); 
+	WindowManager* pWindowManager = WindowManager::get();
+	if (pWindowManager) {
+		return pWindowManager->evalWinParams((WinParams*)pData);
+	}
+	return ERROR_SUCCESS;
 };

@@ -8,26 +8,29 @@
 MemoryManager::MemoryManager() : Singleton<MemoryManager>(false){
 	mpList = new UnManagedList<MemManaged>();
 }
+
 MemoryManager::~MemoryManager() { 
-	if (mpList) {
-		if (mpList->getLength() > 0) {
-			for (UnManagedListElement<MemManaged>* pElem = mpList->iterator(); pElem != NULL; pElem = (UnManagedListElement<MemManaged>*)pElem->getNext()) {
-				if (!pElem->getDeleteContent()) {
-					free((void*)pElem->getObject());
-				}
+	ID memoryKey;
+	if (SUCCEEDED(mpList->lock(&memoryKey))) {
+		UnManagedListElement<MemManaged>* pElem = mpList->iterator();
+		while (pElem) {
+			if (!pElem->getDeleteContent()) {
+				free((void*)pElem->getObject());
 			}
+			pElem = (UnManagedListElement<MemManaged>*)pElem->getNext();
 		}
-		delete mpList;
+		mpList->unlock(memoryKey);
 	}
+	SAFE_RELEASE(mpList);
 }
 
 HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 {
+	V_RETURN(mpList->unlock(0));
 	*ppMem = (MemManaged*)malloc(size);
 	MemManaged* pMem = *ppMem;
 	ZeroMemory(pMem, size);
-	pMem->mMemID = mpList->pushFront(pMem);
-	return S_OK;
+	return mpList->pushFront(pMem, &pMem->mMemID);
 }
 HRESULT MemoryManager::freeMem(MemManaged * pMem) { 
 	return freeMem(pMem->getMemID());
@@ -35,16 +38,18 @@ HRESULT MemoryManager::freeMem(MemManaged * pMem) {
 
 HRESULT MemoryManager::allocateMem(void ** ppMem, size_t size, ID * pID)
 {
+	V_RETURN(mpList->unlock(0));
 	*ppMem = malloc(size);
 	void* pMem = *ppMem;
 	ZeroMemory(pMem, size);
-	*pID = mpList->pushFront((MemManaged*)pMem);
-	UnManagedListElement<MemManaged>* pListElem;
-	if (SUCCEEDED(mpList->iterator(&pListElem))) {
-		pListElem->setDeleteContent(false);
-		return S_OK;
+	HRESULT hr = mpList->pushFront((MemManaged*)pMem, pID);
+	if (SUCCEEDED(hr)) {
+		UnManagedListElement<MemManaged>* pListElem = mpList->iterator();
+		if (pListElem) {
+			hr = pListElem->setDeleteContent(false);
+		}
 	}
-	return ERROR_SUCCESS;
+	return hr;
 }
 
 HRESULT MemoryManager::freeMem(ID id)

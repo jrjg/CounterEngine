@@ -15,12 +15,12 @@ private:
 protected:
 	virtual ~ProcessManager() { SAFE_RELEASE(mpProcesses); };
 public:
-	ID addProcess(Process* pProcess);
+	HRESULT addProcess(Process* pProcess, ID* pID);
 	HRESULT removeProcess(ID processID);
 	HRESULT restore();
 	HRESULT run(TIME elapsed)override;
 
-	HRESULT Release()override {};
+	HRESULT Release()override { return S_OK; };
 	void ManualRelease(){ delete this; };
 
 	static ProcessManager* get();

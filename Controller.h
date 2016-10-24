@@ -30,9 +30,8 @@ private:
 protected:
 	virtual ~Controller();
 public:
-	ID newControlSet();
+	HRESULT newControlSet(ID* pID);
 	HRESULT addMapping(ID controlsID, KEYCODE keyCode, ID eventID);
-
 	HRESULT run(TIME elapsed)override;
 	HRESULT restore();
 };
