@@ -12,12 +12,12 @@
 
 HRESULT ProcessManager::addProcess(Process * pProcess,ID* pID) {
 	HRESULT hr = mpProcesses->pushBack(pProcess, pID);
-	if (FAILED(hr)) {
+	/*if (FAILED(hr)) {
 		EventManager* pEventManager = EventManager::get();
 		if (pEventManager) {
 			hr = pEventManager->queueEventND(EVENT_ADDPROCESS, pProcess);
 		}
-	}
+	}*/
 	return hr; 
 };
 

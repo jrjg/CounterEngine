@@ -99,15 +99,15 @@ HRESULT EventManager::run(TIME elapsed)
 {
 	V_RETURN(mpEvents->unlock(0));
 	V_RETURN(mpListeners->unlock(0));
-	List<EventListener>* pListenerList = 0;
-	ListElement<EventListener>* pListElem = 0;
-	Event* pEvent = 0;
+	List<EventListener>* pListenerList = nullptr;
+	ListElement<EventListener>* pListElem = nullptr;
+	Event* pEvent = nullptr;
 	UINT length = 0;
 	EventListener* pListener;
 	ID listenersKey;
 	ID eventsKey;
 	while (mpEvents->getLength()>0) {
-		pEvent = 0;
+		pEvent = nullptr;
 		V_RETURN(mpEvents->popFirst(&pEvent));
 		pListenerList = mpListeners->get(pEvent->getSlotID());
 		if (pListenerList) {
@@ -121,9 +121,9 @@ HRESULT EventManager::run(TIME elapsed)
 						pListener->run(pEvent->getData());
 						pListElem = (ListElement<EventListener>*)pListElem->getNext();
 					}
-					mpListeners->unlock(listenersKey);
+					V_RETURN(mpListeners->unlock(listenersKey));
 				}
-				mpEvents->unlock(eventsKey);
+				V_RETURN(mpEvents->unlock(eventsKey));
 			}
 		}
 		SAFE_RELEASE(pEvent);

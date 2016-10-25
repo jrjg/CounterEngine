@@ -5,7 +5,7 @@
 
 #include "Memory.h"
 
-MemoryManager::MemoryManager() : Singleton<MemoryManager>(false){
+MemoryManager::MemoryManager() : Singleton<MemoryManager>(false), mLatestMemID(ULLONG_MAX){
 	mpList = new UnManagedList<MemManaged>();
 }
 
@@ -30,8 +30,10 @@ HRESULT MemoryManager::allocateMem(MemManaged ** ppMem, size_t size)
 	*ppMem = (MemManaged*)malloc(size);
 	MemManaged* pMem = *ppMem;
 	ZeroMemory(pMem, size);
-	return mpList->pushFront(pMem, &pMem->mMemID);
+	return mpList->pushFront(pMem, &mLatestMemID);
+	//return mpList->pushFront(pMem, &pMem->mMemID);
 }
+
 HRESULT MemoryManager::freeMem(MemManaged * pMem) { 
 	return freeMem(pMem->getMemID());
 }
@@ -60,15 +62,25 @@ HRESULT MemoryManager::freeMem(ID id)
 	}
 	return S_OK;
 }
+
+ID MemoryManager::retrieveMyMemID()
+{
+	ID id;
+	CE1_ASSERT(mLatestMemID != ULLONG_MAX);
+	id = mLatestMemID;
+	mLatestMemID = ULLONG_MAX;
+	return id;
+}
+
 MemoryManager * MemoryManager::get()
 {
 	if (!mpInstance) {
 		if (mAllowInstancing) {
 			mpInstance = new MemoryManager();
+			//mpInstance->mpAllowInstancingListener = new AllowInstancingListener<MemoryManager>(mpInstance);
 		}
 		else {
 			CE1_ASSERT(0 && "Not allowed to instance Singleton");
-			mpInstance->mpAllowInstancingListener = new AllowInstancingListener<MemoryManager>(mpInstance);
 		}
 	}
 	return mpInstance;

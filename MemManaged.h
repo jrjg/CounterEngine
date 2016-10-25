@@ -8,6 +8,7 @@ private:
 public:
 	void* MemManaged::operator new(size_t size);
 	void MemManaged::operator delete(void* pInst);
+	MemManaged();
 	virtual ~MemManaged() {};
 	virtual HRESULT Release() { delete this; return S_OK; };
 	void setMemID(ID id) { mMemID = id; };

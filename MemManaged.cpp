@@ -21,3 +21,11 @@ void MemManaged::operator delete(void * pInst)
 		pMM->freeMem((MemManaged*)pInst);
 	}
 }
+
+MemManaged::MemManaged()
+{
+	MemoryManager* pMM = MemoryManager::get();
+	if (pMM) {
+		mMemID = pMM->retrieveMyMemID();
+	}
+}

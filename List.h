@@ -51,9 +51,9 @@ protected:
 public:
 	HRESULT deleteListElement(ListElemType* pListElem);
 	HRESULT pushBack(ObjectType* pObj, ID* pID);
-	HRESULT pushBack(ObjectType* pObj) { return pushBack(pObj, 0); };
+	HRESULT pushBack(ObjectType* pObj) { ID id; return pushBack(pObj, &id); };
 	HRESULT pushFront(ObjectType* pObj, ID* pID);
-	HRESULT pushFront(ObjectType* pObj) { return pushFront(pObj, 0); };
+	HRESULT pushFront(ObjectType* pObj) { ID id; return pushFront(pObj, &id); };
 	HRESULT setLength(unsigned int length) { V_RETURN(access()); mLength = length; return S_OK; };
 	HRESULT setFirst(ListElemType* pElem) { V_RETURN(access()); mpFirstElem = pElem; return S_OK; };
 	HRESULT setLast(ListElemType* pElem) { V_RETURN(access()); mpLastElem = pElem; return S_OK; };
@@ -163,9 +163,7 @@ HRESULT List_Template<ObjectType, ListElemType>::pushBack(ObjectType* pObject, I
 	mpLastElem = pNewElem;
 	if (!mpFirstElem) { mpFirstElem = pNewElem; };
 	mLength++;
-	if (pID) {
-		*pID = pNewElem->getID();
-	}
+	*pID = pNewElem->getID();
 	return S_OK;
 };
 
@@ -180,9 +178,7 @@ HRESULT List_Template<ObjectType, ListElemType>::pushFront(ObjectType* pObject, 
 	mpFirstElem = pNewElem;
 	if (!mpLastElem) { mpLastElem = pNewElem; };
 	mLength++;
-	if (pID) {
-		*pID = pNewElem->getID();
-	}
+	*pID = pNewElem->getID();
 	return S_OK;
 };
 
